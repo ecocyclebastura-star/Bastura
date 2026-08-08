@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  bastura-db:
+    build:
+      context: ./bastura-db
+      dockerfile: dockerfile
+    container_name: bastura-db
+    restart: always
+    environment:
+      POSTGRES_USER: your_database_user
+      POSTGRES_PASSWORD: your_database_password
+      POSTGRES_DB: your_database_name
+    volumes:
+      - bastura-data:/var/lib/postgresql/data
+    networks:
+      - bastura-network
+
+  bastura-api:
+    build:
+      context: ./bastura-api
+      dockerfile: dockerfile
+    container_name: bastura-api
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      # Format: postgresql://USER:PASSWORD@HOST:PORT/DATABASE
+      DATABASE_URL: postgresql://your_database_user:your_database_password@bastura-db:5432/your_database_name
+    depends_on:
+      - bastura-db
+    networks:
+      - bastura-network
+
+volumes:
+  bastura-data:
+
+networks:
+  bastura-network:
+    driver: bridge

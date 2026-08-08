@@ -1,0 +1,34 @@
+# ==============================
+# Node & Environment
+# ==============================
+node_modules/
+*.env
+*.env.*
+.ENV
+
+# Bun (jika pakai bun)
+.bun
+
+# ==============================
+# Logs & Cache
+# ==============================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ==============================
+# Docker & DB Data
+# ==============================
+docker-compose.yml
+
+# Abaikan folder volume database jika di mount ke folder lokal di masa depan
+bastura-data/
+postgres-data/
+
+# ==============================
+# OS Generated Files
+# ==============================
+.DS_Store
+Thumbs.db
