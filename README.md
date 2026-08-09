@@ -1,3 +1,4 @@
+![Banner Logo Bastura](https://github.com/ecocyclebastura-star/Bastura/blob/main/Bastura%20Banner.png)
 # ♻️ Bastura 
 **Cerdas Pindai Harga Rongsokan dan Manajemen Keuangan Bank Sampah Berbasis Artificial Intelligence**
 
