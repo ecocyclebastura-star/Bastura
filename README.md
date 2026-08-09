@@ -16,12 +16,12 @@ Bastura menjawab tantangan ini dengan menghadirkan **alat pemindai cerdas berbas
 
 Aplikasi ini dikembangkan dengan memprioritaskan fitur-fitur esensial (Berdasarkan metode MoSCoW):
 
-### 🚀 Must Have (Core Features)
+### 🚀 (Core Features)
 - **Autentikasi Google:** Login yang aman dan praktis, membedakan hak akses antara Warga (User) dan Administrator.
 - **Manajemen Dompet Digital (Real-Time):** Pelacakan saldo total, riwayat pemasukan, dan penarikan hasil penjualan sampah dengan transparansi tinggi. Transaksi terenkripsi 100% (at-rest & in-transit).
 - **AI Scan Sampah:** Pemindai sampah berbasis Artificial Intelligence yang mampu mengidentifikasi jenis sampah dan memberikan estimasi harga pasaran secara *real-time* dengan akurasi target 95%.
 
-### 💡 Should Have & Could Have
+### 💡 (Side Features)
 - **Manajemen Konten & Pengumuman:** Admin dapat membagikan informasi krusial dan berita lingkungan RT kepada seluruh warga.
 - **Notifikasi Jadwal Otomatis:** Peringatan waktu penyetoran sampah dan agenda musyawarah warga.
 - **Modul Edukasi Pemilahan:** Tips dan saran pemilahan sampah setelah proses pemindaian.
@@ -34,8 +34,7 @@ Aplikasi ini dikembangkan dengan memprioritaskan fitur-fitur esensial (Berdasark
 
 ## ⚙️ Spesifikasi & Batasan Sistem
 - **Platform:** Eksklusif untuk sistem operasi **Android** (Mobile only).
-- **Kapasitas Pengguna:** Maksimal 350 pengguna aktif terdaftar.
-- **Persyaratan AI Scanner:** Menggunakan akses kamera dan galeri, dengan batas maksimal ukuran gambar unggahan sebesar **2 MB**.
+- **Kapasitas Pengguna:** 350 +- pengguna aktif terdaftar.
 - **Retensi Data:** Riwayat transaksi digital dapat diakses langsung hingga 6 bulan terakhir.
 - **Konektivitas:** Membutuhkan koneksi internet yang stabil untuk sinkronisasi client-server dan akses API AI.
 
