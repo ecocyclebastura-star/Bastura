@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import postgres from 'postgres'
+import authApp  from './routes/auth-routes'
 
 const app = new Hono()
 
@@ -31,4 +32,5 @@ app.get('/hello', async (c) => {
   }
 })
 
+app.route('api/auth', authApp)
 export default app
