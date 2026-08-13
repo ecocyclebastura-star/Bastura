@@ -320,7 +320,13 @@ fn decode_jwt_role(token: &str) -> String {
     use base64::Engine as _;
     let parts: Vec<&str> = token.split('.').collect();
     if parts.len() == 3 {
-        if let Ok(decoded) = base64::engine::general_purpose::URL_SAFE_NO_PAD.decode(parts[1]) {
+        // Coba baca JWT walau mungkin ada padding atau tidak
+        let payload = parts[1];
+        // Coba decode dengan URL_SAFE_NO_PAD
+        let decoded_opt = base64::engine::general_purpose::URL_SAFE_NO_PAD.decode(payload)
+            .or_else(|_| base64::engine::general_purpose::URL_SAFE.decode(payload));
+            
+        if let Ok(decoded) = decoded_opt {
             if let Ok(json_str) = String::from_utf8(decoded) {
                 if let Ok(val) = serde_json::from_str::<serde_json::Value>(&json_str) {
                     if let Some(r) = val.get("role") {
