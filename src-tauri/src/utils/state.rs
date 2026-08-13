@@ -1,4 +1,4 @@
-use crate::error::AppError;
+use super::error::AppError;
 use sqlx::SqlitePool;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -12,6 +12,7 @@ pub struct AuthState {
 }
 
 // 2. Pembungkus Global State untuk Tauri (`AppState`)
+#[derive(Clone)]
 pub struct AppState {
     pub auth: Arc<Mutex<AuthState>>,
     pub db: SqlitePool,
