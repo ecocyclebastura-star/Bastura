@@ -27,3 +27,28 @@ pub async fn signup_command(
 ) -> Result<LoginSuccessResponse, AppError> {
     signup_service(&state, payload).await
 }
+
+#[tauri::command]
+pub async fn forgot_password_command(
+    state: tauri::State<'_, AppState>,
+    email: String,
+) -> Result<bool, AppError> {
+    crate::services::auth_service::forgot_password_service(&state, email).await
+}
+
+#[tauri::command]
+pub async fn reset_password_command(
+    state: tauri::State<'_, AppState>,
+    email: String,
+    otp: String,
+    new_password: String,
+    confirm_password: String,
+) -> Result<bool, AppError> {
+    crate::services::auth_service::reset_password_service(
+        &state,
+        email,
+        otp,
+        new_password,
+        confirm_password,
+    ).await
+}

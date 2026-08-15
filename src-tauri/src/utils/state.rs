@@ -16,6 +16,7 @@ pub struct AuthState {
 pub struct AppState {
     pub auth: Arc<Mutex<AuthState>>,
     pub db: SqlitePool,
+    pub otp_cache: Arc<std::sync::Mutex<std::collections::HashMap<String, (String, i64)>>>,
 }
 
 impl AppState {
@@ -28,6 +29,7 @@ impl AppState {
                 is_refreshing: false,
             })),
             db,
+            otp_cache: Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
         }
     }
 

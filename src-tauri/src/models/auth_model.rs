@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
 pub struct LoginRequest {
-    pub action: String,
     pub email: String,
     pub password: String,
 }
@@ -69,7 +68,6 @@ pub struct LoginRequestPayload {
 
 #[derive(Serialize)]
 pub struct LogoutRequestPayload {
-    pub action: String,
     pub rf_token: String,
 }
 
@@ -84,7 +82,6 @@ pub struct SignupRequestPayload {
 
 #[derive(Serialize)]
 pub struct SignupRequest {
-    pub action: String,
     pub name: String,
     pub email: String,
     pub phone: String,
@@ -92,3 +89,31 @@ pub struct SignupRequest {
     pub confirm_password: String,
 }
 
+#[derive(Serialize)]
+pub struct ForgotPasswordRequest {
+    pub email: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ForgotPasswordData {
+    pub hash: String,
+    #[serde(rename = "expiresAt")]
+    pub expires_at: i64,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ForgotPasswordApiResponse {
+    pub status: String,
+    pub message: String,
+    pub data: Option<ForgotPasswordData>,
+}
+
+#[derive(Serialize)]
+pub struct ResetPasswordRequest {
+    pub email: String,
+    pub otp: String,
+    pub new_password: String,
+    pub hash: String,
+    #[serde(rename = "expiresAt")]
+    pub expires_at: i64,
+}

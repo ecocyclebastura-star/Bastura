@@ -1,7 +1,8 @@
 use crate::AppError;
 use crate::models::auth_model::{
     LoginApiResponse, LoginRequest, LoginRequestPayload, LoginSuccessResponse, RefreshApiResponse, RefreshRequest,
-    SignupRequest, SignupRequestPayload,
+    SignupRequest, SignupRequestPayload, ForgotPasswordRequest, ForgotPasswordApiResponse,
+    ResetPasswordRequest
 };
 use crate::AppState;
 use crate::middlewares::auth_store::save_refresh_token;
@@ -14,7 +15,6 @@ pub async fn login_service(
 ) -> Result<LoginSuccessResponse, AppError> {
     let client = Client::new();
     let api_req = LoginRequest {
-        action: "LOGIN".to_string(),
         email: payload.email.clone(),
         password: payload.password,
     };
@@ -104,7 +104,6 @@ pub async fn signup_service(
 
     let client = Client::new();
     let api_req = SignupRequest {
-        action: "SIGNUP".to_string(),
         name: payload.name,
         email: payload.email,
         phone: payload.phone,
@@ -228,14 +227,26 @@ pub async fn refresh_session_service(state: &AppState) -> Result<(), AppError> {
         Err(_) => return Err(AppError::MissingToken),
     };
 
+    // 2. Ambil access token dari RAM state jika ada
+    let access_token_opt = {
+        let auth = state.auth.lock().await;
+        auth.access_token.clone()
+    };
+
     let client = Client::new();
     let api_req = RefreshRequest { refresh_token };
 
-    let res = client
+    let mut req_builder = client
         .post("https://enbee.tailf714eb.ts.net/api/v1/auth/refresh")
-        .json(&api_req)
-        .send()
-        .await?;
+        .json(&api_req);
+
+    if let Some(access_token) = access_token_opt {
+        if !access_token.is_empty() {
+            req_builder = req_builder.header("Authorization", format!("Bearer {}", access_token));
+        }
+    }
+
+    let res = req_builder.send().await?;
 
     let http_status = res.status().as_u16();
 
@@ -297,7 +308,6 @@ pub async fn logout_session_service(state: &AppState) -> Result<bool, AppError> 
         use crate::models::auth_model::LogoutRequestPayload;
         let client = Client::new();
         let payload = LogoutRequestPayload {
-            action: "LOGOUT".to_string(),
             rf_token: refresh_token,
         };
 
@@ -334,8 +344,9 @@ fn decode_jwt_role(token: &str) -> String {
                             return s.to_string();
                         } else if let Some(i) = r.as_i64() {
                             return match i {
-                                1 => "super admin".to_string(),
+                                1 => "warga".to_string(),
                                 2 => "admin".to_string(),
+                                3 => "super admin".to_string(),
                                 _ => "warga".to_string(),
                             };
                         }
@@ -345,4 +356,119 @@ fn decode_jwt_role(token: &str) -> String {
         }
     }
     "warga".to_string() // default fallback
+}
+
+pub async fn forgot_password_service(
+    state: &AppState,
+    email: String,
+) -> Result<bool, AppError> {
+    let client = Client::new();
+    let api_req = ForgotPasswordRequest { email: email.clone() };
+
+    let res = client
+        .post("https://enbee.tailf714eb.ts.net/api/v1/auth/forgot-password")
+        .json(&api_req)
+        .send()
+        .await?;
+
+    let http_status = res.status().as_u16();
+
+    if !res.status().is_success() {
+        let error_msg = if let Ok(json) = res.json::<serde_json::Value>().await {
+            json.get("message")
+                .and_then(|v| v.as_str())
+                .unwrap_or("Gagal meminta OTP")
+                .to_string()
+        } else {
+            "Gagal meminta OTP pada server".to_string()
+        };
+
+        return Err(AppError::ApiError {
+            http_status,
+            status: "error".to_string(),
+            code: None,
+            message: error_msg,
+        });
+    }
+
+    let text_res = res.text().await?;
+    let api_res: ForgotPasswordApiResponse = match serde_json::from_str(&text_res) {
+        Ok(data) => data,
+        Err(e) => {
+            return Err(AppError::Unknown(format!(
+                "Format JSON Forgot Password tidak sesuai: {}. Raw: {}",
+                e, text_res
+            )));
+        }
+    };
+
+    let data = api_res.data.ok_or_else(|| {
+        AppError::Unknown("Data OTP tidak ditemukan dari respons server".to_string())
+    })?;
+
+    {
+        let mut cache = state.otp_cache.lock().unwrap();
+        cache.insert(email, (data.hash, data.expires_at));
+    }
+
+    Ok(true)
+}
+
+pub async fn reset_password_service(
+    state: &AppState,
+    email: String,
+    otp: String,
+    new_password: String,
+    confirm_password: String,
+) -> Result<bool, AppError> {
+    if new_password != confirm_password {
+        return Err(AppError::ValidationError("Kata sandi dan konfirmasi tidak cocok.".to_string()));
+    }
+
+    let cache_data = state.otp_cache.lock().unwrap().remove(&email);
+    let (hash, expires_at) = match cache_data {
+        Some(data) => data,
+        None => {
+            // Kita kembalikan Unknown atau kita bisa tambah InvalidSession di AppError jika mau,
+            // tapi sesuai instruksi atau menggunakan ValidationError saja.
+            return Err(AppError::ValidationError("Sesi OTP tidak ditemukan atau sudah kedaluwarsa.".to_string()));
+        }
+    };
+
+    let client = Client::new();
+    let api_req = ResetPasswordRequest {
+        email,
+        otp,
+        new_password,
+        hash,
+        expires_at,
+    };
+
+    let res = client
+        .post("https://enbee.tailf714eb.ts.net/api/v1/auth/reset-password")
+        .json(&api_req)
+        .send()
+        .await?;
+
+    let http_status = res.status().as_u16();
+
+    if !res.status().is_success() {
+        let error_msg = if let Ok(json) = res.json::<serde_json::Value>().await {
+            json.get("message")
+                .and_then(|v| v.as_str())
+                .unwrap_or("Gagal mereset kata sandi")
+                .to_string()
+        } else {
+            "Gagal mereset kata sandi pada server".to_string()
+        };
+
+        return Err(AppError::ApiError {
+            http_status,
+            status: "error".to_string(),
+            code: None,
+            message: error_msg,
+        });
+    }
+
+    Ok(true)
 }
