@@ -54,7 +54,7 @@ pub fn run() {
                 tauri::async_runtime::spawn(async move {
                     tracing::info!("Session Watcher dimulai...");
                     loop {
-                        tokio::time::sleep(tokio::time::Duration::from_secs(240)).await;
+                        tokio::time::sleep(tokio::time::Duration::from_secs(840)).await;
                         
                         tracing::info!("Session Watcher: Memeriksa sesi...");
                         
