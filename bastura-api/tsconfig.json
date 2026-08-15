@@ -2,6 +2,8 @@
   "compilerOptions": {
     "strict": true,
     "esModuleInterop": true,
-    "types": ["bun"]
+    "types": ["bun"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
   }
 }

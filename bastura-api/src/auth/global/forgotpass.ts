@@ -1,51 +1,85 @@
-// import { Context } from 'hono'
-// import { AuthPayload } from './auth-type'
-// import { getUserByEmailOrUsername, updatePasswordByEmail } from '../../model/auth/users-models'
-// import { Resend } from 'resend'
-// import bcrypt from 'bcryptjs'
+import { Context } from 'hono'
+import { createHmac } from 'node:crypto'
+import { Resend } from 'resend'
+import { getUserByEmail } from '../../model/auth/users-models'
+import {ForgotPasswordPayload} from '../type/auth-type'
+import {sendAuthResponse } from "../../logs/auth/auth-logs";
+import { getEnvOTP } from '../middleware/env';
 
-// const resend = new Resend(process.env.RESEND_API_KEY)
+const resend = new Resend(getEnvOTP.RESEND_API_KEY)
+const OTP_SECRET = getEnvOTP.OTP_SECRET
 
-// export const forgotPassword = async (c: Context) => {
-//   try {
-//     const body: AuthPayload = await c.req.json()
+export const forgotpassword = async (c: Context ) => {
+  
+  let email : string | undefined;
 
-//     if (body.action !== 'FORGOT_PASSWORD') {
-//       return c.json({ status: 'error', message: 'Invalid action' }, 400)
-//     }
+  try {
+    const body: ForgotPasswordPayload = await c.req.json()
+    email = body.email
+    if (!email){
+      return await sendAuthResponse(
+        c, 400 , 'error' , 'Email tidak ditemukan' , 'Email tidak ditemukan' , 'Email gagal ditemukan didalam server' , 'EMAIL_NOT_FOUND'  
+        ) 
+    }
 
-//     if (!body.email) {
-//       return c.json({ status: 'error', message: 'Email harus diisi' }, 400)
-//     }
+    if (!email.includes("@") || !email.includes(".")){
+     return await sendAuthResponse(
+      c, 400 , 'error' , 'Format Email tidak sesuai , Mohon diinput ulang' , 'Format Email tidak sesuai' , 'Format Email tidak sesuai' , 'EMAIL_FORMAT_INVALID'  
+     )
+    }
 
-//     const user = await getUserByEmailOrUsername(body.email)
+    const user = await getUserByEmail(email)
     
-//     if (!user) {
-//       return c.json({ status: 'success', message: 'Instruksi reset password telah dikirim ke email Anda.' }, 200)
-//     }
-//     const randomPassword = Math.random().toString(36).slice(-8)
-//     const hashedRandomPassword = await bcrypt.hash(randomPassword, 10)
-//     await updatePasswordByEmail(user.email, hashedRandomPassword)
-//     const { error } = await resend.emails.send({
-//       from: 'System <onboarding@resend.dev>',
-//       to: [user.email],
-//       subject: 'Password Sementara Anda',
-//       html: `
-//         <div style="font-family: sans-serif; padding: 20px;">
-//           <h2>Reset Password Berhasil</h2>
-//           <p>Password sementara anda telah dibuat:</p>
-//           <h2 style="color: #d9534f;">${randomPassword}</h2>
-//           <p>Silakan login menggunakan password ini, lalu <b>segera ubah</b> di menu pengaturan password.</p>
-//         </div>
-//       `,
-//     })
+    const expiresAt = Date.now() + 15 * 60 * 1000
 
-//     if (error) throw new Error('Email gagal dikirim')
+    if (!user) {
+      const fakeHash = createHmac('sha256', OTP_SECRET ).update(`fake.${Date.now()}`).digest('hex')
+      return await sendAuthResponse(
+        c, 200 , 'success' , 'OTP terkirim' , 'Jika email terdaftar, OTP 6-digit telah dikirim ke email Anda.' , 'Jika email terdaftar, OTP 6-digit telah dikirim ke email Anda.' 
+        , {
+          hash : fakeHash,
+          expiresAt : expiresAt
+        }, 'OTP_SENT'
+      )
+    }
 
-//     return c.json({ status: 'success', message: 'Instruksi reset password telah dikirim ke email Anda.' }, 200)
+    const otp = Math.floor(10000 + Math.random() * 90000).toString();
+    
+    const dataToHash = `${user.email}.${otp}.${expiresAt}`
 
-//   } catch (error: any) {
-//     console.error("Forgot Password Error:", error)
-//     return c.json({ status: 'error', message: 'Terjadi kesalahan pada server' }, 500)
-//   }
-// }
+    const hash = createHmac('sha256', OTP_SECRET).update(dataToHash).digest('hex')
+
+    const { error } = await resend.emails.send({
+      from: 'System <onboarding@resend.dev>', // Ubah jika sudah production T_T
+      to: [user.email],
+      subject: 'Kode OTP Reset Password Anda',
+      html: `
+        <div style="font-family: sans-serif; padding: 20px;">
+          <p>Halo Admin Bastura,</p>
+          <h2>Permintaan Reset Password</h2>
+          <p>Kode OTP Anda adalah:</p>
+          <h1 style="color: #106d09ff; letter-spacing: 3px;">${otp}</h1>
+          <p>Kode ini berlaku selama 15 menit. <b>Jangan berikan kode ini kepada siapapun!</b></p>
+          <p>Hormat kami, <br> Admin Bastura</p>
+        </div>
+      `,
+    })
+
+    if (error) throw new Error('Email gagal dikirim')
+    
+    return await sendAuthResponse(
+      c, 200 , 'success' , 'OTP terkirim' , 'Jika email terdaftar, OTP 6-digit telah dikirim ke email Anda.' , 'Jika email terdaftar, OTP 6-digit telah dikirim ke email Anda.' 
+      , {
+        hash : hash,
+        expiresAt : expiresAt
+      }, 'OTP_SENT'
+    );
+    
+  } catch (error) {
+    
+    return await sendAuthResponse(
+      c, 500 , 'error' , 'Internal Server Error' , 'Terjadi kesalahan pada server' , 'Terjadi kesalahan pada server' , 'INTERNAL_SERVER_ERROR'  
+    )
+  }
+}
+    

@@ -1,35 +1,41 @@
 import { Context } from 'hono'
 import { sign } from 'hono/jwt'
-import { createUser, getUserByEmailOrUsername } from '../../model/auth/users-models'
+import { createUser, getUserByEmail } from '../../model/auth/users-models'
 import { saveRefreshToken } from '../../model/auth/token-models'
-import { AuthPayload } from './auth-type'
+import { SignupPayload } from '../type/auth-type'
+import { getEnvJWT } from '../middleware/env'
+import { sendAuthResponse } from '../../logs/auth/auth-logs';
 
-const JWT_SECRET = process.env.JWT_SECRET!
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!
+const { JWT_SECRET, JWT_REFRESH_SECRET } = getEnvJWT
+let email : string | undefined;
 
 export const signup = async (c: Context) => {
-  if (!JWT_SECRET || !JWT_REFRESH_SECRET) {
-    return c.json({ status: 'error', message: 'JWT_SECRET atau JWT_REFRESH_SECRET tidak terdefinisi' }, 500)
-  }
-  
   try {
-    const body: AuthPayload = await c.req.json()
+    const body: SignupPayload = await c.req.json()
 
-    if (body.action !== 'SIGNUP') {
-      return c.json({ status: 'error', message: 'Invalid action' }, 400)
-    }
+    email = body.email
 
     if (!body.email || !body.password || !body.confirm_password) {
-      return c.json({ status: 'error', message: 'Format tipe data invalid' }, 400)
+      await sendAuthResponse(c, 400 , 'error', 'Signup error' ,'format tipe data invalid' , 'format tipe data invalid' , 'DATA_TYPE_INVALID' )
+    }
+
+    const hasnumber = /[0-9]/.test(body.password)
+
+    if (!hasnumber){
+      return await sendAuthResponse(c, 400 , 'error', 'Signup error' ,'password minimal 8 karakter dan mengandung angka' , 'password minimal 8 karakter dan mengandung angka' , 'PASSWORD_MIN_8_CHARACTER_AND_NUMBER' )
+    }
+
+    if (body.password.length < 8) {
+      return await sendAuthResponse(c, 400 , 'error', 'Signup error' ,'password minimal 8 karakter ' , 'password minimal 8 karakter' , 'PASSWORD_MIN_8_CHARACTER' )
     }
 
     if (body.password !== body.confirm_password) {
-      return c.json({ status: 'error', message: 'Kata sandi tidak cocok dengan field konfirmasi kata sandi.' }, 400)
+      await sendAuthResponse(c, 400 , 'error', 'Signup error' ,'Kata sandi tidak cocok dengan field konfirmasi kata sandi.' , 'Kata sandi tidak cocok dengan field konfirmasi kata sandi.' , 'PASSWORD_MISMATCH'  )
     }
 
-    const existingUser = await getUserByEmailOrUsername(body.email)
+    const existingUser = await getUserByEmail(body.email)
     if (existingUser) {
-      return c.json({ status: 'error', message: 'username dan email telah terdaftar' }, 409)
+      return await sendAuthResponse(c, 409 , 'error', 'Signup error' ,'Email telah terdaftar' , 'Email telah terdaftar' , 'EMAIL_ALREADY_REGISTERED'  )
     }
 
     const hashedPassword = await Bun.password.hash(body.password, {
@@ -43,9 +49,9 @@ export const signup = async (c: Context) => {
     
     const payload = {
       sub: newUser.id,
-      username: newUser.username,
-      role: newUser.role || 'user',
-      exp: Math.floor(Date.now() / 1000) + (5 * 60) 
+      name: newUser.name,
+      role: newUser.role,
+      exp: Math.floor(Date.now() / 1000) + (15 * 60) 
     }
     
     const refreshPayload = {
@@ -59,27 +65,26 @@ export const signup = async (c: Context) => {
     const expiresAt = new Date(Date.now() + (24 * 60 * 60 * 1000)) 
     saveRefreshToken(newUser.id, refresh_token, expiresAt).catch(console.error)
 
-    return c.json({
-      status: 'success',
-      message: 'Registrasi berhasil', 
-      data: {
+    await sendAuthResponse(c, 200 , 'success', 'Signup success' , 'User berhasil mendaftar' , 'User berhasil mendaftar' ,
+      {
+        data:{
+          data: {
         user: {
           id: newUser.id,
-          username: newUser.username,
           name: newUser.name,
-          email: newUser.email,
-          role: newUser.role
+          email: newUser.email
         },
         tokens: {
           access_token,
           refresh_token,
           token_type: 'Bearer',
-          expires_in: 300
+          expires_in: 900
         }
       }
-    }, 200)
+        }
+      } , 'SIGNUP_SUCCESS'  )
+
   } catch (error) {
-    console.error('Signup error:', error)
-    return c.json({ status: 'error', message: 'Internal Server Error' }, 500)
+    await sendAuthResponse(c, 500 , 'error', 'Signup error' , 'Internal Server Error' , 'Internal Server Error' , 'INTERNAL_SERVER_ERROR'   )
   }
 }

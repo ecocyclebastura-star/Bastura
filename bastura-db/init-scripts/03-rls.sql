@@ -16,7 +16,6 @@ ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE error_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE update_logs ENABLE ROW LEVEL SECURITY;
 
-
 -- policy punya manajemen akun ya (bisa di modif lagi nanti) T_T
 
 CREATE POLICY "user_lihat_profil_sendiri" ON users
@@ -62,7 +61,7 @@ USING (
 
 CREATE POLICY "admin_bisa_tambah_catalog" ON waste_catalog
 FOR INSERT
-USING (current_setting('app.current_user_role', true) = 'admin' OR current_setting('app.current_user_role', true) = 'super admin');
+WITH CHECK (current_setting('app.current_user_role', true) = 'admin' OR current_setting('app.current_user_role', true) = 'super admin');
 
 CREATE POLICY "admin_bisa_update_catalog" ON waste_catalog
 FOR UPDATE
@@ -74,7 +73,7 @@ USING (current_setting('app.current_user_role', true) = 'admin' OR current_setti
 
 CREATE POLICY "admin_bisa_tambah_category" ON waste_category
 FOR INSERT
-USING (current_setting('app.current_user_role', true) = 'admin' OR current_setting('app.current_user_role', true) = 'super admin');
+WITH CHECK (current_setting('app.current_user_role', true) = 'admin' OR current_setting('app.current_user_role', true) = 'super admin');
 
 CREATE POLICY "admin_bisa_update_category" ON waste_category
 FOR UPDATE
@@ -96,7 +95,7 @@ USING (current_setting('app.current_user_role', true) = 'user' OR current_settin
 
 CREATE POLICY "admin_bisa_tambah_pengumuman" ON announcements
 FOR INSERT
-USING (current_setting('app.current_user_role', true) = 'admin' OR current_setting('app.current_user_role', true) = 'super admin');
+WITH CHECK (current_setting('app.current_user_role', true) = 'admin' OR current_setting('app.current_user_role', true) = 'super admin');
 
 CREATE POLICY "admin_bisa_update_pengumuman" ON announcements
 FOR UPDATE
@@ -114,7 +113,7 @@ USING (current_setting('app.current_user_role', true) = 'user' OR current_settin
 
 CREATE POLICY "admin_bisa_tambah_edukasi" ON education_content
 FOR INSERT
-USING (current_setting('app.current_user_role', true) = 'admin' OR current_setting('app.current_user_role', true) = 'super admin');
+WITH CHECK (current_setting('app.current_user_role', true) = 'admin' OR current_setting('app.current_user_role', true) = 'super admin');
 
 CREATE POLICY "admin_bisa_update_edukasi" ON education_content
 FOR UPDATE
@@ -132,7 +131,7 @@ USING (current_setting('app.current_user_role', true) = 'user' OR current_settin
 
 CREATE POLICY "admin_bisa_tambah_simba" ON simba_content
 FOR INSERT
-USING (current_setting('app.current_user_role', true) = 'admin' OR current_setting('app.current_user_role', true) = 'super admin');
+WITH CHECK (current_setting('app.current_user_role', true) = 'admin' OR current_setting('app.current_user_role', true) = 'super admin');
 
 CREATE POLICY "admin_bisa_update_simba" ON simba_content
 FOR UPDATE

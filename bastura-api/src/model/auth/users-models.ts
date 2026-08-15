@@ -1,9 +1,15 @@
 import { sql } from '../connection'
 
-export const getUserByEmailOrUsername = async (identifier: string) => {
+export const getUserByEmail = async (identifier: string) => {
   const result = await sql`
-    SELECT * FROM users 
-    WHERE email = ${identifier} OR username = ${identifier} 
+    SELECT 
+      u.id_users as id,
+      u.email,
+      u.password,
+      u.name,
+      u.phone,
+      u.roles as role
+    WHERE u.email = ${identifier}
     LIMIT 1
   `
   return result.length > 0 ? result[0] : null
@@ -11,42 +17,53 @@ export const getUserByEmailOrUsername = async (identifier: string) => {
 
 export const createUser = async (user: any) => {
   const result = await sql`
-    INSERT INTO users (id, name, email, phone, password, created_at)
-    VALUES (gen_random_uuid(), ${user.name}, ${user.email}, ${user.phone}, ${user.password}, NOW())
-    RETURNING id, username, name, email, phone
+    INSERT INTO users (id_users, name, email, phone, password,role_id, created_at)
+    VALUES (gen_random_uuid(), ${user.name}, ${user.email}, ${user.phone}, ${user.password},1, NOW())
+    RETURNING id_users as id, name, email, phone, role_id as role
   `
   return result[0]
 }
 
 export const getUserById = async (id: string) => {
-  const result = await sql`SELECT * FROM users WHERE id = ${id} LIMIT 1`
+  const result = await sql`
+    SELECT 
+      u.id_users as id,
+      u.email,
+      u.name,
+      u.phone,
+      r.roles as role
+    FROM users u
+    LEFT JOIN roles r ON u.role_id = r.id_roles
+    WHERE u.id_users = ${id}
+    LIMIT 1
+  `
   return result.length > 0 ? result[0] : null
 }
 
 export const getPasswordByUserID = async (id: string) => {
-  const result = await sql`SELECT password FROM users WHERE id = ${id} LIMIT 1`
+  const result = await sql`SELECT password FROM users WHERE id_users = ${id} LIMIT 1`
   return result.length > 0 ? result[0].password : null
 }
 
 export const resetPassword = async (id: string, hashedPassword: string) => {
   const result = await sql`
-    UPDATE users SET password = ${hashedPassword} WHERE id = ${id}
-    RETURNING id, username, name, email, phone
+    UPDATE users SET password = ${hashedPassword} WHERE id_users = ${id}
+    RETURNING id_users, name, email, phone
   `
   return result[0]
 } 
 
 const updatePassword = async (id: string, hashedPassword: string) => {
   const result = await sql`
-    UPDATE users SET password = ${hashedPassword} WHERE id = ${id}
-    RETURNING id, username, name, email, phone
+    UPDATE users SET password = ${hashedPassword} WHERE id_users = ${id}
+    RETURNING id_users, name, email, phone
   `
   return result[0]
 }
 
 export const changeOldPassword = async (email: string, old_password: string , new_password: string) => {
   
-  const user = await getUserByEmailOrUsername(email)
+  const user = await getUserByEmail(email)
   if(!user) {
     throw new Error("user tidak di temukan")
   }
@@ -68,8 +85,8 @@ export const changeOldPassword = async (email: string, old_password: string , ne
 export const updatePasswordByEmail = async (id: string, hashedPassword: string) => {
   const result = await sql`
     UPDATE users SET password = ${hashedPassword} WHERE email = ${id}
-    RETURNING id, username, name, email, phone
+    RETURNING id_users, name, email, phone
   `
   return result[0]
 }
-  
+ 

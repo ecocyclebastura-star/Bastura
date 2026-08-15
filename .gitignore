@@ -32,3 +32,5 @@ postgres-data/
 # ==============================
 .DS_Store
 Thumbs.db
+
+bastura-db/init-scripts/02-seed.sql

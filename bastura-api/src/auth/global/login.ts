@@ -1,46 +1,42 @@
 import { Context } from 'hono'
 import { sign } from 'hono/jwt'
-import { getUserByEmailOrUsername } from '../../model/auth/users-models'
+import { getUserByEmail } from '../../model/auth/users-models'
 import { saveRefreshToken } from '../../model/auth/token-models'
-import { AuthPayload } from './auth-type'
+import { LoginPayload } from '../type/auth-type'
+import { getEnvJWT } from '../middleware/env'
+import { sendAuthResponse } from '../../logs/auth/auth-logs'
 
-const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
+const JWT_SECRET = getEnvJWT.JWT_SECRET
+const JWT_REFRESH_SECRET = getEnvJWT.JWT_REFRESH_SECRET
 
 export const login = async (c: Context) => {
-  if(!JWT_SECRET || !JWT_REFRESH_SECRET) {
-    return c.json({ status: 'error', message: 'JWT_SECRET atau JWT_REFRESH_SECRET tidak terdefinisi' }, 500)
-  }
+
   try {
-    const body: AuthPayload = await c.req.json()
-    
-    if(body.action !== 'LOGIN') {
-      return c.json({ status: 'error', message: 'Invalid action' }, 400)
-    }
-    const identifier = body.email || body.username 
+    const body: LoginPayload = await c.req.json()
+    const identifier = body.email 
     const password = body.password
 
     if (!identifier || !password) {
-      return c.json({ status: 'error', message: 'Username/Email dan password harus diisi' }, 400)
+      return await sendAuthResponse(c, 400 , 'error' , 'Login Error ' , 'Email dan Password harus diisi ' , 'Email dan Password harus diisi ' , 'EMAIL_PASSWORD_REQUIRED'  )
     }
 
-    const user = await getUserByEmailOrUsername(identifier)
+    const user = await getUserByEmail(identifier)
     
     if (!user) {
-      return c.json({ status: 'error', message: 'Username atau email belum terdaftar' }, 401)
+      return await sendAuthResponse(c, 401 , 'error' , 'Login Error ' , 'Email belum terdaftar' , 'Email belum terdaftar' , 'EMAIL_NOT_FOUND'  )
     }
 
     const isMatch = await Bun.password.verify(password, user.password)
 
     if (!isMatch) {
-      return c.json({ status: 'error', message: 'Username atau password salah' }, 401)
+      return await sendAuthResponse(c, 401 , 'error' , 'Login Error ' , 'Email atau password salah' , 'Email atau password salah' , 'EMAIL_PASSWORD_WRONG'  )
     }
 
     const payload = {
       sub: user.id,
-      username: user.username,
+      name: user.name,
       role: user.role,
-      exp: Math.floor(Date.now() / 1000) + (5 * 60) 
+      exp: Math.floor(Date.now() / 1000) + (15 * 60) 
     }
     
     const refreshPayload = {
@@ -48,19 +44,16 @@ export const login = async (c: Context) => {
       exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) 
     }
 
-    const access_token = await sign(payload, JWT_SECRET!)
-    const refresh_token = await sign(refreshPayload, JWT_REFRESH_SECRET!)
+    const access_token = await sign(payload, JWT_SECRET)
+    const refresh_token = await sign(refreshPayload, JWT_REFRESH_SECRET)
 
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
     saveRefreshToken(user.id, refresh_token, expiresAt).catch(console.error) 
 
-    return c.json({
-      status: 'success',
-      message: 'Login berhasil',
-      data: {
-        user: { 
+    await sendAuthResponse(c, 200 , 'success' , 'Login Success ' , `User ${user.email} berhasil login` , `User ${user.email} berhasil login` , 
+      {
+        user: {
           id: user.id, 
-          username: user.username, 
           name: user.name, 
           email: user.email 
         },
@@ -68,12 +61,12 @@ export const login = async (c: Context) => {
           access_token,
           refresh_token,
           token_type: 'Bearer',
-          expires_in: 300
+          expires_in: 900
         }
       }
-    }, 200)
+      ,'LOGIN_SUCCESS'  )
+
   } catch (error) {
-    console.error('Login error:', error)
-    return c.json({ status: 'error', message: 'Internal Server Error' }, 500)
+    await sendAuthResponse(c, 500 , 'error' , 'Login Error ' , 'Internal Server Error' , 'Internal Server Error' , 'INTERNAL_SERVER_ERROR'   )
   }
 }

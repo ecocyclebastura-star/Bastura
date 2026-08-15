@@ -1,14 +1,11 @@
 import { Context } from "hono";
-import { AuthPayload } from "./auth-type"; 
+import { ChangePasswordPayload } from "../../auth/type/auth-type"; 
 import { changeOldPassword } from "../../model/auth/users-models"; 
 
 export const changePassword = async (c: Context) => {
   try {
-    const body: AuthPayload = await c.req.json();
+    const body: ChangePasswordPayload = await c.req.json();
 
-    if (body.action !== 'CHANGE_PASSWORD') {
-      return c.json({ status: 'error', message: 'Invalid action' }, 400);
-    }
     if (body.new_password.length < 8) {
         return c.json({ status: 'error', message: 'Password minimal 8 karakter' }, 400);
     }

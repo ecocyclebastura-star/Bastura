@@ -10,7 +10,7 @@ CREATE TYPE status_tf AS ENUM('processed', 'canceled', 'success' , 'rejected' , 
 
 CREATE TABLE IF NOT EXISTS roles(
     id_roles SERIAL PRIMARY KEY NOT NULL,
-    roles VARCHAR(50) NOT NULL,
+    roles VARCHAR(50) NOT NULL UNIQUE,
     status_role role_s NOT NULL DEFAULT 'active'
 );
 
@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS users(
     name VARCHAR(100),
     phone VARCHAR(20), 
     avatar_url TEXT,
-    role_id INT NOT NULL, 
+    role_id INT NOT NULL DEFAULT 1, 
     status_active status_users DEFAULT 'active',
     total_balance BIGINT DEFAULT 0 NOT NULL,
     balance_held BIGINT,
@@ -89,6 +89,17 @@ CREATE TABLE IF NOT EXISTS users(
     reason_banned VARCHAR(200),
 
     CONSTRAINT fk_role_id FOREIGN KEY (role_id) REFERENCES roles(id_roles)
+);
+
+CREATE TABLE IF NOT EXISTS refresh_tokens(
+    id_token UUID DEFAULT gen_random_uuid() PRIMARY KEY NOT NULL,
+    user_id UUID NOT NULL,
+    token TEXT NOT NULL UNIQUE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    access_expired TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+    CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES users(id_users) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS waste_catalog(

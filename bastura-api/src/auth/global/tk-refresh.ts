@@ -1,78 +1,63 @@
 import { Context } from 'hono'
 import { verify, sign } from 'hono/jwt'
-import { findRefreshToken, saveRefreshToken, deleteRefreshToken } from '../../model/auth/token-models'
+import { findRefreshToken, deleteRefreshToken , updatetimeAccess } from '../../model/auth/token-models'
 import { getUserById } from '../../model/auth/users-models' 
+import { sendAuthResponse } from '../../logs/auth/auth-logs';
+import { getEnvJWT } from '../middleware/env';
 
-const JWT_SECRET = process.env.JWT_SECRET
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET
+const JWT_SECRET = getEnvJWT.JWT_SECRET
+const JWT_REFRESH_SECRET = getEnvJWT.JWT_REFRESH_SECRET
 
 export const refreshToken = async (c: Context) => {
-  if(!JWT_SECRET || !JWT_REFRESH_SECRET) {
-    return c.json({ status: 'error', message: 'JWT_SECRET atau JWT_REFRESH_SECRET tidak terdefinisi' }, 500)
-  }
   try {
+    
     const body = await c.req.json()
     const reqToken = body.refresh_token
 
     if (!reqToken) {
-      return c.json({ status: 'error', message: 'Refresh token tidak ditemukan' }, 400)
+      await sendAuthResponse(c, 400 , 'error', 'Token refresh error' , 'Refresh token tidak ditemukan' , 'Refresh token tidak ditemukan' , 'REFRESH_TOKEN_NOT_FOUND'   )
     }
 
     const tokenRecord = await findRefreshToken(reqToken)
 
     if (!tokenRecord) {
-      return c.json({
-        status: 'error',
-        code: 'TOKEN_REVOKED_SECURITY_ALERT',
-        message: 'Terdeteksi aktivitas mencurigakan pada sesi Anda. Sesi telah diakhiri demi keamanan, silakan login ulang.'
-      }, 403)
+      await sendAuthResponse(c, 403 , 'error', 'Token refresh error' , 'Terdeteksi aktivitas mencurigakan pada sesi Anda. Sesi telah diakhiri demi keamanan, silakan login ulang.' , 'Terdeteksi aktivitas mencurigakan pada sesi Anda. Sesi telah diakhiri demi keamanan, silakan login ulang.' , 'TOKEN_REVOKED_SECURITY_ALERT' )
+      deleteRefreshToken(reqToken).catch(console.error)
     }
 
     let payload
     try {
       payload = await verify(reqToken, JWT_REFRESH_SECRET, 'HS256')
+      updatetimeAccess(reqToken , new Date())    
     } catch (err) {
       deleteRefreshToken(reqToken).catch(console.error)
-      return c.json({ status: 'error', message: 'Refresh token invalid atau expired' }, 403)
+      return await sendAuthResponse(c, 403 , 'error', 'Token refresh error' , 'Refresh token invalid atau expired' , 'Refresh token invalid atau expired' , 'REFRESH_TOKEN_INVALID_OR_EXPIRED' )
     }
 
     const userId = payload.sub as string
     
     const user = await getUserById(userId)
     if (!user) {
-      return c.json({ status: 'error', message: 'User tidak ditemukan' }, 404)
+      return await sendAuthResponse(c, 404 , 'error', 'Token refresh error' , 'User tidak ditemukan' , 'User tidak ditemukan' , 'USER_NOT_FOUND' )
     }
     
     const newAccessPayload = {
       sub: user.id,
-      username: user.username,
+      name: user.name,
       role: user.role,
-      exp: Math.floor(Date.now() / 1000) + (5 * 60) 
+      exp: Math.floor(Date.now() / 1000) + (15 * 60) 
     }
     const new_access_token = await sign(newAccessPayload, JWT_SECRET)
 
-    const newRefreshPayload = {
-      sub: user.id,
-      exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) 
+    
+    return await sendAuthResponse(c, 200 , 'success', 'Token refresh success' , 'Token berhasil diperbarui' , 'Token berhasil diperbarui' , {
+      access_token: new_access_token, 
+      expires_in: 900
     }
-    const new_refresh_token = await sign(newRefreshPayload, JWT_REFRESH_SECRET)
+  ,'TOKEN_REFRESH_SUCCESS')
     
-    deleteRefreshToken(reqToken).catch(console.error)
-    
-    const expiresAt = new Date(Date.now() + (24 * 60 * 60 * 1000)) 
-    saveRefreshToken(user.id, new_refresh_token, expiresAt).catch(console.error)
-
-    return c.json({
-      status: 'success',
-      message: 'Token berhasil diperbarui',
-      data: {
-        access_token: new_access_token,
-        refresh_token: new_refresh_token, 
-        expires_in: 300
-      }
-    }, 200)
   } catch (error) {
     console.error('Refresh token error:', error)
-    return c.json({ status: 'error', message: 'Internal Server Error' }, 500)
+    return await sendAuthResponse(c, 500 , 'error', 'Token refresh error' , 'Internal Server Error' , 'Internal Server Error' , 'INTERNAL_SERVER_ERROR' )
   }
 }
