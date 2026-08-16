@@ -16,7 +16,7 @@ export const signup = async (c: Context) => {
     email = body.email
 
     if (!body.email || !body.password || !body.confirm_password) {
-      await sendAuthResponse(c, 400 , 'error', 'Signup error' ,'format tipe data invalid' , 'format tipe data invalid' , 'DATA_TYPE_INVALID' )
+      return await sendAuthResponse(c, 400 , 'error', 'Signup error' ,'format tipe data invalid' , 'format tipe data invalid' , 'DATA_TYPE_INVALID' )
     }
 
     const hasnumber = /[0-9]/.test(body.password)
@@ -30,7 +30,7 @@ export const signup = async (c: Context) => {
     }
 
     if (body.password !== body.confirm_password) {
-      await sendAuthResponse(c, 400 , 'error', 'Signup error' ,'Kata sandi tidak cocok dengan field konfirmasi kata sandi.' , 'Kata sandi tidak cocok dengan field konfirmasi kata sandi.' , 'PASSWORD_MISMATCH'  )
+      return await sendAuthResponse(c, 400 , 'error', 'Signup error' ,'Kata sandi tidak cocok dengan field konfirmasi kata sandi.' , 'Kata sandi tidak cocok dengan field konfirmasi kata sandi.' , 'PASSWORD_MISMATCH'  )
     }
 
     const existingUser = await getUserByEmail(body.email)
@@ -65,7 +65,7 @@ export const signup = async (c: Context) => {
     const expiresAt = new Date(Date.now() + (24 * 60 * 60 * 1000)) 
     saveRefreshToken(newUser.id, refresh_token, expiresAt).catch(console.error)
 
-    await sendAuthResponse(c, 200 , 'success', 'Signup success' , 'User berhasil mendaftar' , 'User berhasil mendaftar' ,
+    return await sendAuthResponse(c, 200 , 'success', 'Signup success' , 'User berhasil mendaftar' , 'User berhasil mendaftar' ,
       {
         data:{
           data: {
@@ -85,6 +85,6 @@ export const signup = async (c: Context) => {
       } , 'SIGNUP_SUCCESS'  )
 
   } catch (error) {
-    await sendAuthResponse(c, 500 , 'error', 'Signup error' , 'Internal Server Error' , 'Internal Server Error' , 'INTERNAL_SERVER_ERROR'   )
+    return await sendAuthResponse(c, 500 , 'error', 'Signup error' , 'Internal Server Error' , 'Internal Server Error' , 'INTERNAL_SERVER_ERROR'   )
   }
 }

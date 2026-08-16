@@ -8,7 +8,8 @@ export const getUserByEmail = async (identifier: string) => {
       u.password,
       u.name,
       u.phone,
-      u.roles as role
+      u.role_id as role
+    FROM users u
     WHERE u.email = ${identifier}
     LIMIT 1
   `

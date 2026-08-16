@@ -24,11 +24,11 @@ export const resetPassword = async (c: Context) => {
 
     const hasnumber = /[0-9]/.test(body.new_password)
     if (!hasnumber){
-      return await sendAuthResponse(c, 400 , 'error', 'password minimal 8 karakter dan mengandung angka' , 'password minimal 8 karakter dan mengandung angka' , 'PASSWORD_MIN_8_CHARACTER_AND_NUMBER' )
+      return await sendAuthResponse(c, 400 , 'error', 'Reset Password Error' , 'password minimal 8 karakter dan mengandung angka' , 'password minimal 8 karakter dan mengandung angka' , 'PASSWORD_MIN_8_CHARACTER_AND_NUMBER' )
     }
 
     if (body.new_password.length < 8) {
-      return await sendAuthResponse(c, 400 , 'error', 'password minimal 8 karakter' , 'password minimal 8 karakter' , 'PASSWORD_MIN_8_CHARACTER' )
+      return await sendAuthResponse(c, 400 , 'error', 'Reset Password Error' , 'password minimal 8 karakter' , 'password minimal 8 karakter' , 'PASSWORD_MIN_8_CHARACTER' )
     }
 
     const dataToHash = `${body.email}.${body.otp}.${body.expiresAt}`
@@ -40,9 +40,9 @@ export const resetPassword = async (c: Context) => {
     const hashedNewPassword = await bcrypt.hash(body.new_password, 10)
     await updatePasswordByEmail(body.email, hashedNewPassword)
 
-    return await sendAuthResponse(c, 200 , 'success', 'Password berhasil diubah' , 'Password berhasil diubah , Silahkan login kembali' , 'PASSWORD_RESET_SUCCESS' )
+    return await sendAuthResponse(c, 200 , 'success', 'Password berhasil diubah' , 'Password berhasil diubah , Silahkan login kembali', 'PASSWORD_RESET_SUCCESS' )
 
-  } catch (error: any) {
+  } catch (error: any) {  
     console.error("Reset Password Error:", error)
     return await sendAuthResponse(c, 500 , 'error', 'Internal Server Error' , 'Terjadi kesalahan pada server' , 'INTERNAL_SERVER_ERROR' )
   }

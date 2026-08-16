@@ -50,7 +50,7 @@ export const login = async (c: Context) => {
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
     saveRefreshToken(user.id, refresh_token, expiresAt).catch(console.error) 
 
-    await sendAuthResponse(c, 200 , 'success' , 'Login Success ' , `User ${user.email} berhasil login` , `User ${user.email} berhasil login` , 
+    return await sendAuthResponse(c, 200 , 'success' , 'Login Success ' , `User ${user.email} berhasil login` , `User ${user.email} berhasil login` , 
       {
         user: {
           id: user.id, 
@@ -67,6 +67,6 @@ export const login = async (c: Context) => {
       ,'LOGIN_SUCCESS'  )
 
   } catch (error) {
-    await sendAuthResponse(c, 500 , 'error' , 'Login Error ' , 'Internal Server Error' , 'Internal Server Error' , 'INTERNAL_SERVER_ERROR'   )
+    return await sendAuthResponse(c, 500 , 'error' , 'Login Error ' , 'Internal Server Error' , 'Internal Server Error' , 'INTERNAL_SERVER_ERROR'   )
   }
 }

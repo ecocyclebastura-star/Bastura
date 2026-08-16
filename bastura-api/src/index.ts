@@ -32,5 +32,5 @@ app.get('/hello', async (c) => {
   }
 })
 
-app.route('api/v1/auth', authApp)
+app.route('/api/v1/auth', authApp)
 export default app

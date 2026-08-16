@@ -15,14 +15,14 @@ export const refreshToken = async (c: Context) => {
     const reqToken = body.refresh_token
 
     if (!reqToken) {
-      await sendAuthResponse(c, 400 , 'error', 'Token refresh error' , 'Refresh token tidak ditemukan' , 'Refresh token tidak ditemukan' , 'REFRESH_TOKEN_NOT_FOUND'   )
+      return await sendAuthResponse(c, 400 , 'error', 'Token refresh error' , 'Refresh token tidak ditemukan' , 'Refresh token tidak ditemukan' , 'REFRESH_TOKEN_NOT_FOUND'   )
     }
 
     const tokenRecord = await findRefreshToken(reqToken)
 
     if (!tokenRecord) {
-      await sendAuthResponse(c, 403 , 'error', 'Token refresh error' , 'Terdeteksi aktivitas mencurigakan pada sesi Anda. Sesi telah diakhiri demi keamanan, silakan login ulang.' , 'Terdeteksi aktivitas mencurigakan pada sesi Anda. Sesi telah diakhiri demi keamanan, silakan login ulang.' , 'TOKEN_REVOKED_SECURITY_ALERT' )
       deleteRefreshToken(reqToken).catch(console.error)
+      return await sendAuthResponse(c, 403 , 'error', 'Token refresh error' , 'Terdeteksi aktivitas mencurigakan pada sesi Anda. Sesi telah diakhiri demi keamanan, silakan login ulang.' , 'Terdeteksi aktivitas mencurigakan pada sesi Anda. Sesi telah diakhiri demi keamanan, silakan login ulang.' , 'TOKEN_REVOKED_SECURITY_ALERT' )
     }
 
     let payload
@@ -49,7 +49,6 @@ export const refreshToken = async (c: Context) => {
     }
     const new_access_token = await sign(newAccessPayload, JWT_SECRET)
 
-    
     return await sendAuthResponse(c, 200 , 'success', 'Token refresh success' , 'Token berhasil diperbarui' , 'Token berhasil diperbarui' , {
       access_token: new_access_token, 
       expires_in: 900
