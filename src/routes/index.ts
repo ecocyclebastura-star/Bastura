@@ -1,0 +1,99 @@
+import { createRouter, createWebHistory } from "vue-router";
+import type { RouteRecordRaw } from "vue-router";
+import { ADMIN_ROLES, homeRouteName } from "../constants/roleRoutes";
+import { useAuthStore } from "../stores/authStore";
+import { useOnboardingStore } from "../stores/onboardingStore";
+
+declare module "vue-router" {
+  interface RouteMeta {
+    /** Wajib sudah login. */
+    requiresAuth?: boolean;
+    /** Hanya untuk yang belum login (halaman auth). */
+    guestOnly?: boolean;
+    /** Kalau diisi, hanya role di daftar ini yang boleh masuk. */
+    roles?: string[];
+  }
+}
+
+const routes: RouteRecordRaw[] = [
+  {
+    path: "/",
+    // Onboarding cuma buat yang belum pernah lihat; sisanya langsung login.
+    redirect: () => {
+      const onboardingStore = useOnboardingStore();
+      return { name: onboardingStore.hasSeen ? "login" : "onboarding" };
+    },
+  },
+  {
+    path: "/onboarding",
+    name: "onboarding",
+    component: () => import("../views/onboardingView.vue"),
+    meta: { guestOnly: true },
+  },
+  {
+    path: "/login",
+    name: "login",
+    component: () => import("../views/loginView.vue"),
+    meta: { guestOnly: true },
+  },
+  {
+    path: "/register",
+    name: "register",
+    component: () => import("../views/signUpView.vue"),
+    meta: { guestOnly: true },
+  },
+  {
+    path: "/forgot-password",
+    name: "forgot-password",
+    component: () => import("../views/forgotPasswordView.vue"),
+    meta: { guestOnly: true },
+  },
+  {
+    path: "/reset-password",
+    name: "reset-password",
+    component: () => import("../views/resetPasswordView.vue"),
+    meta: { guestOnly: true },
+    // Tanpa email tujuan OTP halaman ini tidak ada artinya.
+    beforeEnter: (to) => (to.query.email ? true : { name: "forgot-password" }),
+  },
+  {
+    path: "/user",
+    name: "dashboard-user",
+    component: () => import("../views/user/dashboardUser.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/admin",
+    name: "dashboard-admin",
+    component: () => import("../views/admin/dashboardAdmin.vue"),
+    meta: { requiresAuth: true, roles: ADMIN_ROLES },
+  },
+];
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes,
+});
+
+router.beforeEach((to) => {
+  // Aman dipanggil di sini: pinia sudah di-install duluan di main.ts.
+  const authStore = useAuthStore();
+
+  if (to.meta.requiresAuth && !authStore.isLoggedIn) {
+    return { name: "login" };
+  }
+
+  // Yang sudah login tidak perlu lihat halaman login/daftar lagi.
+  if (to.meta.guestOnly && authStore.isLoggedIn) {
+    return { name: homeRouteName(authStore.role) };
+  }
+
+  // Warga yang iseng buka /admin dilempar balik ke dashboard-nya sendiri.
+  if (to.meta.roles && !to.meta.roles.includes(authStore.role.toLowerCase())) {
+    return { name: homeRouteName(authStore.role) };
+  }
+
+  return true;
+});
+
+export default router;
