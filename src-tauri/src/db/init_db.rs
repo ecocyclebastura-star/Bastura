@@ -1,10 +1,18 @@
 use crate::AppError;
-use sqlx::{sqlite::SqlitePoolOptions, SqlitePool}; // Pastikan ini sesuai dengan struktur modul error-mu
+use sqlx::{sqlite::{SqliteConnectOptions, SqlitePoolOptions}, SqlitePool}; // Pastikan ini sesuai dengan struktur modul error-mu
+use std::path::Path;
 
-pub async fn init_db(db_url: &str) -> Result<SqlitePool, AppError> {
+pub async fn init_db(db_path: &Path) -> Result<SqlitePool, AppError> {
+    // Pakai filename() langsung (bukan URL string) supaya path Windows dengan
+    // backslash & drive letter tidak salah di-parse sebagai URI.
+    // create_if_missing wajib: tanpa ini SQLite gagal (code 14) di device baru.
+    let options = SqliteConnectOptions::new()
+        .filename(db_path)
+        .create_if_missing(true);
+
     let pool = SqlitePoolOptions::new()
         .max_connections(5)
-        .connect(db_url)
+        .connect_with(options)
         .await?;
 
     sqlx::query(

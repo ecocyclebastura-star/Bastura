@@ -37,11 +37,10 @@ pub fn run() {
             // Inisialisasi logger di sini agar tersimpan di direktori yang tepat
             crate::utils::setup_logger(&app_dir);
             let db_path = app_dir.join("bastura.db");
-            let db_url = format!("sqlite:{}", db_path.to_str().expect("Path invalid UTF-8"));
 
             // Blok async untuk menunggu database selesai disiapkan
             tauri::async_runtime::block_on(async move {
-                let db_pool = db::init_db(&db_url)
+                let db_pool = db::init_db(&db_path)
                     .await
                     .expect("Gagal menginisialisasi SQLite");
 

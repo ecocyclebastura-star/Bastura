@@ -358,6 +358,31 @@ fn decode_jwt_role(token: &str) -> String {
     "warga".to_string() // default fallback
 }
 
+/// `reqwest::Error` sendirian cuma bilang "error sending request" tanpa
+/// menyebut penyebab aslinya (DNS, TLS, connect refused, timeout). Penyebab
+/// itu ada di rantai `source()`, jadi harus ditelusuri manual. Tanpa ini
+/// semua kegagalan jaringan berakhir jadi "Gagal terhubung ke server" di UI
+/// tanpa jejak apa pun di log.
+fn log_network_error(context: &str, err: &reqwest::Error) {
+    let mut detail = err.to_string();
+    let mut src: Option<&(dyn std::error::Error + 'static)> = std::error::Error::source(err);
+    while let Some(s) = src {
+        detail.push_str(&format!(" <- {}", s));
+        src = std::error::Error::source(s);
+    }
+
+    tracing::error!(
+        "{} gagal: {} [timeout={} connect={} request={} body={} url={:?}]",
+        context,
+        detail,
+        err.is_timeout(),
+        err.is_connect(),
+        err.is_request(),
+        err.is_body(),
+        err.url().map(|u| u.as_str())
+    );
+}
+
 pub async fn forgot_password_service(
     state: &AppState,
     email: String,
@@ -365,11 +390,18 @@ pub async fn forgot_password_service(
     let client = Client::new();
     let api_req = ForgotPasswordRequest { email: email.clone() };
 
-    let res = client
+    let res = match client
         .post("https://enbee.tailf714eb.ts.net/api/v1/auth/forgot-password")
         .json(&api_req)
         .send()
-        .await?;
+        .await
+    {
+        Ok(res) => res,
+        Err(e) => {
+            log_network_error("Forgot password (kirim request)", &e);
+            return Err(e.into());
+        }
+    };
 
     let http_status = res.status().as_u16();
 
@@ -391,7 +423,13 @@ pub async fn forgot_password_service(
         });
     }
 
-    let text_res = res.text().await?;
+    let text_res = match res.text().await {
+        Ok(text) => text,
+        Err(e) => {
+            log_network_error("Forgot password (baca body)", &e);
+            return Err(e.into());
+        }
+    };
     let api_res: ForgotPasswordApiResponse = match serde_json::from_str(&text_res) {
         Ok(data) => data,
         Err(e) => {
@@ -444,11 +482,18 @@ pub async fn reset_password_service(
         expires_at,
     };
 
-    let res = client
+    let res = match client
         .post("https://enbee.tailf714eb.ts.net/api/v1/auth/reset-password")
         .json(&api_req)
         .send()
-        .await?;
+        .await
+    {
+        Ok(res) => res,
+        Err(e) => {
+            log_network_error("Reset password (kirim request)", &e);
+            return Err(e.into());
+        }
+    };
 
     let http_status = res.status().as_u16();
 
