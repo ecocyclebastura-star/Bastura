@@ -3,19 +3,25 @@ use sqlx::{sqlite::{SqliteConnectOptions, SqlitePoolOptions}, SqlitePool}; // Pa
 use std::path::Path;
 
 pub async fn init_db(db_path: &Path) -> Result<SqlitePool, AppError> {
-    // Pakai filename() langsung (bukan URL string) supaya path Windows dengan
-    // backslash & drive letter tidak salah di-parse sebagai URI.
-    // create_if_missing wajib: tanpa ini SQLite gagal (code 14) di device baru.
+    tracing::info!("Menginisialisasi database SQLite...");
+
     let options = SqliteConnectOptions::new()
         .filename(db_path)
         .create_if_missing(true);
 
-    let pool = SqlitePoolOptions::new()
+    let pool = match SqlitePoolOptions::new()
         .max_connections(5)
         .connect_with(options)
-        .await?;
+        .await
+    {
+        Ok(pool) => pool,
+        Err(e) => {
+            tracing::error!("Gagal menghubungkan ke database SQLite: {}", e);
+            return Err(e.into());
+        }
+    };
 
-    sqlx::query(
+    if let Err(e) = sqlx::query(
         "
         /* =========================================
            KELOMPOK 1: MANAJEMEN WAKTU SINKRONISASI
@@ -134,7 +140,12 @@ pub async fn init_db(db_path: &Path) -> Result<SqlitePool, AppError> {
         ",
     )
     .execute(&pool)
-    .await?;
+    .await
+    {
+        tracing::error!("Gagal membuat struktur tabel SQLite: {}", e);
+        return Err(e.into());
+    }
 
+    tracing::info!("Inisialisasi database SQLite dan skema tabel berhasil diselesaikan.");
     Ok(pool)
 }

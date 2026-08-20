@@ -95,7 +95,17 @@ pub fn run() {
                 });
 
                 // Masukkan db_pool ke dalam AppState, lalu daftarkan ke sistem Tauri
+                let worker_state = app_state.clone();
+                let worker_pool = app_state.db.clone(); // Pool diambil dari AppState yang sudah memilikinya
+                let worker_handle = handle.clone();
                 handle.manage(app_state);
+
+                // Jalankan Balance Worker di background (hanya emit jika user sudah login)
+                crate::services::balance_worker::start_balance_worker(
+                    worker_handle,
+                    worker_pool,
+                    worker_state,
+                );
             });
 
             Ok(())

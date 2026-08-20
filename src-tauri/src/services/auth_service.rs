@@ -1,12 +1,12 @@
-use crate::AppError;
-use crate::models::auth_model::{
-    LoginApiResponse, LoginRequest, LoginRequestPayload, LoginSuccessResponse, RefreshApiResponse, RefreshRequest,
-    SignupRequest, SignupRequestPayload, ForgotPasswordRequest, ForgotPasswordApiResponse,
-    ResetPasswordRequest
-};
-use crate::AppState;
 use crate::middlewares::auth_store::save_refresh_token;
-use crate::utils::{API_BASE_URL, log_network_error, create_http_client};
+use crate::models::auth_model::{
+    ForgotPasswordApiResponse, ForgotPasswordRequest, LoginApiResponse, LoginRequest,
+    LoginRequestPayload, LoginSuccessResponse, RefreshApiResponse, RefreshRequest,
+    ResetPasswordRequest, SignupRequest, SignupRequestPayload,
+};
+use crate::utils::{create_http_client, log_network_error, API_BASE_URL};
+use crate::AppError;
+use crate::AppState;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub async fn login_service(
@@ -111,7 +111,9 @@ pub async fn signup_service(
     tracing::info!("Memulai proses pendaftaran pengguna baru...");
     // Validasi lokal: pastikan password dan confirm_password cocok
     if payload.password != payload.confirm_password {
-        return Err(AppError::ValidationError("kata sandi tidak cocok dengan field konfirmasi kata sandi.".to_string()));
+        return Err(AppError::ValidationError(
+            "kata sandi tidak cocok dengan field konfirmasi kata sandi.".to_string(),
+        ));
     }
 
     let client = create_http_client();
@@ -177,7 +179,7 @@ pub async fn signup_service(
     })?;
 
     tracing::info!("Sign Up berhasil! Menyimpan token ke dalam sesi.");
-    
+
     // Simpan Refresh Token menggunakan auth_store (middleware)
     if let Err(e) = save_refresh_token(&data.tokens.refresh_token) {
         tracing::warn!("Gagal menyimpan refresh_token saat signup: {}", e);
@@ -223,13 +225,8 @@ pub async fn cleanup_session_service(state: &AppState) {
     let tables_to_clear = [
         "profile_cache",
         "transaction_history_cache",
-        "waste_catalog_cache",
-        "announcements_cache",
-        "education_cache",
         "daftar_warga_cache",
         "transaksi_global_cache",
-        "draft_posts",
-        "draft_split_bill"
     ];
 
     for table in tables_to_clear {
@@ -365,9 +362,10 @@ fn decode_jwt_role(token: &str) -> String {
         // Coba baca JWT walau mungkin ada padding atau tidak
         let payload = parts[1];
         // Coba decode dengan URL_SAFE_NO_PAD
-        let decoded_opt = base64::engine::general_purpose::URL_SAFE_NO_PAD.decode(payload)
+        let decoded_opt = base64::engine::general_purpose::URL_SAFE_NO_PAD
+            .decode(payload)
             .or_else(|_| base64::engine::general_purpose::URL_SAFE.decode(payload));
-            
+
         if let Ok(decoded) = decoded_opt {
             if let Ok(json_str) = String::from_utf8(decoded) {
                 if let Ok(val) = serde_json::from_str::<serde_json::Value>(&json_str) {
@@ -390,15 +388,12 @@ fn decode_jwt_role(token: &str) -> String {
     "warga".to_string() // default fallback
 }
 
-
-
-pub async fn forgot_password_service(
-    state: &AppState,
-    email: String,
-) -> Result<bool, AppError> {
+pub async fn forgot_password_service(state: &AppState, email: String) -> Result<bool, AppError> {
     tracing::info!("Memulai proses lupa kata sandi...");
     let client = create_http_client();
-    let api_req = ForgotPasswordRequest { email: email.clone() };
+    let api_req = ForgotPasswordRequest {
+        email: email.clone(),
+    };
 
     let res = match client
         .post(&format!("{}/auth/forgot-password", API_BASE_URL))
@@ -474,7 +469,9 @@ pub async fn reset_password_service(
     tracing::info!("Memulai proses reset kata sandi...");
     if new_password != confirm_password {
         tracing::warn!("Gagal reset kata sandi: Kata sandi dan konfirmasi tidak cocok.");
-        return Err(AppError::ValidationError("Kata sandi dan konfirmasi tidak cocok.".to_string()));
+        return Err(AppError::ValidationError(
+            "Kata sandi dan konfirmasi tidak cocok.".to_string(),
+        ));
     }
 
     let cache_data = state.otp_cache.lock().unwrap().remove(&email);
@@ -483,8 +480,12 @@ pub async fn reset_password_service(
         None => {
             // Kita kembalikan Unknown atau kita bisa tambah InvalidSession di AppError jika mau,
             // tapi sesuai instruksi atau menggunakan ValidationError saja.
-            tracing::warn!("Gagal reset kata sandi: Sesi OTP tidak ditemukan atau sudah kedaluwarsa.");
-            return Err(AppError::ValidationError("Sesi OTP tidak ditemukan atau sudah kedaluwarsa.".to_string()));
+            tracing::warn!(
+                "Gagal reset kata sandi: Sesi OTP tidak ditemukan atau sudah kedaluwarsa."
+            );
+            return Err(AppError::ValidationError(
+                "Sesi OTP tidak ditemukan atau sudah kedaluwarsa.".to_string(),
+            ));
         }
     };
 
@@ -522,7 +523,11 @@ pub async fn reset_password_service(
             "Gagal mereset kata sandi pada server".to_string()
         };
 
-        tracing::error!("Gagal mereset kata sandi (HTTP {}): {}", http_status, error_msg);
+        tracing::error!(
+            "Gagal mereset kata sandi (HTTP {}): {}",
+            http_status,
+            error_msg
+        );
         return Err(AppError::ApiError {
             http_status,
             status: "error".to_string(),
