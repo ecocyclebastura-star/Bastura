@@ -67,3 +67,15 @@ fn cleanup_old_logs(logs_dir: &PathBuf) {
         }
     }
 }
+
+pub fn log_network_error(context: &str, err: &reqwest::Error) {
+    let reason = if err.is_timeout() {
+        "Waktu koneksi habis (Timeout)".to_string()
+    } else if err.is_connect() {
+        "Gagal terhubung ke server (Masalah Jaringan/Koneksi)".to_string()
+    } else {
+        "Terjadi kesalahan pada jaringan".to_string()
+    };
+
+    tracing::error!("{} gagal: {}", context, reason);
+}

@@ -6,24 +6,32 @@ use crate::models::auth_model::{
 };
 use crate::AppState;
 use crate::middlewares::auth_store::save_refresh_token;
-use reqwest::Client;
+use crate::utils::{API_BASE_URL, log_network_error, create_http_client};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub async fn login_service(
     state: &AppState,
     payload: LoginRequestPayload,
 ) -> Result<LoginSuccessResponse, AppError> {
-    let client = Client::new();
+    tracing::info!("Memulai proses login...");
+    let client = create_http_client();
     let api_req = LoginRequest {
         email: payload.email.clone(),
         password: payload.password,
     };
 
-    let res = client
-        .post("https://enbee.tailf714eb.ts.net/api/v1/auth/login")
+    let res = match client
+        .post(&format!("{}/auth/login", API_BASE_URL))
         .json(&api_req)
         .send()
-        .await?;
+        .await
+    {
+        Ok(res) => res,
+        Err(e) => {
+            log_network_error("Login (kirim request)", &e);
+            return Err(e.into());
+        }
+    };
 
     let http_status = res.status().as_u16();
 
@@ -39,6 +47,7 @@ pub async fn login_service(
             "Terjadi kesalahan pada server".to_string()
         };
 
+        tracing::error!("Gagal login (HTTP {}): {}", http_status, error_msg);
         return Err(AppError::ApiError {
             http_status,
             status: "error".to_string(),
@@ -85,6 +94,8 @@ pub async fn login_service(
         auth.expires_at = expires_at;
     }
 
+    tracing::info!("Proses login berhasil diselesaikan.");
+
     Ok(LoginSuccessResponse {
         id: data.user.id,
         name: data.user.name,
@@ -97,12 +108,13 @@ pub async fn signup_service(
     state: &AppState,
     payload: SignupRequestPayload,
 ) -> Result<LoginSuccessResponse, AppError> {
+    tracing::info!("Memulai proses pendaftaran pengguna baru...");
     // Validasi lokal: pastikan password dan confirm_password cocok
     if payload.password != payload.confirm_password {
         return Err(AppError::ValidationError("kata sandi tidak cocok dengan field konfirmasi kata sandi.".to_string()));
     }
 
-    let client = Client::new();
+    let client = create_http_client();
     let api_req = SignupRequest {
         name: payload.name,
         email: payload.email,
@@ -111,11 +123,18 @@ pub async fn signup_service(
         confirm_password: payload.confirm_password,
     };
 
-    let res = client
-        .post("https://enbee.tailf714eb.ts.net/api/v1/auth/signup")
+    let res = match client
+        .post(&format!("{}/auth/signup", API_BASE_URL))
         .json(&api_req)
         .send()
-        .await?;
+        .await
+    {
+        Ok(res) => res,
+        Err(e) => {
+            log_network_error("Sign Up (kirim request)", &e);
+            return Err(e.into());
+        }
+    };
 
     let http_status = res.status().as_u16();
 
@@ -189,6 +208,7 @@ pub async fn signup_service(
 }
 
 pub async fn cleanup_session_service(state: &AppState) {
+    tracing::info!("Memulai proses pembersihan sesi (cleanup)...");
     // 1. Hapus dari Keyring
     let _ = crate::middlewares::auth_store::delete_refresh_token();
 
@@ -218,9 +238,11 @@ pub async fn cleanup_session_service(state: &AppState) {
             tracing::error!("Gagal menghapus cache tabel {}: {}", table, e);
         }
     }
+    tracing::info!("Proses pembersihan sesi selesai.");
 }
 
 pub async fn refresh_session_service(state: &AppState) -> Result<(), AppError> {
+    tracing::info!("Memulai proses penyegaran sesi (refresh token)...");
     // 1. Ambil refresh token dari keyring
     let refresh_token = match crate::middlewares::auth_store::get_refresh_token() {
         Ok(t) => t,
@@ -233,11 +255,11 @@ pub async fn refresh_session_service(state: &AppState) -> Result<(), AppError> {
         auth.access_token.clone()
     };
 
-    let client = Client::new();
+    let client = create_http_client();
     let api_req = RefreshRequest { refresh_token };
 
     let mut req_builder = client
-        .post("https://enbee.tailf714eb.ts.net/api/v1/auth/refresh")
+        .post(&format!("{}/auth/refresh", API_BASE_URL))
         .json(&api_req);
 
     if let Some(access_token) = access_token_opt {
@@ -246,7 +268,13 @@ pub async fn refresh_session_service(state: &AppState) -> Result<(), AppError> {
         }
     }
 
-    let res = req_builder.send().await?;
+    let res = match req_builder.send().await {
+        Ok(res) => res,
+        Err(e) => {
+            log_network_error("Refresh session (kirim request)", &e);
+            return Err(e.into());
+        }
+    };
 
     let http_status = res.status().as_u16();
 
@@ -260,6 +288,7 @@ pub async fn refresh_session_service(state: &AppState) -> Result<(), AppError> {
             "Sesi ditolak oleh server".to_string()
         };
 
+        tracing::error!("Gagal refresh sesi (HTTP {}): {}", http_status, error_msg);
         return Err(AppError::ApiError {
             http_status,
             status: "error".to_string(),
@@ -295,10 +324,12 @@ pub async fn refresh_session_service(state: &AppState) -> Result<(), AppError> {
         auth.expires_at = expires_at;
     }
 
+    tracing::info!("Proses penyegaran sesi berhasil diselesaikan.");
     Ok(())
 }
 
 pub async fn logout_session_service(state: &AppState) -> Result<bool, AppError> {
+    tracing::info!("Memulai proses logout...");
     // 1. Ambil token dari state dan keyring
     let access_token = state.get_valid_token().await.unwrap_or_default();
     let refresh_token = crate::middlewares::auth_store::get_refresh_token().unwrap_or_default();
@@ -306,14 +337,14 @@ pub async fn logout_session_service(state: &AppState) -> Result<bool, AppError> 
     // 2. Jika ada token, coba hubungi server Naufal untuk logout
     if !access_token.is_empty() && !refresh_token.is_empty() {
         use crate::models::auth_model::LogoutRequestPayload;
-        let client = Client::new();
+        let client = create_http_client();
         let payload = LogoutRequestPayload {
             rf_token: refresh_token,
         };
 
         // Fire and forget (kita tidak peduli sukses/gagal di sisi server)
         let _ = client
-            .post("https://enbee.tailf714eb.ts.net/api/v1/auth/logout")
+            .post(&format!("{}/auth/logout", API_BASE_URL))
             .header("Authorization", format!("Bearer {}", access_token))
             .json(&payload)
             .send()
@@ -323,6 +354,7 @@ pub async fn logout_session_service(state: &AppState) -> Result<bool, AppError> 
     // 3. Paling krusial: Bersihkan semua jejak secara lokal (Pantang Gagal)
     cleanup_session_service(state).await;
 
+    tracing::info!("Proses logout berhasil diselesaikan.");
     Ok(true)
 }
 
@@ -358,40 +390,18 @@ fn decode_jwt_role(token: &str) -> String {
     "warga".to_string() // default fallback
 }
 
-/// `reqwest::Error` sendirian cuma bilang "error sending request" tanpa
-/// menyebut penyebab aslinya (DNS, TLS, connect refused, timeout). Penyebab
-/// itu ada di rantai `source()`, jadi harus ditelusuri manual. Tanpa ini
-/// semua kegagalan jaringan berakhir jadi "Gagal terhubung ke server" di UI
-/// tanpa jejak apa pun di log.
-fn log_network_error(context: &str, err: &reqwest::Error) {
-    let mut detail = err.to_string();
-    let mut src: Option<&(dyn std::error::Error + 'static)> = std::error::Error::source(err);
-    while let Some(s) = src {
-        detail.push_str(&format!(" <- {}", s));
-        src = std::error::Error::source(s);
-    }
 
-    tracing::error!(
-        "{} gagal: {} [timeout={} connect={} request={} body={} url={:?}]",
-        context,
-        detail,
-        err.is_timeout(),
-        err.is_connect(),
-        err.is_request(),
-        err.is_body(),
-        err.url().map(|u| u.as_str())
-    );
-}
 
 pub async fn forgot_password_service(
     state: &AppState,
     email: String,
 ) -> Result<bool, AppError> {
-    let client = Client::new();
+    tracing::info!("Memulai proses lupa kata sandi...");
+    let client = create_http_client();
     let api_req = ForgotPasswordRequest { email: email.clone() };
 
     let res = match client
-        .post("https://enbee.tailf714eb.ts.net/api/v1/auth/forgot-password")
+        .post(&format!("{}/auth/forgot-password", API_BASE_URL))
         .json(&api_req)
         .send()
         .await
@@ -415,6 +425,7 @@ pub async fn forgot_password_service(
             "Gagal meminta OTP pada server".to_string()
         };
 
+        tracing::error!("Gagal meminta OTP (HTTP {}): {}", http_status, error_msg);
         return Err(AppError::ApiError {
             http_status,
             status: "error".to_string(),
@@ -449,6 +460,7 @@ pub async fn forgot_password_service(
         cache.insert(email, (data.hash, data.expires_at));
     }
 
+    tracing::info!("Proses lupa kata sandi (pengiriman OTP) berhasil diselesaikan.");
     Ok(true)
 }
 
@@ -459,7 +471,9 @@ pub async fn reset_password_service(
     new_password: String,
     confirm_password: String,
 ) -> Result<bool, AppError> {
+    tracing::info!("Memulai proses reset kata sandi...");
     if new_password != confirm_password {
+        tracing::warn!("Gagal reset kata sandi: Kata sandi dan konfirmasi tidak cocok.");
         return Err(AppError::ValidationError("Kata sandi dan konfirmasi tidak cocok.".to_string()));
     }
 
@@ -469,11 +483,12 @@ pub async fn reset_password_service(
         None => {
             // Kita kembalikan Unknown atau kita bisa tambah InvalidSession di AppError jika mau,
             // tapi sesuai instruksi atau menggunakan ValidationError saja.
+            tracing::warn!("Gagal reset kata sandi: Sesi OTP tidak ditemukan atau sudah kedaluwarsa.");
             return Err(AppError::ValidationError("Sesi OTP tidak ditemukan atau sudah kedaluwarsa.".to_string()));
         }
     };
 
-    let client = Client::new();
+    let client = create_http_client();
     let api_req = ResetPasswordRequest {
         email,
         otp,
@@ -483,7 +498,7 @@ pub async fn reset_password_service(
     };
 
     let res = match client
-        .post("https://enbee.tailf714eb.ts.net/api/v1/auth/reset-password")
+        .post(&format!("{}/auth/reset-password", API_BASE_URL))
         .json(&api_req)
         .send()
         .await
@@ -507,6 +522,7 @@ pub async fn reset_password_service(
             "Gagal mereset kata sandi pada server".to_string()
         };
 
+        tracing::error!("Gagal mereset kata sandi (HTTP {}): {}", http_status, error_msg);
         return Err(AppError::ApiError {
             http_status,
             status: "error".to_string(),
@@ -515,5 +531,6 @@ pub async fn reset_password_service(
         });
     }
 
+    tracing::info!("Proses reset kata sandi berhasil diselesaikan.");
     Ok(true)
 }
