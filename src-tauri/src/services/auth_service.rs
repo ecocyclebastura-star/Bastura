@@ -1,6 +1,7 @@
 use crate::AppError;
 use crate::models::auth_model::{
-    LoginApiResponse, LoginRequest, LoginRequestPayload, LoginSuccessResponse, RefreshApiResponse, RefreshRequest,
+    ApiData, LoginApiResponse, LoginRequest, LoginRequestPayload, LoginSuccessResponse,
+    RefreshApiResponse, RefreshRequest,
     SignupRequest, SignupRequestPayload, ForgotPasswordRequest, ForgotPasswordApiResponse,
     ResetPasswordRequest
 };
@@ -63,6 +64,14 @@ pub async fn login_service(
         .data
         .ok_or_else(|| AppError::Unknown("Data user tidak ditemukan dari respons".to_string()))?;
 
+    Ok(establish_session(state, data).await)
+}
+
+/// Simpan token hasil login/signup, lalu susun data user buat frontend.
+///
+/// Dipakai bareng `login_service` dan `signup_service` supaya keduanya tidak
+/// pernah beda perlakuan soal penyimpanan token.
+async fn establish_session(state: &AppState, data: ApiData) -> LoginSuccessResponse {
     // 1. Simpan Refresh Token menggunakan auth_store (middleware)
     if let Err(e) = save_refresh_token(&data.tokens.refresh_token) {
         tracing::warn!("Gagal menyimpan refresh_token: {}", e);
@@ -76,7 +85,7 @@ pub async fn login_service(
 
     let expires_at = now + data.tokens.expires_in;
 
-    // 3. Kembalikan data user ke frontend dengan role dari JWT
+    // 3. Role diambil dari klaim JWT, bukan dari body respons
     let role_str = decode_jwt_role(&data.tokens.access_token);
 
     {
@@ -85,12 +94,12 @@ pub async fn login_service(
         auth.expires_at = expires_at;
     }
 
-    Ok(LoginSuccessResponse {
+    LoginSuccessResponse {
         id: data.user.id,
         name: data.user.name,
         email: data.user.email,
         role: role_str,
-    })
+    }
 }
 
 pub async fn signup_service(
@@ -101,6 +110,11 @@ pub async fn signup_service(
     if payload.password != payload.confirm_password {
         return Err(AppError::ValidationError("kata sandi tidak cocok dengan field konfirmasi kata sandi.".to_string()));
     }
+
+    // Disalin dulu sebelum `payload` pindah ke `api_req`: dipakai buat login
+    // otomatis kalau respons signup ternyata tidak membawa token.
+    let email = payload.email.clone();
+    let password = payload.password.clone();
 
     let client = Client::new();
     let api_req = SignupRequest {
@@ -139,53 +153,58 @@ pub async fn signup_service(
         });
     }
 
-    // Parse response sukses
+    // Sampai sini akunnya sudah jadi di server (HTTP-nya 2xx). Yang belum
+    // pasti cuma satu: apakah respons signup ikut membawa token atau tidak.
+    // Endpoint signup tidak dijamin mengembalikan sesi seperti endpoint
+    // login, jadi parsingnya diperlakukan sebagai "kalau ada, syukur".
     let text_res = res.text().await?;
-    let api_res: LoginApiResponse = match serde_json::from_str(&text_res) {
-        Ok(data) => data,
+
+    match serde_json::from_str::<LoginApiResponse>(&text_res) {
+        Ok(api_res) => match api_res.data {
+            Some(data) => {
+                tracing::info!("Sign Up berhasil dan responsnya langsung membawa token.");
+                return Ok(establish_session(state, data).await);
+            }
+            None => tracing::info!("Sign Up berhasil, tapi field 'data' kosong."),
+        },
         Err(e) => {
-            tracing::error!("Gagal parse respons JSON Sign Up: {}", e);
-            return Err(AppError::Unknown(format!(
-                "Format JSON Sign Up tidak sesuai. Error: {}. Raw: {}",
-                e, text_res
-            )));
+            // Isi respons sengaja tidak di-log mentah-mentah: kalau ternyata
+            // ada token di dalamnya, tokennya ikut mendarat di file log.
+            // Nama field-nya saja sudah cukup buat menelusuri bentuk respons.
+            let fields = serde_json::from_str::<serde_json::Value>(&text_res)
+                .ok()
+                .and_then(|v| {
+                    v.as_object()
+                        .map(|o| o.keys().cloned().collect::<Vec<_>>().join(", "))
+                })
+                .unwrap_or_else(|| "tidak terbaca".to_string());
+
+            tracing::info!(
+                "Respons Sign Up tidak berbentuk respons login ({}). Field teratas: [{}]",
+                e,
+                fields
+            );
         }
-    };
-
-    let data = api_res.data.ok_or_else(|| {
-        tracing::error!("Respons Sign Up sukses tapi field 'data' kosong");
-        AppError::Unknown("Data token tidak ditemukan dari respons pendaftaran".to_string())
-    })?;
-
-    tracing::info!("Sign Up berhasil! Menyimpan token ke dalam sesi.");
-    
-    // Simpan Refresh Token menggunakan auth_store (middleware)
-    if let Err(e) = save_refresh_token(&data.tokens.refresh_token) {
-        tracing::warn!("Gagal menyimpan refresh_token saat signup: {}", e);
     }
 
-    // Simpan Access Token ke RAM (AppState)
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs() as i64;
+    // Akun sudah terbuat tapi sesinya belum ada. Login otomatis pakai
+    // kredensial yang barusan diisi, supaya user tidak dilempar ke halaman
+    // login cuma buat mengetik ulang data yang sama.
+    tracing::info!("Membuat sesi lewat login otomatis setelah signup.");
 
-    let expires_at = now + data.tokens.expires_in;
-
-    let role_str = decode_jwt_role(&data.tokens.access_token);
-
-    {
-        let mut auth = state.auth.lock().await;
-        auth.access_token = Some(data.tokens.access_token);
-        auth.expires_at = expires_at;
-    }
-
-    Ok(LoginSuccessResponse {
-        id: data.user.id,
-        name: data.user.name,
-        email: data.user.email,
-        role: role_str,
-    })
+    login_service(state, LoginRequestPayload { email, password })
+        .await
+        .map_err(|e| {
+            tracing::error!("Login otomatis setelah signup gagal: {}", e);
+            AppError::ApiError {
+                http_status: 200,
+                status: "error".to_string(),
+                // Ditangkap khusus di frontend: akunnya jadi, sesinya saja
+                // yang gagal, jadi user cukup diarahkan ke halaman login.
+                code: Some("SIGNUP_LOGIN_REQUIRED".to_string()),
+                message: "Akun berhasil dibuat, tapi sesi otomatis gagal dibuat. Silakan masuk lewat halaman login.".to_string(),
+            }
+        })
 }
 
 pub async fn cleanup_session_service(state: &AppState) {

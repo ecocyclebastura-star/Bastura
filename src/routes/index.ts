@@ -57,10 +57,37 @@ const routes: RouteRecordRaw[] = [
     beforeEnter: (to) => (to.query.email ? true : { name: "forgot-password" }),
   },
   {
+    // Semua halaman warga berbagi shell yang sama (konten + bottom nav).
     path: "/user",
-    name: "dashboard-user",
-    component: () => import("../views/user/dashboardUser.vue"),
+    component: () => import("../layouts/UserLayout.vue"),
     meta: { requiresAuth: true },
+    children: [
+      {
+        path: "",
+        name: "dashboard-user",
+        component: () => import("../views/user/dashboardUser.vue"),
+      },
+      {
+        path: "dompet",
+        name: "user-dompet",
+        component: () => import("../views/user/dompetView.vue"),
+      },
+      {
+        path: "scan",
+        name: "user-scan",
+        component: () => import("../views/user/scanView.vue"),
+      },
+      {
+        path: "riwayat",
+        name: "user-riwayat",
+        component: () => import("../views/user/riwayatView.vue"),
+      },
+      {
+        path: "profil",
+        name: "user-profil",
+        component: () => import("../views/user/profilView.vue"),
+      },
+    ],
   },
   {
     path: "/admin",

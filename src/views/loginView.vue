@@ -23,11 +23,23 @@ const errors = reactive({ email: "", password: "" });
 const isSubmitted = ref(false);
 const isLoading = ref(false);
 
-// Datang dari halaman reset password -> kasih tahu kata sandinya sudah berganti.
+// Pesan sambutan tergantung asal kedatangan. Query-nya dibersihkan setelah
+// dibaca supaya toast-nya tidak muncul lagi kalau halaman di-refresh.
 onMounted(() => {
-  if (route.query.reset !== "success") return;
-  showToast("Kata sandi berhasil diubah. Silakan masuk kembali.", "success");
-  router.replace({ name: "login" });
+  if (route.query.reset === "success") {
+    showToast("Kata sandi berhasil diubah. Silakan masuk kembali.", "success");
+    router.replace({ name: "login" });
+    return;
+  }
+
+  // Dari halaman daftar, saat sesi otomatis gagal dibuat.
+  if (route.query.registered === "1") {
+    if (typeof route.query.email === "string") {
+      form.email = route.query.email;
+    }
+    showToast("Akun berhasil dibuat. Silakan masuk untuk melanjutkan.", "success");
+    router.replace({ name: "login" });
+  }
 });
 
 function validate() {

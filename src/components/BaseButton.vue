@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-type Variant = "primary" | "secondary" | "outline" | "ghost" | "danger";
+type Variant =
+  | "primary"
+  | "accent"
+  | "secondary"
+  | "outline"
+  | "ghost"
+  | "danger";
 type Size = "sm" | "md" | "lg";
 type Rounded = "md" | "lg" | "xl" | "full";
 
@@ -34,6 +40,8 @@ const props = withDefaults(
 const variantClasses: Record<Variant, string> = {
   primary:
     "bg-primary-700 text-white hover:bg-primary-800 active:bg-primary-900",
+  // Hijau terang khas brand, dipakai buat aksi utama di halaman dalam.
+  accent: "bg-primary-500 text-white hover:bg-primary-600 active:bg-primary-700",
   secondary:
     "bg-secondary-500 text-primary-900 hover:bg-secondary-600 active:bg-secondary-700",
   outline:

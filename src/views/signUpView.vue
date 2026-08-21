@@ -6,7 +6,7 @@ import AlertToast from "../components/AlertToast.vue";
 import BaseInput from "../components/BaseInput.vue";
 import BaseButton from "../components/BaseButton.vue";
 import { useToast } from "../composables/useToast";
-import { resolveAuthError } from "../constants/authErrors";
+import { resolveAuthError, toAppError } from "../constants/authErrors";
 import { homeRouteName } from "../constants/roleRoutes";
 import { useAuthStore } from "../stores/authStore";
 import {
@@ -134,6 +134,17 @@ async function handleRegister() {
 
     router.push({ name: homeRouteName(user.role) });
   } catch (error) {
+    // Akunnya sudah terbentuk di server, cuma sesinya yang gagal dibuat.
+    // Daripada menampilkan error, antar saja ke halaman login dengan email
+    // yang sudah terisi.
+    if (toAppError(error)?.code === "SIGNUP_LOGIN_REQUIRED") {
+      router.push({
+        name: "login",
+        query: { registered: "1", email: form.email.trim() },
+      });
+      return;
+    }
+
     showToast(
       resolveAuthError(error, "Gagal mendaftar. Coba lagi sebentar lagi."),
       "error",

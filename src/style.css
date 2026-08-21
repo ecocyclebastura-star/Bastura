@@ -159,3 +159,11 @@
 @utility mb-safe {
   margin-bottom: env(safe-area-inset-bottom);
 }
+/* Scroll horizontal (carousel kartu) tanpa scrollbar yang kelihatan. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
