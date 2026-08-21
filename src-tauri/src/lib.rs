@@ -116,7 +116,9 @@ pub fn run() {
             crate::controllers::auth_controller::logout_command,
             crate::controllers::auth_controller::signup_command,
             crate::controllers::auth_controller::forgot_password_command,
-            crate::controllers::auth_controller::reset_password_command
+            crate::controllers::auth_controller::reset_password_command,
+            crate::controllers::announcement_controller::get_announcements_command,
+            crate::controllers::education_controller::get_education_command
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
