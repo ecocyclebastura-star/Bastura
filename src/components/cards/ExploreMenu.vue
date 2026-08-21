@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import AppIcon from "./AppIcon.vue";
-import type { IconName } from "../constants/appIcons";
+import AppIcon from "../AppIcon.vue";
+import type { IconName } from "../../constants/appIcons";
 
 export type ExploreItem = {
   key: string;

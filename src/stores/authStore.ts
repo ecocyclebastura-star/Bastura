@@ -1,5 +1,7 @@
 import { defineStore } from "pinia";
 import { invoke } from "@tauri-apps/api/core";
+import { useBalanceStore } from "./balanceStore";
+import { useContentStore } from "./contentStore";
 
 /** Bentuk `LoginSuccessResponse` dari src-tauri/src/models/auth_model.rs. */
 export interface AuthUser {
@@ -73,6 +75,7 @@ export const useAuthStore = defineStore("auth", {
         // Command-nya sendiri "pantang gagal", tapi kalau IPC-nya yang error
         // sesi di sisi frontend tetap harus bersih.
         this.user = null;
+        this.clearCachedData();
       }
     },
 
@@ -93,6 +96,17 @@ export const useAuthStore = defineStore("auth", {
     /** Dipakai saat event `on_session_expired` datang dari session watcher. */
     clearSession() {
       this.user = null;
+      this.clearCachedData();
+    },
+
+    /**
+     * Buang data milik user yang barusan keluar. Store-nya di-persist ke
+     * sessionStorage, jadi tanpa ini saldo & konten user lama masih kelihatan
+     * sekejap waktu ada yang login lagi di sesi yang sama.
+     */
+    clearCachedData() {
+      useBalanceStore().reset();
+      useContentStore().reset();
     },
   },
 

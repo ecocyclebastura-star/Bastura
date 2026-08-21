@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import AppIcon from "./AppIcon.vue";
+import AppIcon from "../AppIcon.vue";
 
 const props = withDefaults(
   defineProps<{

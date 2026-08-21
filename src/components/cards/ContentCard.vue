@@ -9,6 +9,15 @@ const props = withDefaults(
     excerpt?: string;
     /** URL gambar. Kalau kosong dipakai placeholder abu-abu. */
     image?: string;
+    /** Label kecil di atas judul, mis. "Penting". */
+    badge?: string;
+    /** Chip kategori di bawah judul. */
+    tags?: string[];
+    /**
+     * Mode daftar: teksnya ditampilkan utuh (tidak dipotong) dan tombol
+     * aksinya disembunyikan karena isinya sudah kebaca semua.
+     */
+    expanded?: boolean;
     /** Teks aksi di bawah kartu. */
     actionLabel?: string;
   }>(),
@@ -16,6 +25,9 @@ const props = withDefaults(
     date: "",
     excerpt: "",
     image: "",
+    badge: "",
+    tags: () => [],
+    expanded: false,
     actionLabel: "Baca Selengkapnya",
   },
 );
@@ -34,6 +46,7 @@ const displayDate = computed(() => props.date || "dd mm yyyy");
       v-if="image"
       :src="image"
       :alt="title"
+      loading="lazy"
       class="aspect-4/3 w-full object-cover"
     />
     <!-- Placeholder selama gambar dari backend belum tersedia. -->
@@ -44,17 +57,43 @@ const displayDate = computed(() => props.date || "dd mm yyyy");
     />
 
     <div class="flex flex-1 flex-col p-3">
-      <p class="text-body-tiny text-neutral-400">{{ displayDate }}</p>
+      <div class="flex items-center gap-2">
+        <span
+          v-if="badge"
+          class="rounded-full bg-red-100 px-2 py-0.5 text-body-tiny font-bold text-red-700"
+        >
+          {{ badge }}
+        </span>
+        <p class="text-body-tiny text-neutral-400">{{ displayDate }}</p>
+      </div>
 
-      <h3 class="mt-0.5 line-clamp-2 text-body-sm font-bold text-neutral-900">
+      <h3
+        class="mt-0.5 text-body-sm font-bold text-neutral-900"
+        :class="expanded ? '' : 'line-clamp-2'"
+      >
         {{ title }}
       </h3>
 
-      <p v-if="excerpt" class="mt-1 line-clamp-2 text-body-sm text-neutral-700">
+      <ul v-if="tags.length" class="mt-1.5 flex flex-wrap gap-1.5">
+        <li
+          v-for="tag in tags"
+          :key="tag"
+          class="rounded-full bg-primary-100 px-2 py-0.5 text-body-tiny font-medium text-primary-800"
+        >
+          {{ tag }}
+        </li>
+      </ul>
+
+      <p
+        v-if="excerpt"
+        class="mt-1 text-body-sm whitespace-pre-line text-neutral-700"
+        :class="expanded ? '' : 'line-clamp-2'"
+      >
         {{ excerpt }}
       </p>
 
       <button
+        v-if="!expanded"
         type="button"
         class="mt-3 inline-flex cursor-pointer items-center gap-1.5 self-start text-body-sm font-medium text-primary-500 transition-colors duration-200 hover:text-primary-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
         @click="$emit('open')"

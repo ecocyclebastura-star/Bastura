@@ -68,6 +68,21 @@ const routes: RouteRecordRaw[] = [
         component: () => import("../views/user/dashboardUser.vue"),
       },
       {
+        path: "pengumuman",
+        name: "user-pengumuman",
+        component: () => import("../views/user/pengumumanView.vue"),
+      },
+      {
+        path: "pengumuman/:id",
+        name: "user-pengumuman-detail",
+        component: () => import("../views/user/detailPengumumanView.vue"),
+      },
+      {
+        path: "edukasi",
+        name: "user-edukasi",
+        component: () => import("../views/user/edukasiView.vue"),
+      },
+      {
         path: "dompet",
         name: "user-dompet",
         component: () => import("../views/user/dompetView.vue"),
