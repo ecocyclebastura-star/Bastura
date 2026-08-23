@@ -3,6 +3,7 @@ pub mod logger;
 pub mod state;
 pub mod constants;
 pub mod http;
+pub mod file_utils;
 
 pub use error::AppError;
 pub use logger::{setup_logger, log_network_error};

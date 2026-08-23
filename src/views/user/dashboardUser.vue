@@ -119,7 +119,7 @@ function handleExplore(key: string) {
             :title="item.title"
             :date="formatTanggal(item.created_at)"
             :excerpt="item.content.text"
-            :image="item.image_url ?? ''"
+            :image="item.image_base64 ?? item.image_url ?? ''"
             :badge="item.content.important ? 'Penting' : ''"
             @open="
               router.push({
@@ -171,7 +171,7 @@ function handleExplore(key: string) {
             :title="item.title"
             :date="formatTanggal(item.created_at)"
             :excerpt="item.content.text"
-            :image="item.image_url ?? ''"
+            :image="item.image_base64 ?? item.image_url ?? ''"
             :tags="item.content.tags"
             @open="router.push({ name: 'user-edukasi' })"
           />

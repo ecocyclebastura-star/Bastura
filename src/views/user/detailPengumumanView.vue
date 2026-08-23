@@ -136,8 +136,8 @@ function goBack() {
       </div>
 
       <img
-        v-if="announcement.image_url"
-        :src="announcement.image_url"
+        v-if="announcement.image_base64 || announcement.image_url"
+        :src="announcement.image_base64 ?? announcement.image_url ?? ''"
         :alt="announcement.title"
         class="mt-4 w-full rounded-2xl object-cover"
       />

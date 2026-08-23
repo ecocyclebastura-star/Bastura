@@ -29,6 +29,7 @@ interface ContentBase {
   id: string;
   title: string;
   image_url: string | null;
+  image_base64?: string | null;
   created_at: string;
 }
 

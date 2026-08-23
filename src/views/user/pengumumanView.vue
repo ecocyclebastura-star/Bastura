@@ -75,7 +75,7 @@ function openDetail(id: string) {
       :category="resolveCategory(item)"
       :author="item.content.author"
       :date="formatTanggal(item.created_at)"
-      :image="item.image_url ?? ''"
+      :image="item.image_base64 ?? item.image_url ?? ''"
       @open="openDetail(item.id)"
     />
   </ContentListPage>

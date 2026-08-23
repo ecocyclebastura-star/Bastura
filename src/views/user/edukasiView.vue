@@ -44,7 +44,7 @@ const isSearching = computed(() => searchTerm.value.trim().length > 0);
       :title="item.title"
       :date="formatTanggal(item.created_at)"
       :excerpt="item.content.text"
-      :image="item.image_url ?? ''"
+      :image="item.image_base64 ?? item.image_url ?? ''"
       :tags="item.content.tags"
     />
   </ContentListPage>

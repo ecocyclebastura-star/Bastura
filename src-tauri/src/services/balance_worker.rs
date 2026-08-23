@@ -14,7 +14,7 @@ pub fn start_balance_worker(app: tauri::AppHandle, state: AppState) {
         tracing::info!("Balance Worker dimulai...");
 
         loop {
-            tokio::time::sleep(tokio::time::Duration::from_secs(15)).await;
+            tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
 
             // --- Cek sesi: lewati siklus jika user belum login ---
             let has_token = {
@@ -32,9 +32,7 @@ pub fn start_balance_worker(app: tauri::AppHandle, state: AppState) {
                 Ok(val) => val,
                 Err(crate::AppError::Network(_)) => {
                     // Offline / server tidak dapat dijangkau — bukan error kritis
-                    tracing::warn!(
-                        "Balance Worker: Gagal terhubung ke server. Siklus dilewati."
-                    );
+                    tracing::warn!("Balance Worker: Gagal terhubung ke server. Siklus dilewati.");
                     continue;
                 }
                 Err(crate::AppError::MissingToken) | Err(crate::AppError::Unauthorized) => {
@@ -103,7 +101,20 @@ fn build_iso_timestamp() -> String {
 
     // Iterasi bulan dalam tahun yang sudah ditemukan
     let leap = is_leap_year(year);
-    let month_days: [u64; 12] = [31, if leap { 29 } else { 28 }, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    let month_days: [u64; 12] = [
+        31,
+        if leap { 29 } else { 28 },
+        31,
+        30,
+        31,
+        30,
+        31,
+        31,
+        30,
+        31,
+        30,
+        31,
+    ];
     let mut month = 1u32;
     for &md in &month_days {
         if days < md {

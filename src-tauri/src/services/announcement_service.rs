@@ -29,6 +29,26 @@ pub async fn sync_announcements_from_server(state: &AppState) -> Result<(), AppE
                             return Err(e);
                         } else {
                             tracing::info!("Berhasil menyimpan pengumuman terbaru ke SQLite.");
+                            
+                            // Download images in the background
+                            for item in api_response.data {
+                                if let Some(img_url) = item.data.announcements_img {
+                                    if let Some(filename) = img_url.split('/').last() {
+                                        let full_url = if img_url.starts_with("http") {
+                                            img_url.clone()
+                                        } else {
+                                            format!("{}/announcements/announcements/photo/{}", API_BASE_URL, filename)
+                                        };
+                                        
+                                        let _ = crate::utils::file_utils::download_and_save_image(
+                                            &state.app_handle,
+                                            &full_url,
+                                            &token,
+                                            filename
+                                        ).await;
+                                    }
+                                }
+                            }
                         }
                     }
                     Err(e) => {
@@ -68,5 +88,29 @@ pub async fn fetch_announcements_service(
     }
 
     // Selalu kembalikan hasil dari SQLite
-    get_cached_announcements(&state.db, search, limit).await
+    let items = get_cached_announcements(&state.db, &state.app_handle, search, limit).await?;
+
+    let missing_images: Vec<_> = items.iter().filter_map(|item| {
+        if item.image_base64.is_none() && item.image_url.is_some() {
+            Some(item.image_url.clone().unwrap())
+        } else {
+            None
+        }
+    }).collect();
+
+    if !missing_images.is_empty() {
+        let state_clone = state.clone();
+        tauri::async_runtime::spawn(async move {
+            if let Ok(token) = state_clone.get_valid_token().await {
+                for img_url in missing_images {
+                    if let Some(filename) = img_url.split('/').last() {
+                        let full_url = if img_url.starts_with("http") { img_url.clone() } else { format!("{}/announcements/announcements/photo/{}", crate::utils::constants::API_BASE_URL, filename) };
+                        let _ = crate::utils::file_utils::download_and_save_image(&state_clone.app_handle, &full_url, &token, filename).await;
+                    }
+                }
+            }
+        });
+    }
+
+    Ok(items)
 }

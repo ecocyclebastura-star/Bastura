@@ -32,5 +32,6 @@ pub struct EducationClientResponse {
     pub title: String,
     pub content: EducationContent,
     pub image_url: Option<String>,
+    pub image_base64: Option<String>,
     pub created_at: String,
 }

@@ -33,5 +33,6 @@ pub struct AnnouncementClientResponse {
     pub title: String,
     pub content: AnnouncementContent,
     pub image_url: Option<String>,
+    pub image_base64: Option<String>,
     pub created_at: String,
 }

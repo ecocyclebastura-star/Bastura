@@ -26,6 +26,20 @@ pub async fn upsert_education(pool: &SqlitePool, items: &[EducationItem]) -> Res
         .execute(pool)
         .await?;
     }
+    
+    // Hapus data lokal yang sudah tidak ada di server
+    if !items.is_empty() {
+        let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new("DELETE FROM education_cache WHERE id_content NOT IN (");
+        let mut separated = query_builder.separated(", ");
+        for item in items {
+            separated.push_bind(&item.id_content);
+        }
+        separated.push_unseparated(")");
+        query_builder.build().execute(pool).await?;
+    } else {
+        sqlx::query("DELETE FROM education_cache").execute(pool).await?;
+    }
+    
     Ok(())
 }
 
@@ -40,6 +54,7 @@ struct EducationRow {
 
 pub async fn get_cached_education(
     pool: &SqlitePool,
+    app: &tauri::AppHandle,
     search: Option<String>,
     limit: Option<u32>,
 ) -> Result<Vec<EducationClientResponse>, AppError> {
@@ -79,11 +94,19 @@ pub async fn get_cached_education(
                 text: String::new(),
             });
 
+        let mut image_base64 = None;
+        if let Some(ref img_url) = row.education_img {
+            if let Some(filename) = img_url.split('/').last() {
+                image_base64 = crate::utils::file_utils::read_image_as_base64(app, filename).await;
+            }
+        }
+
         education_list.push(EducationClientResponse {
             id: row.id_content.unwrap_or_default(),
             title: row.title,
             content,
             image_url: row.education_img,
+            image_base64,
             created_at: row.created_at,
         });
     }

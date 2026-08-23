@@ -96,5 +96,8 @@ pub async fn run_smart_sync_service(state: &AppState) -> Result<bool, AppError> 
 
     // TODO: Sync kategori lain (profile, transaction, dll) dengan cara yang sama.
     
+    // Cleanup unused images after sync finishes
+    crate::utils::file_utils::cleanup_unused_images(&state.app_handle, &state.db).await;
+
     Ok(true)
 }
