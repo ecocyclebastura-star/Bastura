@@ -44,7 +44,7 @@ pub fn run() {
                     .await
                     .expect("Gagal menginisialisasi SQLite");
 
-                let app_state = AppState::new(db_pool);
+                let app_state = AppState::new(db_pool, handle.clone());
                 
                 // Spawn Session Watcher
                 let watcher_state = app_state.clone();
@@ -58,7 +58,7 @@ pub fn run() {
                         tracing::info!("Session Watcher: Memeriksa sesi...");
                         
                         // 1. Cek token menggunakan logika terpusat di state.rs
-                        let force_cleanup = match watcher_state.get_valid_token().await {
+                        let is_expired = match watcher_state.get_valid_token().await {
                             Err(crate::AppError::Unauthorized) => {
                                 tracing::warn!("Session Watcher: Token RAM sudah kedaluwarsa. Melewati API call.");
                                 true
@@ -66,9 +66,8 @@ pub fn run() {
                             _ => false,
                         };
                         
-                        if force_cleanup {
-                            crate::services::auth_service::cleanup_session_service(&watcher_state).await;
-                            let _ = watcher_handle.emit("on_session_expired", ());
+                        if is_expired {
+                            // get_valid_token sudah otomatis melakukan cleanup dan emit
                             continue;
                         }
                         
