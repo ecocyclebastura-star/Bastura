@@ -36,3 +36,45 @@ pub struct BalanceApiResponse {
     pub code: String,
     pub data: BalanceData,
 }
+
+// =============================================================================
+// Model untuk Modul Profil Pengguna
+// =============================================================================
+
+#[derive(Serialize)]
+pub struct UpdateBioRequest {
+    #[serde(rename = "new_name", skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "new_phone", skip_serializing_if = "Option::is_none")]
+    pub phone: Option<String>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct ProfileItem {
+    pub name: String,
+    pub email: String,
+    pub phone: String,
+    pub avatar_url: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ProfileDataWrapper {
+    pub data: Vec<ProfileItem>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ProfileApiResponse {
+    pub status: String,
+    pub message: String,
+    pub code: String,
+    pub data: ProfileDataWrapper,
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct ProfileClientResponse {
+    pub id: String,
+    pub name: String,
+    pub email: String,
+    pub phone: String,
+    pub avatar_base64: Option<String>,
+}

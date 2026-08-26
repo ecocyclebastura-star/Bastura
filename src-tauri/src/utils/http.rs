@@ -1,5 +1,5 @@
-use std::time::Duration;
 use crate::utils::constants::REQUEST_TIMEOUT_SECS;
+use std::time::Duration;
 
 /// Membuat HTTP client dengan timeout terpusat.
 /// Gunakan fungsi ini di semua service agar timeout konsisten di seluruh aplikasi.

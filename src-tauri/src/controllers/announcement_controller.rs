@@ -1,7 +1,7 @@
-use tauri::State;
-use crate::{AppError, AppState};
 use crate::models::announcement_model::AnnouncementClientResponse;
 use crate::services::announcement_service::fetch_announcements_service;
+use crate::{AppError, AppState};
+use tauri::State;
 
 #[tauri::command]
 pub async fn get_announcements_command(

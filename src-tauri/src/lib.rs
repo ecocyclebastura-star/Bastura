@@ -6,8 +6,8 @@ pub mod services;
 
 pub mod utils;
 
-pub use utils::{AppError, AppState};
-use tauri::{Manager, Emitter}; // 2. Import Manager agar bisa menyuntikkan AppState
+use tauri::{Emitter, Manager};
+pub use utils::{AppError, AppState}; // 2. Import Manager agar bisa menyuntikkan AppState
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -16,8 +16,9 @@ fn greet(name: &str) -> String {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    
     tauri::Builder::default()
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         // 3. Gunakan hook 'setup' untuk menjalankan fungsi async saat aplikasi dibuka
         .setup(|app| {
@@ -116,7 +117,10 @@ pub fn run() {
             crate::controllers::auth_controller::forgot_password_command,
             crate::controllers::auth_controller::reset_password_command,
             crate::controllers::announcement_controller::get_announcements_command,
-            crate::controllers::education_controller::get_education_command
+            crate::controllers::education_controller::get_education_command,
+            crate::controllers::profile_controller::get_profile_command,
+            crate::controllers::profile_controller::update_full_profile_command,
+            crate::controllers::profile_controller::deactivate_account_command
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

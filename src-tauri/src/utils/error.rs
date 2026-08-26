@@ -50,11 +50,20 @@ impl Serialize for AppError {
         S: serde::Serializer,
     {
         let (code, message, http_status) = match self {
-            AppError::Network(_) => ("NETWORK_OFFLINE".to_string(), "Gagal terhubung ke server".to_string(), 0),
+            AppError::Network(_) => (
+                "NETWORK_OFFLINE".to_string(),
+                "Gagal terhubung ke server".to_string(),
+                0,
+            ),
             AppError::JsonParse(e) => ("JSON_PARSE_ERROR".to_string(), e.to_string(), 500),
             AppError::Database(e) => ("DATABASE_ERROR".to_string(), e.to_string(), 500),
             AppError::Keyring(e) => ("KEYRING_ERROR".to_string(), e.to_string(), 500),
-            AppError::ApiError { http_status, code, message, .. } => {
+            AppError::ApiError {
+                http_status,
+                code,
+                message,
+                ..
+            } => {
                 let code_str = code.clone().unwrap_or_else(|| {
                     if *http_status == 401 {
                         "UNAUTHORIZED".to_string()
@@ -65,9 +74,17 @@ impl Serialize for AppError {
                     }
                 });
                 (code_str, message.clone(), *http_status)
-            },
-            AppError::Unauthorized => ("UNAUTHORIZED".to_string(), "Sesi telah kedaluwarsa".to_string(), 401),
-            AppError::MissingToken => ("UNAUTHORIZED".to_string(), "Token tidak ditemukan".to_string(), 401),
+            }
+            AppError::Unauthorized => (
+                "UNAUTHORIZED".to_string(),
+                "Sesi telah kedaluwarsa".to_string(),
+                401,
+            ),
+            AppError::MissingToken => (
+                "UNAUTHORIZED".to_string(),
+                "Token tidak ditemukan".to_string(),
+                401,
+            ),
             AppError::ValidationError(msg) => ("VALIDATION_ERROR".to_string(), msg.clone(), 400),
             AppError::Unknown(msg) => ("UNKNOWN_ERROR".to_string(), msg.clone(), 500),
         };
@@ -77,7 +94,7 @@ impl Serialize for AppError {
             message,
             http_status,
         };
-        
+
         response.serialize(serializer)
     }
 }

@@ -1,12 +1,17 @@
-use sqlx::{SqlitePool, QueryBuilder, Sqlite};
-use crate::models::announcement_model::{AnnouncementItem, AnnouncementClientResponse, AnnouncementContent};
+use crate::models::announcement_model::{
+    AnnouncementClientResponse, AnnouncementContent, AnnouncementItem,
+};
 use crate::AppError;
+use sqlx::{QueryBuilder, Sqlite, SqlitePool};
 
-pub async fn upsert_announcements(pool: &SqlitePool, items: &[AnnouncementItem]) -> Result<(), AppError> {
+pub async fn upsert_announcements(
+    pool: &SqlitePool,
+    items: &[AnnouncementItem],
+) -> Result<(), AppError> {
     for item in items {
-        let content_json = serde_json::to_string(&item.data.content)
-            .map_err(AppError::JsonParse)?;
-        
+        let content_json =
+            serde_json::to_string(&item.data.content).map_err(AppError::JsonParse)?;
+
         sqlx::query(
             r#"
             INSERT INTO announcements_cache (id_announcements, title, content, announcements_img, created_at)
@@ -26,10 +31,11 @@ pub async fn upsert_announcements(pool: &SqlitePool, items: &[AnnouncementItem])
         .execute(pool)
         .await?;
     }
-    
+
     // Hapus data lokal yang sudah tidak ada di server
     if !items.is_empty() {
-        let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new("DELETE FROM announcements_cache WHERE id_announcements NOT IN (");
+        let mut query_builder: QueryBuilder<Sqlite> =
+            QueryBuilder::new("DELETE FROM announcements_cache WHERE id_announcements NOT IN (");
         let mut separated = query_builder.separated(", ");
         for item in items {
             separated.push_bind(&item.id_announcements);
@@ -37,9 +43,11 @@ pub async fn upsert_announcements(pool: &SqlitePool, items: &[AnnouncementItem])
         separated.push_unseparated(")");
         query_builder.build().execute(pool).await?;
     } else {
-        sqlx::query("DELETE FROM announcements_cache").execute(pool).await?;
+        sqlx::query("DELETE FROM announcements_cache")
+            .execute(pool)
+            .await?;
     }
-    
+
     Ok(())
 }
 
@@ -79,17 +87,14 @@ pub async fn get_cached_announcements(
     query_builder.push(" LIMIT ");
     query_builder.push_bind(final_limit);
 
-    let rows: Vec<AnnouncementRow> = query_builder
-        .build_query_as()
-        .fetch_all(pool)
-        .await?;
+    let rows: Vec<AnnouncementRow> = query_builder.build_query_as().fetch_all(pool).await?;
 
     let mut announcements = Vec::new();
     for row in rows {
         let content_json = row.content.unwrap_or_else(|| "{}".to_string());
-        
-        let content: AnnouncementContent = serde_json::from_str(&content_json)
-            .unwrap_or_else(|_| AnnouncementContent {
+
+        let content: AnnouncementContent =
+            serde_json::from_str(&content_json).unwrap_or_else(|_| AnnouncementContent {
                 text: String::new(),
                 author: String::new(),
                 important: false,

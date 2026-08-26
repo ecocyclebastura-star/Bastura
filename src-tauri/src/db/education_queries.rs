@@ -1,12 +1,12 @@
-use sqlx::{SqlitePool, QueryBuilder, Sqlite};
-use crate::models::education_model::{EducationItem, EducationClientResponse, EducationContent};
+use crate::models::education_model::{EducationClientResponse, EducationContent, EducationItem};
 use crate::AppError;
+use sqlx::{QueryBuilder, Sqlite, SqlitePool};
 
 pub async fn upsert_education(pool: &SqlitePool, items: &[EducationItem]) -> Result<(), AppError> {
     for item in items {
-        let content_json = serde_json::to_string(&item.data.content)
-            .map_err(AppError::JsonParse)?;
-        
+        let content_json =
+            serde_json::to_string(&item.data.content).map_err(AppError::JsonParse)?;
+
         sqlx::query(
             r#"
             INSERT INTO education_cache (id_content, title, content, education_img, created_at)
@@ -16,7 +16,7 @@ pub async fn upsert_education(pool: &SqlitePool, items: &[EducationItem]) -> Res
                 content = excluded.content,
                 education_img = excluded.education_img,
                 created_at = excluded.created_at
-            "#
+            "#,
         )
         .bind(&item.id_content)
         .bind(&item.data.title)
@@ -26,10 +26,11 @@ pub async fn upsert_education(pool: &SqlitePool, items: &[EducationItem]) -> Res
         .execute(pool)
         .await?;
     }
-    
+
     // Hapus data lokal yang sudah tidak ada di server
     if !items.is_empty() {
-        let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new("DELETE FROM education_cache WHERE id_content NOT IN (");
+        let mut query_builder: QueryBuilder<Sqlite> =
+            QueryBuilder::new("DELETE FROM education_cache WHERE id_content NOT IN (");
         let mut separated = query_builder.separated(", ");
         for item in items {
             separated.push_bind(&item.id_content);
@@ -37,9 +38,11 @@ pub async fn upsert_education(pool: &SqlitePool, items: &[EducationItem]) -> Res
         separated.push_unseparated(")");
         query_builder.build().execute(pool).await?;
     } else {
-        sqlx::query("DELETE FROM education_cache").execute(pool).await?;
+        sqlx::query("DELETE FROM education_cache")
+            .execute(pool)
+            .await?;
     }
-    
+
     Ok(())
 }
 
@@ -79,17 +82,14 @@ pub async fn get_cached_education(
     query_builder.push(" LIMIT ");
     query_builder.push_bind(final_limit);
 
-    let rows: Vec<EducationRow> = query_builder
-        .build_query_as()
-        .fetch_all(pool)
-        .await?;
+    let rows: Vec<EducationRow> = query_builder.build_query_as().fetch_all(pool).await?;
 
     let mut education_list = Vec::new();
     for row in rows {
         let content_json = row.content.unwrap_or_else(|| "{}".to_string());
-        
-        let content: EducationContent = serde_json::from_str(&content_json)
-            .unwrap_or_else(|_| EducationContent {
+
+        let content: EducationContent =
+            serde_json::from_str(&content_json).unwrap_or_else(|_| EducationContent {
                 tags: Vec::new(),
                 text: String::new(),
             });

@@ -1,13 +1,12 @@
+pub mod constants;
 pub mod error;
+pub mod file_utils;
+pub mod http;
 pub mod logger;
 pub mod state;
-pub mod constants;
-pub mod http;
-pub mod file_utils;
 
-pub use error::AppError;
-pub use logger::{setup_logger, log_network_error};
-pub use state::AppState;
 pub use constants::API_BASE_URL;
+pub use error::AppError;
 pub use http::create_http_client;
-
+pub use logger::{log_network_error, setup_logger};
+pub use state::AppState;

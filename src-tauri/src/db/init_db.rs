@@ -1,5 +1,8 @@
 use crate::AppError;
-use sqlx::{sqlite::{SqliteConnectOptions, SqlitePoolOptions}, SqlitePool}; // Pastikan ini sesuai dengan struktur modul error-mu
+use sqlx::{
+    sqlite::{SqliteConnectOptions, SqlitePoolOptions},
+    SqlitePool,
+}; // Pastikan ini sesuai dengan struktur modul error-mu
 use std::path::Path;
 
 pub async fn init_db(db_path: &Path) -> Result<SqlitePool, AppError> {

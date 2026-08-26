@@ -2,8 +2,8 @@ use super::error::AppError;
 use sqlx::SqlitePool;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use tokio::sync::Mutex;
 use tauri::{AppHandle, Emitter};
+use tokio::sync::Mutex;
 
 // 1. Data Struktur Sesi Autentikasi di RAM
 pub struct AuthState {
@@ -39,7 +39,7 @@ impl AppState {
     // 3. Fungsi "Satpam Pengatur Antrean Token"
     pub async fn get_valid_token(&self) -> Result<String, AppError> {
         let mut is_expired = false;
-        
+
         {
             // Ambil Mutex Lock (Request lain otomatis mengantre di baris ini jika sedang ada refresh)
             let mut auth = self.auth.lock().await;
@@ -64,7 +64,7 @@ impl AppState {
             tracing::warn!("Token kedaluwarsa terdeteksi di get_valid_token. Memicu cleanup & emit on_session_expired");
             crate::services::auth_service::cleanup_session_service(self).await;
             let _ = self.app_handle.emit("on_session_expired", ());
-            
+
             // Kembalikan error Unauthorized agar Rust/Vue tahu sesi sudah mati total
             return Err(AppError::Unauthorized);
         }

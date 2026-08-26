@@ -1,11 +1,11 @@
-use std::path::PathBuf;
 use std::fs;
-use std::time::{SystemTime, Duration};
-use tracing_subscriber::{fmt, EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
+use std::path::PathBuf;
+use std::time::{Duration, SystemTime};
+use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 pub fn setup_logger(app_data_dir: &PathBuf) {
     let logs_dir = app_data_dir.join("logs");
-    
+
     // Create logs directory if it doesn't exist
     if let Err(e) = fs::create_dir_all(&logs_dir) {
         eprintln!("Failed to create logs directory: {}", e);
@@ -20,9 +20,7 @@ pub fn setup_logger(app_data_dir: &PathBuf) {
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
 
     // Console layer
-    let console_layer = fmt::layer()
-        .with_target(true)
-        .with_ansi(true);
+    let console_layer = fmt::layer().with_target(true).with_ansi(true);
 
     // File layer
     let file_layer = fmt::layer()
@@ -31,8 +29,7 @@ pub fn setup_logger(app_data_dir: &PathBuf) {
         .with_ansi(false);
 
     // Env filter
-    let env_filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("info"));
+    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
 
     // Initialize tracing (stdout + file)
     tracing_subscriber::registry()
@@ -40,7 +37,7 @@ pub fn setup_logger(app_data_dir: &PathBuf) {
         .with(console_layer)
         .with(file_layer)
         .init();
-        
+
     // Prevent the guard from being dropped so the background logging thread stays alive
     Box::leak(Box::new(_guard));
 }
@@ -56,7 +53,11 @@ fn cleanup_old_logs(logs_dir: &PathBuf) {
                     if let Ok(duration) = now.duration_since(modified) {
                         if duration > seven_days {
                             if let Err(e) = fs::remove_file(entry.path()) {
-                                eprintln!("Failed to clean up old log file {:?}: {}", entry.path(), e);
+                                eprintln!(
+                                    "Failed to clean up old log file {:?}: {}",
+                                    entry.path(),
+                                    e
+                                );
                             } else {
                                 println!("Cleaned up old log file: {:?}", entry.path());
                             }

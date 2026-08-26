@@ -19,14 +19,14 @@ pub fn save_refresh_token(token: &str) -> Result<(), AppError> {
             return Ok(());
         }
     }
-    
+
     // Fallback jika Keyring OS tidak didukung (seperti Android Emulator tanpa DBus)
     tracing::warn!("Gagal menyimpan di OS Keyring, beralih ke metode fallback (file).");
     fs::write(fallback_path(), token).map_err(|e| {
         tracing::error!("Gagal menyimpan fallback token: {}", e);
         AppError::Unknown(format!("Gagal simpan fallback token: {}", e))
     })?;
-    
+
     tracing::info!("Refresh token berhasil disimpan menggunakan fallback (file).");
     Ok(())
 }
@@ -70,7 +70,7 @@ pub fn delete_refresh_token() -> Result<(), AppError> {
             tracing::debug!("Penghapusan token dari OS Keyring diabaikan (mungkin tidak ada).");
         }
     }
-    
+
     let path = fallback_path();
     if path.exists() {
         if fs::remove_file(path).is_ok() {
@@ -79,7 +79,7 @@ pub fn delete_refresh_token() -> Result<(), AppError> {
             tracing::warn!("Gagal menghapus file fallback refresh token.");
         }
     }
-    
+
     tracing::info!("Proses penghapusan refresh token selesai.");
     Ok(())
 }

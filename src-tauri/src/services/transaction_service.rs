@@ -78,14 +78,18 @@ pub async fn fetch_real_balance(state: &AppState) -> Result<i64, AppError> {
 
     // 5. Konversi String → i64 secara aman (tidak akan panic)
     //    Jika server mengirim nilai yang tidak valid, fallback ke 0.
-    let balance: i64 = api_res.data.total_balance.parse::<i64>().unwrap_or_else(|e| {
-        tracing::warn!(
-            "fetch_real_balance: Gagal parse total_balance '{}' ke i64: {}. Fallback ke 0.",
-            api_res.data.total_balance,
-            e
-        );
-        0
-    });
+    let balance: i64 = api_res
+        .data
+        .total_balance
+        .parse::<i64>()
+        .unwrap_or_else(|e| {
+            tracing::warn!(
+                "fetch_real_balance: Gagal parse total_balance '{}' ke i64: {}. Fallback ke 0.",
+                api_res.data.total_balance,
+                e
+            );
+            0
+        });
 
     // 6. Simpan ke SQLite sebagai cache persisten
     profile_queries::update_user_balance(&state.db, balance).await?;
