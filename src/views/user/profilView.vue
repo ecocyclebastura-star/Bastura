@@ -1,21 +1,42 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import AppIcon from "../../components/AppIcon.vue";
+import AvatarPhoto from "../../components/AvatarPhoto.vue";
 import BaseButton from "../../components/BaseButton.vue";
-import type { IconName } from "../../constants/appIcons";
+import MenuCard from "../../components/MenuCard.vue";
+import PageHeader from "../../components/PageHeader.vue";
+import type { MenuItem } from "../../components/MenuCard.vue";
 import { useAuthStore } from "../../stores/authStore";
+import { useProfileStore } from "../../stores/profileStore";
 
 const router = useRouter();
 const authStore = useAuthStore();
+const profileStore = useProfileStore();
+
+/** Rute tujuan tiap menu. Yang belum ada halamannya dibiarkan kosong. */
+const MENU_ROUTES: Record<string, string | undefined> = {
+  "edit-profil": "user-edit-profil",
+  "ganti-password": "user-ganti-password",
+  "pusat-bantuan": "user-pusat-bantuan",
+  "hapus-akun": "user-nonaktif-akun",
+};
+
+// Profil dipakai buat nama, email, dan foto. Kalau gagal dimuat (offline dan
+// cache kosong), tampilannya jatuh ke data sesi dari authStore.
+const displayName = computed(
+  () => profileStore.profile?.name || authStore.user?.name || "Warga",
+);
+const displayEmail = computed(
+  () => profileStore.profile?.email || authStore.user?.email || "",
+);
 
 const isLoggingOut = ref(false);
 
-const MENU_ITEMS: { key: string; label: string; icon: IconName }[] = [
+const MENU_ITEMS: readonly MenuItem[] = [
   { key: "edit-profil", label: "Edit Profil", icon: "editProfile" },
   { key: "ganti-password", label: "Ganti Password", icon: "lock" },
   { key: "pusat-bantuan", label: "Pusat Bantuan", icon: "help" },
-  { key: "hapus-akun", label: "Hapus Akun", icon: "deleteAccount" },
+  { key: "hapus-akun", label: "Nonaktifkan Akun", icon: "deleteAccount" },
 ];
 
 // Diambil dari tauri.conf.json biar tidak perlu diperbarui manual tiap rilis.
@@ -24,6 +45,8 @@ const MENU_ITEMS: { key: string; label: string; icon: IconName }[] = [
 const appVersion = ref("");
 
 onMounted(async () => {
+  profileStore.load();
+
   try {
     const { getVersion } = await import("@tauri-apps/api/app");
     appVersion.value = await getVersion();
@@ -34,8 +57,9 @@ onMounted(async () => {
 
 const currentYear = computed(() => new Date().getFullYear());
 
-function handleMenu(_key: string) {
-  // TODO: arahkan ke halaman terkait setelah routenya dibuat.
+function handleMenu(key: string) {
+  const name = MENU_ROUTES[key];
+  if (name) router.push({ name });
 }
 
 async function handleLogout() {
@@ -55,75 +79,31 @@ async function handleLogout() {
   <main
     class="mx-auto flex min-h-[calc(100vh-7rem)] w-full max-w-sm flex-col px-6 pt-safe"
   >
-    <header class="relative flex items-center justify-center pt-6">
-      <button
-        type="button"
-        class="absolute left-0 cursor-pointer p-1 text-neutral-900"
-        aria-label="Kembali"
-        @click="router.back()"
-      >
-        <svg
-          class="size-7"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M20 12H4" />
-          <path d="m10 6-6 6 6 6" />
-        </svg>
-      </button>
-
-      <h1 class="text-h5 font-extrabold text-neutral-900">Profil</h1>
-    </header>
+    <PageHeader title="Profil" fallback="user-profil" />
 
     <!-- Identitas -->
     <section class="mt-8 flex flex-col items-center">
-      <AppIcon name="account" class="size-30 text-primary-800" />
+      <AvatarPhoto
+        :src="profileStore.avatarSrc"
+        alt="Foto profil"
+        class="size-30"
+      />
 
       <p class="mt-3 text-h4 font-extrabold text-neutral-900">
-        {{ authStore.user?.name || "Warga" }}
+        {{ displayName }}
       </p>
       <p class="text-body-reg text-neutral-700">
-        {{ authStore.user?.email }}
+        {{ displayEmail }}
       </p>
     </section>
 
     <!-- Menu pengaturan -->
-    <nav
-      class="mt-6 divide-y divide-neutral-200 overflow-hidden rounded-2xl bg-white shadow-[0_4px_16px_-6px_rgba(28,28,26,0.2)]"
+    <MenuCard
+      class="mt-6"
+      :items="MENU_ITEMS"
       aria-label="Pengaturan akun"
-    >
-      <button
-        v-for="item in MENU_ITEMS"
-        :key="item.key"
-        type="button"
-        class="flex w-full cursor-pointer items-center gap-3 px-4 py-3.5 text-left transition-colors duration-200 hover:bg-neutral-100 focus:outline-none focus-visible:bg-neutral-100"
-        @click="handleMenu(item.key)"
-      >
-        <AppIcon :name="item.icon" class="text-primary-800" />
-
-        <span class="flex-1 text-body-reg text-neutral-900">
-          {{ item.label }}
-        </span>
-
-        <svg
-          class="size-5 text-neutral-900"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.4"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <path d="m9 6 6 6-6 6" />
-        </svg>
-      </button>
-    </nav>
+      @select="handleMenu"
+    />
 
     <!-- Keluar + versi -->
     <div class="mt-8 flex flex-col items-center">

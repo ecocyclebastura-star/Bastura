@@ -3,6 +3,12 @@ import { computed, ref, useId } from "vue";
 
 type IconName = "user" | "mail" | "phone" | "password" | "none";
 
+/**
+ * "filled" = kotak putih membulat, dipakai di halaman auth.
+ * "line"   = hanya garis bawah, dipakai di halaman profil.
+ */
+type Variant = "filled" | "line";
+
 const props = withDefaults(
   defineProps<{
     label?: string;
@@ -14,6 +20,7 @@ const props = withDefaults(
     error?: string;
     autocomplete?: string;
     inputmode?: "text" | "email" | "tel" | "numeric";
+    variant?: Variant;
   }>(),
   {
     label: "",
@@ -23,6 +30,7 @@ const props = withDefaults(
     error: "",
     autocomplete: "off",
     inputmode: "text",
+    variant: "filled",
   },
 );
 
@@ -32,6 +40,29 @@ const uid = useId();
 const showPassword = ref(false);
 
 const isPassword = computed(() => props.icon === "password");
+const isLine = computed(() => props.variant === "line");
+
+const labelClasses = computed(() =>
+  isLine.value
+    ? "text-body-sm text-neutral-600"
+    : "text-body-reg font-bold text-primary-900",
+);
+
+const fieldClasses = computed(() => {
+  // pr-12 cuma perlu kalau ada ikon di kanan; tanpa itu teksnya jadi
+  // menggantung jauh dari garis.
+  const paddingRight = props.icon === "none" ? "pr-1" : "pr-12";
+
+  if (isLine.value) {
+    return `w-full border-b bg-transparent py-1.5 pl-1 ${paddingRight} text-body-md text-neutral-900 placeholder:text-neutral-400 focus:outline-none ${
+      props.error
+        ? "border-red-500"
+        : "border-neutral-400 focus:border-primary-500"
+    }`;
+  }
+
+  return "w-full rounded-xl border-2 border-transparent bg-white py-3 pl-4 pr-12 text-body-reg text-neutral-900 placeholder:text-neutral-400 focus:border-blue-500 focus:outline-none";
+});
 const inputType = computed(() => {
   if (!isPassword.value) return props.type;
   return showPassword.value ? "text" : "password";
@@ -43,12 +74,12 @@ const inputType = computed(() => {
     <label
       v-if="label"
       :for="uid"
-      class="text-body-reg font-bold text-primary-900"
+      :class="labelClasses"
     >
       {{ label }}
     </label>
 
-    <div class="relative mt-2">
+    <div class="relative" :class="isLine ? 'mt-1' : 'mt-2'">
       <input
         :id="uid"
         v-model="model"
@@ -58,7 +89,7 @@ const inputType = computed(() => {
         :inputmode="inputmode"
         :aria-invalid="Boolean(error)"
         :aria-describedby="error ? `${uid}-error` : undefined"
-        class="w-full rounded-xl border-2 border-transparent bg-white py-3 pl-4 pr-12 text-body-reg text-neutral-900 placeholder:text-neutral-400 focus:border-blue-500 focus:outline-none"
+        :class="fieldClasses"
       />
 
       <!-- Password: tombol show/hide -->

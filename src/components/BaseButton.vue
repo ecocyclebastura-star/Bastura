@@ -7,7 +7,8 @@ type Variant =
   | "secondary"
   | "outline"
   | "ghost"
-  | "danger";
+  | "danger"
+  | "warning";
 type Size = "sm" | "md" | "lg";
 type Rounded = "md" | "lg" | "xl" | "full";
 
@@ -49,6 +50,8 @@ const variantClasses: Record<Variant, string> = {
   ghost:
     "bg-transparent text-primary-700 hover:bg-primary-100 active:bg-primary-200",
   danger: "bg-red-600 text-white hover:bg-red-700 active:bg-red-800",
+  // Oranye: aksi merusak yang masih bisa dibatalkan, mis. hapus akun.
+  warning: "bg-orange-500 text-white hover:bg-orange-600 active:bg-orange-700",
 };
 
 const sizeClasses: Record<Size, string> = {

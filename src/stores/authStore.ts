@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { invoke } from "@tauri-apps/api/core";
 import { useBalanceStore } from "./balanceStore";
 import { useContentStore } from "./contentStore";
+import { useProfileStore } from "./profileStore";
 
 /** Bentuk `LoginSuccessResponse` dari src-tauri/src/models/auth_model.rs. */
 export interface AuthUser {
@@ -17,6 +18,12 @@ export interface SignupPayload {
   email: string;
   phone: string;
   password: string;
+  confirmPassword: string;
+}
+
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
   confirmPassword: string;
 }
 
@@ -93,6 +100,24 @@ export const useAuthStore = defineStore("auth", {
       });
     },
 
+    /**
+     * Ganti password dari halaman profil.
+     *
+     * PERHATIAN: `change_password_command` BELUM ada di backend -- belum
+     * terdaftar di `invoke_handler` maupun di auth_controller.rs. Sampai rekan
+     * backend menambahkannya, pemanggilan ini selalu gagal dan halamannya
+     * menampilkan pesan "belum tersedia". Nama argumennya sengaja mengikuti
+     * pola `reset_password_command` yang sudah ada, jadi begitu commandnya
+     * dibuat tidak ada yang perlu diubah di sisi frontend.
+     */
+    changePassword(payload: ChangePasswordPayload) {
+      return invoke<boolean>("change_password_command", {
+        currentPassword: payload.currentPassword,
+        newPassword: payload.newPassword,
+        confirmPassword: payload.confirmPassword,
+      });
+    },
+
     /** Dipakai saat event `on_session_expired` datang dari session watcher. */
     clearSession() {
       this.user = null;
@@ -107,6 +132,7 @@ export const useAuthStore = defineStore("auth", {
     clearCachedData() {
       useBalanceStore().reset();
       useContentStore().reset();
+      useProfileStore().reset();
     },
   },
 

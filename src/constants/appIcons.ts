@@ -17,6 +17,11 @@ import editProfileIcon from "../assets/icon-edit-profile.svg?raw";
 import lockIcon from "../assets/icon-lock.svg?raw";
 import helpIcon from "../assets/icon-help.svg?raw";
 import deleteAccountIcon from "../assets/icon-delete-account.svg?raw";
+import galleryIcon from "../assets/icon-gallery.svg?raw";
+import trashIcon from "../assets/icon-trash.svg?raw";
+import infoIcon from "../assets/icon-info.svg?raw";
+import phoneIcon from "../assets/icon-phone.svg?raw";
+import mailIcon from "../assets/icon-mail.svg?raw";
 
 export const APP_ICONS = {
   home: homeIcon,
@@ -30,6 +35,11 @@ export const APP_ICONS = {
   lock: lockIcon,
   help: helpIcon,
   deleteAccount: deleteAccountIcon,
+  gallery: galleryIcon,
+  trash: trashIcon,
+  info: infoIcon,
+  phone: phoneIcon,
+  mail: mailIcon,
 } as const;
 
 export type IconName = keyof typeof APP_ICONS;

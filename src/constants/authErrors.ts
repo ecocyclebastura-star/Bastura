@@ -52,6 +52,17 @@ export function resolveAuthError(error: unknown, fallback: string): string {
 }
 
 /**
+ * Command-nya belum terdaftar di `invoke_handler` Rust.
+ *
+ * Tauri membalas kasus ini dengan string biasa, bukan AppError, jadi tidak
+ * bisa dibedakan lewat `code`. Dipakai supaya fitur yang backend-nya belum
+ * siap bisa bilang apa adanya, bukan menyalahkan server.
+ */
+export function isMissingCommand(error: unknown): boolean {
+  return typeof error === "string" && /not found|not allowed/i.test(error);
+}
+
+/**
  * Sesi OTP di RAM Rust hilang/kedaluwarsa, jadi user wajib minta kode baru.
  * Ini juga kejadian setiap kali reset gagal, karena `reset_password_service`
  * meng-`remove` cache OTP-nya sebelum request dikirim.

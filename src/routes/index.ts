@@ -102,6 +102,41 @@ const routes: RouteRecordRaw[] = [
         name: "user-profil",
         component: () => import("../views/user/profilView.vue"),
       },
+      {
+        path: "profil/edit",
+        name: "user-edit-profil",
+        component: () => import("../views/user/editProfilView.vue"),
+      },
+      {
+        path: "profil/ganti-password",
+        name: "user-ganti-password",
+        component: () => import("../views/user/gantiPasswordView.vue"),
+      },
+      {
+        path: "profil/nonaktif-akun",
+        name: "user-nonaktif-akun",
+        component: () => import("../views/user/nonaktifAkunView.vue"),
+      },
+      {
+        path: "profil/bantuan",
+        name: "user-pusat-bantuan",
+        component: () => import("../views/user/pusatBantuanView.vue"),
+      },
+      {
+        path: "profil/bantuan/faq",
+        name: "user-faq",
+        component: () => import("../views/user/faqView.vue"),
+      },
+      {
+        path: "profil/bantuan/tentang",
+        name: "user-tentang",
+        component: () => import("../views/user/tentangBasturaView.vue"),
+      },
+      {
+        path: "profil/bantuan/hubungi",
+        name: "user-hubungi-kami",
+        component: () => import("../views/user/hubungiKamiView.vue"),
+      },
     ],
   },
   {
