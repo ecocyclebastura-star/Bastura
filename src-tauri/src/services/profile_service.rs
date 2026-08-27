@@ -198,6 +198,15 @@ pub async fn upload_avatar_service(
     file_bytes: Vec<u8>,
 ) -> Result<ProfileItem, AppError> {
     tracing::info!("Memulai proses upload avatar...");
+    
+    // Pengecekan ukuran file (maksimal 500KB)
+    if file_bytes.len() > 500 * 1024 {
+        tracing::warn!("Upload dibatalkan di backend Rust: Ukuran file melebihi 500KB");
+        return Err(AppError::ValidationError(
+            "Ukuran foto maksimal adalah 500KB.".to_string(),
+        ));
+    }
+
     let token = state.get_valid_token().await?;
     let client = create_http_client();
 
