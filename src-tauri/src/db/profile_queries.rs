@@ -87,3 +87,18 @@ pub async fn get_cached_profile(
 
     Ok(row)
 }
+
+/// Mengambil ID user dari profil yang sedang dicache secara lokal.
+pub async fn get_cached_user_id(
+    pool: &sqlx::SqlitePool,
+) -> Result<Option<String>, AppError> {
+    let id = sqlx::query_scalar::<_, String>("SELECT id_users FROM profile_cache LIMIT 1")
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Gagal mengambil id_users dari profile_cache: {}", e);
+            AppError::Database(e)
+        })?;
+
+    Ok(id)
+}

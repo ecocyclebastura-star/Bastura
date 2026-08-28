@@ -67,9 +67,11 @@ pub async fn sync_profile_from_server(state: &AppState) -> Result<(), AppError> 
             .unwrap_or("avatar.jpg")
             .to_string();
 
-        tracing::info!("Mencoba mengunduh avatar profil: {}", filename);
+        let full_download_url = format!("{}/users/account/profile/avatar/{}", API_BASE_URL, filename);
+
+        tracing::info!("Mencoba mengunduh avatar profil dari endpoint: {}", full_download_url);
         if let Err(e) =
-            download_and_save_image(&state.app_handle, avatar_url, &token, &filename).await
+            download_and_save_image(&state.app_handle, &full_download_url, &token, &filename).await
         {
             tracing::error!("Gagal mengunduh avatar profil: {}", e);
             // Tetap lanjut meskipun gagal download avatar

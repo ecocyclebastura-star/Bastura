@@ -80,6 +80,27 @@ pub async fn login_service(
 /// Dipakai bareng `login_service` dan `signup_service` supaya keduanya tidak
 /// pernah beda perlakuan soal penyimpanan token.
 async fn establish_session(state: &AppState, data: ApiData) -> LoginSuccessResponse {
+    // 0. Cek apakah pengguna yang login sama dengan pengguna di cache lokal
+    let cached_user_id = crate::db::profile_queries::get_cached_user_id(&state.db)
+        .await
+        .unwrap_or(None);
+
+    let is_same_user = match cached_user_id {
+        Some(id) => id == data.user.id,
+        None => false,
+    };
+
+    if !is_same_user {
+        tracing::info!("Pengguna berbeda terdeteksi (atau cache kosong). Membersihkan data lokal lama...");
+        crate::services::auth_service::cleanup_session_service(state).await;
+    } else {
+        tracing::info!("Pengguna yang sama login kembali. Mengamankan cache data lokal.");
+        // Tetap bersihkan status RAM sebelum mengisi ulang
+        let mut auth = state.auth.lock().await;
+        auth.access_token = None;
+        auth.expires_at = 0;
+    }
+
     // 1. Simpan Refresh Token menggunakan auth_store (middleware)
     if let Err(e) = save_refresh_token(&data.tokens.refresh_token) {
         tracing::warn!("Gagal menyimpan refresh_token: {}", e);

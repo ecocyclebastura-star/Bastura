@@ -103,7 +103,13 @@ pub async fn update_full_profile_command(
                 if let Ok(app_dir) = state.app_handle.path().app_data_dir() {
                     let image_dir = app_dir.join("images");
                     let _ = std::fs::create_dir_all(&image_dir);
-                    let filepath = image_dir.join(&f_name);
+                    
+                    // Gunakan nama file resmi dari API agar cocok dengan database SQLite
+                    let api_filename = latest_profile.as_ref().unwrap().avatar_url.as_deref()
+                        .and_then(|url| url.split('/').last())
+                        .unwrap_or(&f_name);
+
+                    let filepath = image_dir.join(api_filename);
 
                     if let Ok(mut file) = std::fs::File::create(&filepath) {
                         use std::io::Write;
