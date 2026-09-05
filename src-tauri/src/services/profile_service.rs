@@ -1,5 +1,8 @@
 use crate::db::profile_queries::upsert_profile;
-use crate::models::profile_model::{ProfileApiResponse, ProfileItem};
+use crate::models::profile_model::{
+    AdminContactApiResponse, AdminContactItem, ChangePasswordRequest, ProfileApiResponse,
+    ProfileItem,
+};
 use crate::utils::constants::API_BASE_URL;
 use crate::utils::file_utils::download_and_save_image;
 use crate::utils::http::create_http_client;
@@ -331,3 +334,132 @@ pub async fn deactivate_account_service(state: &AppState) -> Result<(), AppError
     tracing::info!("Deaktivasi akun berhasil di sisi server.");
     Ok(())
 }
+
+pub async fn change_password_service(
+    state: &AppState,
+    payload: ChangePasswordRequest,
+) -> Result<(), AppError> {
+    tracing::info!("Memulai proses perubahan kata sandi...");
+
+    let token = state.get_valid_token().await?;
+    let client = create_http_client();
+
+    let url = format!("{}/users/account/profile/changepass", API_BASE_URL);
+
+    let res = client
+        .patch(&url)
+        .header(AUTHORIZATION, format!("Bearer {}", token))
+        .json(&payload)
+        .send()
+        .await;
+
+    let response = match res {
+        Ok(r) => r,
+        Err(e) => {
+            log_network_error("Change Password (kirim request)", &e);
+            return Err(e.into());
+        }
+    };
+
+    let http_status = response.status().as_u16();
+
+    if !response.status().is_success() {
+        let (error_msg, error_code) = if let Ok(json) = response.json::<serde_json::Value>().await {
+            let msg = json
+                .get("message")
+                .and_then(|v| v.as_str())
+                .unwrap_or("Gagal mengubah kata sandi")
+                .to_string();
+            let code = json
+                .get("code")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            (msg, code)
+        } else {
+            (
+                "Terjadi kesalahan pada server saat mengubah kata sandi".to_string(),
+                None,
+            )
+        };
+
+        tracing::error!("Gagal ganti kata sandi (HTTP {}): {}", http_status, error_msg);
+        return Err(AppError::ApiError {
+            http_status,
+            status: "error".to_string(),
+            code: error_code,
+            message: error_msg,
+        });
+    }
+
+    tracing::info!("Perubahan kata sandi berhasil di sisi server.");
+    Ok(())
+}
+
+pub async fn get_admin_contact_service(state: &AppState) -> Result<AdminContactItem, AppError> {
+    tracing::info!("Mengambil informasi kontak admin dari server...");
+
+    let token = state.get_valid_token().await?;
+    let client = create_http_client();
+
+    let url = format!("{}/users/account/contact-info", API_BASE_URL);
+
+    let res = client
+        .get(&url)
+        .header(AUTHORIZATION, format!("Bearer {}", token))
+        .send()
+        .await;
+
+    let response = match res {
+        Ok(r) => r,
+        Err(e) => {
+            log_network_error("Get Admin Contact (kirim request)", &e);
+            return Err(e.into());
+        }
+    };
+
+    let http_status = response.status().as_u16();
+
+    if !response.status().is_success() {
+        let (error_msg, error_code) = if let Ok(json) = response.json::<serde_json::Value>().await {
+            let msg = json
+                .get("message")
+                .and_then(|v| v.as_str())
+                .unwrap_or("Gagal mengambil kontak admin")
+                .to_string();
+            let code = json
+                .get("code")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            (msg, code)
+        } else {
+            (
+                "Terjadi kesalahan pada server saat mengambil kontak admin".to_string(),
+                None,
+            )
+        };
+
+        tracing::error!("Gagal mengambil kontak admin (HTTP {}): {}", http_status, error_msg);
+        return Err(AppError::ApiError {
+            http_status,
+            status: "error".to_string(),
+            code: error_code,
+            message: error_msg,
+        });
+    }
+
+    let api_response = match response.json::<AdminContactApiResponse>().await {
+        Ok(data) => data,
+        Err(e) => {
+            tracing::error!("Gagal memparsing JSON /users/account/contact-info: {}", e);
+            return Err(e.into());
+        }
+    };
+
+    api_response
+        .data
+        .data
+        .into_iter()
+        .next()
+        .ok_or_else(|| AppError::Unknown("Kontak admin tidak ditemukan di server".to_string()))
+}
+

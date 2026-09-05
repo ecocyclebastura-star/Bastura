@@ -1,5 +1,5 @@
 use crate::db::profile_queries::get_cached_profile;
-use crate::models::profile_model::ProfileClientResponse;
+use crate::models::profile_model::{AdminContactItem, ProfileClientResponse};
 use crate::utils::file_utils::read_image_as_base64;
 use crate::AppError;
 use crate::AppState;
@@ -202,3 +202,33 @@ pub async fn deactivate_account_command(
 
     Ok(true)
 }
+
+#[tauri::command]
+pub async fn change_password_command(
+    state: State<'_, AppState>,
+    old_password: String,
+    new_password: String,
+    conf_password: String,
+) -> Result<bool, AppError> {
+    tracing::info!("Menjalankan command: change_password_command");
+
+    let payload = crate::models::profile_model::ChangePasswordRequest {
+        old_password,
+        new_password,
+        conf_password,
+    };
+
+    crate::services::profile_service::change_password_service(&state, payload).await?;
+
+    Ok(true)
+}
+
+#[tauri::command]
+pub async fn get_admin_contact_command(
+    state: State<'_, AppState>,
+) -> Result<AdminContactItem, AppError> {
+    tracing::info!("Menjalankan command: get_admin_contact_command");
+
+    crate::services::profile_service::get_admin_contact_service(&state).await
+}
+

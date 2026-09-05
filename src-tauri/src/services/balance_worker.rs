@@ -70,11 +70,38 @@ pub fn start_balance_worker(app: tauri::AppHandle, state: AppState) {
     });
 }
 
+/// Eksekusi manual pengambilan saldo dan pancarkan ke frontend.
+/// Berguna untuk dipanggil langsung setelah transaksi (seperti penarikan saldo)
+/// agar UI langsung ter-update tanpa menunggu siklus 60 detik worker.
+pub async fn force_fetch_and_emit_balance(state: &AppState) {
+    let balance = match transaction_service::fetch_real_balance(state).await {
+        Ok(val) => val,
+        Err(e) => {
+            tracing::error!("Gagal force fetch saldo: {}", e);
+            return;
+        }
+    };
+
+    let last_updated = build_iso_timestamp();
+
+    if let Err(e) = state.app_handle.emit(
+        "on_balance_update",
+        BalanceUpdatePayload {
+            saldo: balance,
+            last_updated,
+        },
+    ) {
+        tracing::error!("Gagal emit event force balance update: {}", e);
+    } else {
+        tracing::info!("Saldo dipaksa update dan berhasil dikirim ke frontend: {} IDR", balance);
+    }
+}
+
 /// Buat string timestamp ISO 8601 UTC dari waktu sistem saat ini.
 ///
 /// Menggunakan kalkulasi langsung dari UNIX epoch untuk menghindari
 /// ketergantungan pada crate `chrono`. Akurat untuk representasi UTC.
-fn build_iso_timestamp() -> String {
+pub fn build_iso_timestamp() -> String {
     let secs = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_secs())

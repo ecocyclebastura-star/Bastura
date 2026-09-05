@@ -24,6 +24,21 @@ pub async fn init_db(db_path: &Path) -> Result<SqlitePool, AppError> {
         }
     };
 
+    // Migrasi otomatis: cek apakah transaction_history_cache masih memakai skema placeholder lama
+    let is_old_tx_schema: bool = sqlx::query_scalar(
+        "SELECT COUNT(*) > 0 FROM pragma_table_info('transaction_history_cache') WHERE name = 'id'",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap_or(false);
+
+    if is_old_tx_schema {
+        tracing::info!("Mendeteksi skema lama pada transaction_history_cache. Menghapus tabel untuk dibuat ulang dengan skema baru...");
+        let _ = sqlx::query("DROP TABLE transaction_history_cache")
+            .execute(&pool)
+            .await;
+    }
+
     if let Err(e) = sqlx::query(
         "
         /* =========================================
@@ -49,15 +64,14 @@ pub async fn init_db(db_path: &Path) -> Result<SqlitePool, AppError> {
             total_balance INTEGER DEFAULT 0
         );
 
-        -- 2. Tabungan Pribadi
+        -- 2. Tabungan Pribadi (Riwayat Transaksi)
         CREATE TABLE IF NOT EXISTS transaction_history_cache (
-            id TEXT PRIMARY KEY,         
-            type TEXT NOT NULL,            
-            title TEXT NOT NULL,
-            subtitle TEXT,
-            amount INTEGER NOT NULL,      
+            id_transaksi INTEGER PRIMARY KEY,         
+            jenis_transaksi TEXT NOT NULL,            
+            deskripsi TEXT,
+            nominal INTEGER NOT NULL,      
             status TEXT NOT NULL,             
-            date TEXT NOT NULL
+            tanggal_transaksi TEXT NOT NULL
         );
 
         -- 3. Katalog Sampah

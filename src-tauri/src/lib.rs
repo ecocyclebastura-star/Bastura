@@ -120,7 +120,12 @@ pub fn run() {
             crate::controllers::education_controller::get_education_command,
             crate::controllers::profile_controller::get_profile_command,
             crate::controllers::profile_controller::update_full_profile_command,
-            crate::controllers::profile_controller::deactivate_account_command
+            crate::controllers::profile_controller::deactivate_account_command,
+            crate::controllers::profile_controller::change_password_command,
+            crate::controllers::profile_controller::get_admin_contact_command,
+            crate::controllers::transaction_controller::get_transaction_history_command,
+            crate::controllers::transaction_controller::create_withdrawal_command,
+            crate::controllers::transaction_controller::cancel_withdrawal_command,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

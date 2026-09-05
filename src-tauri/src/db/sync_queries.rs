@@ -31,3 +31,31 @@ pub async fn update_last_sync(
 
     Ok(())
 }
+
+pub async fn clear_user_cache_and_sync_logs(
+    pool: &SqlitePool,
+    tables: &[&str],
+) -> Result<(), AppError> {
+    // 1. Hapus cache tabel
+    for table in tables {
+        let query = format!("DELETE FROM {}", table);
+        if let Err(e) = sqlx::query(&query).execute(pool).await {
+            tracing::error!("Gagal menghapus cache tabel {}: {}", table, e);
+        }
+    }
+
+    // 2. Hapus log sinkronisasi spesifik pengguna
+    let categories_to_clear = ["profile", "transaction"];
+    for category in categories_to_clear {
+        let query = "DELETE FROM local_sync_logs WHERE sync_category = ?";
+        if let Err(e) = sqlx::query(query).bind(category).execute(pool).await {
+            tracing::error!(
+                "Gagal menghapus local_sync_logs untuk kategori {}: {}",
+                category,
+                e
+            );
+        }
+    }
+
+    Ok(())
+}

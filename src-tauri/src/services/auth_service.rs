@@ -268,12 +268,7 @@ pub async fn cleanup_session_service(state: &AppState) {
         "transaksi_global_cache",
     ];
 
-    for table in tables_to_clear {
-        let query = format!("DELETE FROM {}", table);
-        if let Err(e) = sqlx::query(&query).execute(&state.db).await {
-            tracing::error!("Gagal menghapus cache tabel {}: {}", table, e);
-        }
-    }
+    let _ = crate::db::sync_queries::clear_user_cache_and_sync_logs(&state.db, &tables_to_clear).await;
     tracing::info!("Proses pembersihan sesi selesai.");
 }
 

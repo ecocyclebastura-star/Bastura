@@ -49,6 +49,13 @@ pub struct UpdateBioRequest {
     pub phone: Option<String>,
 }
 
+#[derive(Serialize)]
+pub struct ChangePasswordRequest {
+    pub old_password: String,
+    pub new_password: String,
+    pub conf_password: String,
+}
+
 #[derive(Deserialize, Debug, Clone)]
 pub struct ProfileItem {
     pub name: String,
@@ -78,3 +85,27 @@ pub struct ProfileClientResponse {
     pub phone: String,
     pub avatar_base64: Option<String>,
 }
+
+// =============================================================================
+// Model untuk Kontak Admin (Cloud-Only / Direct Fetch)
+// =============================================================================
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct AdminContactItem {
+    pub name_contact: String,
+    pub phone_number: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct AdminContactDataWrapper {
+    pub data: Vec<AdminContactItem>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct AdminContactApiResponse {
+    pub status: String,
+    pub message: String,
+    pub code: String,
+    pub data: AdminContactDataWrapper,
+}
+

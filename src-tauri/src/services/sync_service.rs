@@ -33,15 +33,18 @@ pub async fn run_smart_sync_service(state: &AppState) -> Result<bool, AppError> 
                     }
                 }
             } else {
+                let status = response.status();
+                let body_text = response.text().await.unwrap_or_default();
                 tracing::warn!(
-                    "API /updates merespons dengan status error: {}",
-                    response.status()
+                    "API /updates merespons dengan status error: {} - {}",
+                    status,
+                    body_text
                 );
                 return Err(AppError::ApiError {
-                    http_status: response.status().as_u16(),
+                    http_status: status.as_u16(),
                     status: "error".to_string(),
                     code: None,
-                    message: format!("HTTP Status: {}", response.status()),
+                    message: format!("HTTP Status: {} - {}", status, body_text),
                 });
             }
         }
@@ -127,7 +130,29 @@ pub async fn run_smart_sync_service(state: &AppState) -> Result<bool, AppError> 
         }
     }
 
-    // TODO: Sync kategori lain (transaction, dll) dengan cara yang sama.
+    // 6. Sync Transaction History
+    if let Some(server_transaction_up) = &server_data.transaction_up {
+        let local_transaction_up = get_last_sync(&state.db, "transaction").await?;
+
+        let needs_sync = match local_transaction_up {
+            Some(local_ts) => server_transaction_up > &local_ts,
+            None => true,
+        };
+
+        if needs_sync {
+            tracing::info!("Terdapat pembaruan Riwayat Transaksi. Mulai sinkronisasi...");
+            if let Err(e) =
+                crate::services::transaction_service::sync_transaction_log_from_server(state).await
+            {
+                tracing::error!("Sinkronisasi riwayat transaksi gagal: {}", e);
+            } else {
+                update_last_sync(&state.db, "transaction", server_transaction_up).await?;
+                tracing::info!("Sinkronisasi Riwayat Transaksi selesai.");
+            }
+        } else {
+            tracing::debug!("Riwayat Transaksi sudah up-to-date.");
+        }
+    }
 
     // Cleanup unused images after sync finishes
     crate::utils::file_utils::cleanup_unused_images(&state.app_handle, &state.db).await;
