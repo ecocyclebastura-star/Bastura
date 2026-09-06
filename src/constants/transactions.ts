@@ -14,7 +14,7 @@
 export type TransactionKind = "setoran" | "penarikan" | "lainnya";
 
 const SETORAN_RE = /setor|deposit|masuk/;
-const PENARIKAN_RE = /tarik|withdraw|wd|keluar/;
+const PENARIKAN_RE = /tarik|narik|withdraw|wd|keluar/;
 
 export function resolveKind(jenis: string | null | undefined): TransactionKind {
   const value = (jenis ?? "").toLowerCase();

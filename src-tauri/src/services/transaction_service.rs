@@ -206,6 +206,12 @@ pub async fn create_withdrawal_service(
     state: &AppState,
     amount: i64,
 ) -> Result<crate::models::transaction_model::WithdrawalResponseData, AppError> {
+    if amount < 10_000 {
+        return Err(AppError::Unknown(
+            "Nominal penarikan tidak boleh kurang dari Rp10.000".to_string(),
+        ));
+    }
+
     tracing::info!("Memproses pengajuan penarikan saldo sebesar {} IDR...", amount);
 
     let token = state.get_valid_token().await?;
