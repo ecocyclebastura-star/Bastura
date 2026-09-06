@@ -17,6 +17,18 @@ export interface Profile {
   avatar_base64: string | null;
 }
 
+/**
+ * Bentuk `AdminContactItem` dari src-tauri/src/models/profile_model.rs.
+ *
+ * CATATAN: strukturnya cuma punya nama & nomor telepon -- tidak ada email.
+ * Jadi alamat email di halaman Hubungi Kami masih memakai nilai tetap di
+ * constants/helpCenter.ts sampai backend ikut mengirimkannya.
+ */
+export interface AdminContact {
+  name_contact: string;
+  phone_number: string;
+}
+
 export interface ProfileUpdatePayload {
   name?: string;
   phone?: string;
@@ -37,6 +49,11 @@ export const useProfileStore = defineStore("profile", {
     profile: null as Profile | null,
     loading: false,
     errorMessage: "",
+
+    /** Kontak pengurus buat halaman Hubungi Kami. */
+    adminContact: null as AdminContact | null,
+    contactLoading: false,
+    contactError: "",
   }),
 
   getters: {
@@ -80,6 +97,31 @@ export const useProfileStore = defineStore("profile", {
       return updated;
     },
 
+    /**
+     * Ambil kontak pengurus dari server.
+     *
+     * Command-nya cloud-only: tidak ada cache SQLite di baliknya, jadi kalau
+     * sedang offline pemanggilan ini pasti gagal dan halamannya jatuh ke
+     * kontak bawaan aplikasi.
+     */
+    async loadAdminContact() {
+      this.contactLoading = true;
+      this.contactError = "";
+
+      try {
+        this.adminContact = await invoke<AdminContact>(
+          "get_admin_contact_command",
+        );
+      } catch (error) {
+        this.contactError = resolveAuthError(
+          error,
+          "Gagal memuat kontak pengurus. Coba lagi sebentar lagi.",
+        );
+      } finally {
+        this.contactLoading = false;
+      }
+    },
+
     /** Nonaktifkan akun; sesi lokal ikut dibersihkan backend. */
     deactivate() {
       return invoke<boolean>("deactivate_account_command");
@@ -88,6 +130,8 @@ export const useProfileStore = defineStore("profile", {
     reset() {
       this.profile = null;
       this.errorMessage = "";
+      this.adminContact = null;
+      this.contactError = "";
     },
   },
 });
