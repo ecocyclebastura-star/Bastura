@@ -74,10 +74,3 @@ export const ABOUT_FEATURES: readonly { title: string; body: string }[] = [
 
 export const ABOUT_OUTRO =
   "Bersama Bastura, mari wujudkan lingkungan yang lebih bersih, sehat, dan berkelanjutan. \u{1F331}";
-
-/**
- * Kontak pengurus. Nilai di bawah diambil apa adanya dari mockup dan tampaknya
- * masih contoh -- ganti dengan nomor dan email asli sebelum rilis.
- */
-export const CONTACT_PHONE = "+62 834-2323-9589";
-export const CONTACT_EMAIL = "Admin@gmail.com";

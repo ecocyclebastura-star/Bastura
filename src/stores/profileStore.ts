@@ -17,16 +17,10 @@ export interface Profile {
   avatar_base64: string | null;
 }
 
-/**
- * Bentuk `AdminContactItem` dari src-tauri/src/models/profile_model.rs.
- *
- * CATATAN: strukturnya cuma punya nama & nomor telepon -- tidak ada email.
- * Jadi alamat email di halaman Hubungi Kami masih memakai nilai tetap di
- * constants/helpCenter.ts sampai backend ikut mengirimkannya.
- */
+/** Bentuk `AdminContactItem` dari src-tauri/src/models/profile_model.rs. */
 export interface AdminContact {
-  name_contact: string;
-  phone_number: string;
+  email: string;
+  phone: string;
 }
 
 export interface ProfileUpdatePayload {
