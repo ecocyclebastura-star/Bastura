@@ -92,8 +92,8 @@ pub struct ProfileClientResponse {
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct AdminContactItem {
-    pub name_contact: String,
-    pub phone_number: String,
+    pub email: String,
+    pub phone: String,
 }
 
 #[derive(Deserialize, Debug)]
