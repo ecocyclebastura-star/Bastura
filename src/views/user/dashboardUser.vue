@@ -36,10 +36,6 @@ const EXPLORE_ROUTES: Record<string, string | undefined> = {
 
 onMounted(() => contentStore.loadHighlights());
 
-function handleWithdraw() {
-  // TODO: sambungkan ke alur tarik saldo kalau backend-nya sudah siap.
-}
-
 function handleExplore(key: string) {
   const name = EXPLORE_ROUTES[key];
   if (name) router.push({ name });
@@ -66,7 +62,7 @@ function handleExplore(key: string) {
     <BalanceCard
       :balance="balanceStore.saldo"
       :loading="balanceStore.isWaitingFirstUpdate"
-      @withdraw="handleWithdraw"
+      @withdraw="router.push({ name: 'user-tarik-saldo' })"
     />
 
     <ExploreMenu :items="EXPLORE_ITEMS" @select="handleExplore" />

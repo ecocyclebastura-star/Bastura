@@ -4,7 +4,7 @@ import AlertToast from "../../components/AlertToast.vue";
 import BaseButton from "../../components/BaseButton.vue";
 import BaseInput from "../../components/BaseInput.vue";
 import PageHeader from "../../components/PageHeader.vue";
-import { isMissingCommand, resolveAuthError } from "../../constants/authErrors";
+import { resolveAuthError } from "../../constants/authErrors";
 import { useToast } from "../../composables/useToast";
 import { useAuthStore } from "../../stores/authStore";
 import { PASSWORD_HINT, PASSWORD_RE } from "../../utils/validators";
@@ -70,14 +70,9 @@ async function handleSave() {
     confirmPassword.value = "";
     showToast("Perubahan berhasil disimpan.", "success");
   } catch (error) {
-    if (isMissingCommand(error)) {
-      showToast(
-        "Ganti password belum tersedia: command-nya belum ada di backend.",
-        "error",
-      );
-    } else {
-      showToast(resolveAuthError(error, "Perubahan gagal disimpan."), "error");
-    }
+    // Password lama yang salah dibalas server lewat pesannya sendiri, jadi
+    // pesan dari resolveAuthError sudah cukup jelas buat user.
+    showToast(resolveAuthError(error, "Perubahan gagal disimpan."), "error");
   } finally {
     saving.value = false;
   }

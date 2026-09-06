@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useBalanceStore } from "./balanceStore";
 import { useContentStore } from "./contentStore";
 import { useProfileStore } from "./profileStore";
+import { useTransactionStore } from "./transactionStore";
 
 /** Bentuk `LoginSuccessResponse` dari src-tauri/src/models/auth_model.rs. */
 export interface AuthUser {
@@ -103,18 +104,16 @@ export const useAuthStore = defineStore("auth", {
     /**
      * Ganti password dari halaman profil.
      *
-     * PERHATIAN: `change_password_command` BELUM ada di backend -- belum
-     * terdaftar di `invoke_handler` maupun di auth_controller.rs. Sampai rekan
-     * backend menambahkannya, pemanggilan ini selalu gagal dan halamannya
-     * menampilkan pesan "belum tersedia". Nama argumennya sengaja mengikuti
-     * pola `reset_password_command` yang sudah ada, jadi begitu commandnya
-     * dibuat tidak ada yang perlu diubah di sisi frontend.
+     * Nama argumennya mengikuti `change_password_command` di
+     * src-tauri/src/controllers/profile_controller.rs -- Tauri yang mengubah
+     * camelCase di sini jadi snake_case di Rust, jadi `confPassword` (bukan
+     * `confirmPassword`) yang dikenali sebagai `conf_password`.
      */
     changePassword(payload: ChangePasswordPayload) {
       return invoke<boolean>("change_password_command", {
-        currentPassword: payload.currentPassword,
+        oldPassword: payload.currentPassword,
         newPassword: payload.newPassword,
-        confirmPassword: payload.confirmPassword,
+        confPassword: payload.confirmPassword,
       });
     },
 
@@ -133,6 +132,7 @@ export const useAuthStore = defineStore("auth", {
       useBalanceStore().reset();
       useContentStore().reset();
       useProfileStore().reset();
+      useTransactionStore().reset();
     },
   },
 

@@ -5,9 +5,23 @@ export type FilterChip = {
   label: string;
 };
 
-defineProps<{ chips: readonly FilterChip[] }>();
+const props = withDefaults(
+  defineProps<{
+    chips: readonly FilterChip[];
+    /**
+     * Chip yang aktif bisa dimatikan lagi dengan diklik ulang. Dipakai kalau
+     * daftar chip-nya tidak punya pilihan "Semua" sendiri.
+     */
+    toggleable?: boolean;
+  }>(),
+  { toggleable: false },
+);
 
 const model = defineModel<string>({ default: "" });
+
+function select(value: string) {
+  model.value = props.toggleable && model.value === value ? "" : value;
+}
 </script>
 
 <template>
@@ -28,7 +42,7 @@ const model = defineModel<string>({ default: "" });
           ? 'bg-primary-500 text-white'
           : 'border border-neutral-300 bg-white text-neutral-900 hover:bg-neutral-100',
       ]"
-      @click="model = chip.value"
+      @click="select(chip.value)"
     >
       {{ chip.label }}
     </button>

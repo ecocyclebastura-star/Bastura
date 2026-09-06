@@ -88,6 +88,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import("../views/user/dompetView.vue"),
       },
       {
+        path: "dompet/tarik-saldo",
+        name: "user-tarik-saldo",
+        component: () => import("../views/user/tarikSaldoView.vue"),
+      },
+      {
         path: "scan",
         name: "user-scan",
         component: () => import("../views/user/scanView.vue"),
@@ -96,6 +101,11 @@ const routes: RouteRecordRaw[] = [
         path: "riwayat",
         name: "user-riwayat",
         component: () => import("../views/user/riwayatView.vue"),
+      },
+      {
+        path: "riwayat/:id",
+        name: "user-riwayat-detail",
+        component: () => import("../views/user/detailTransaksiView.vue"),
       },
       {
         path: "profil",
