@@ -1,10 +1,29 @@
 <script setup lang="ts">
+import { computed, onMounted } from "vue";
 import AppIcon from "../../components/AppIcon.vue";
 import PageHeader from "../../components/PageHeader.vue";
 import { CONTACT_EMAIL, CONTACT_PHONE } from "../../constants/helpCenter";
+import { useProfileStore } from "../../stores/profileStore";
+
+const profileStore = useProfileStore();
+
+onMounted(() => profileStore.loadAdminContact());
+
+/**
+ * Nomor dari server dipakai duluan; kalau command-nya gagal (mis. sedang
+ * offline -- kontak admin cloud-only, tidak ada cache-nya) halaman tetap
+ * berguna dengan nomor bawaan aplikasi.
+ */
+const phone = computed(
+  () => profileStore.adminContact?.phone_number?.trim() || CONTACT_PHONE,
+);
+
+const contactName = computed(
+  () => profileStore.adminContact?.name_contact?.trim() || "",
+);
 
 /** tel: tidak menerima spasi maupun tanda hubung. */
-const phoneHref = `tel:${CONTACT_PHONE.replace(/[^\d+]/g, "")}`;
+const phoneHref = computed(() => `tel:${phone.value.replace(/[^\d+]/g, "")}`);
 const emailHref = `mailto:${CONTACT_EMAIL}`;
 
 /**
@@ -37,7 +56,21 @@ async function open(url: string) {
         @click="open(phoneHref)"
       >
         <AppIcon name="phone" class="size-6 text-neutral-900" />
-        <span class="text-body-reg text-neutral-900">{{ CONTACT_PHONE }}</span>
+
+        <span
+          v-if="profileStore.contactLoading"
+          class="h-5 w-40 animate-pulse rounded bg-neutral-200"
+          aria-hidden="true"
+        />
+        <span v-else>
+          <span class="block text-body-reg text-neutral-900">{{ phone }}</span>
+          <span
+            v-if="contactName"
+            class="block text-body-tiny text-neutral-600"
+          >
+            {{ contactName }}
+          </span>
+        </span>
       </button>
 
       <button
@@ -51,5 +84,16 @@ async function open(url: string) {
         </span>
       </button>
     </div>
+
+    <!-- Nomornya tetap tampil (memakai kontak bawaan), jadi ini cuma
+         pemberitahuan bahwa yang terbaru belum sempat diambil. -->
+    <p
+      v-if="profileStore.contactError"
+      class="mt-3 text-body-tiny text-neutral-600"
+      role="status"
+    >
+      {{ profileStore.contactError }} Sementara ini ditampilkan kontak bawaan
+      aplikasi.
+    </p>
   </main>
 </template>
