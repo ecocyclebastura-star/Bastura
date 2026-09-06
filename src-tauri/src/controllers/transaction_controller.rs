@@ -24,7 +24,7 @@ pub async fn create_withdrawal_command(
 #[tauri::command]
 pub async fn cancel_withdrawal_command(
     state: State<'_, AppState>,
-    id_transaksi: i64,
+    id_transaksi: String,
 ) -> Result<crate::models::transaction_model::CancelWithdrawalResponseData, AppError> {
     tracing::info!("Menjalankan command: cancel_withdrawal_command");
     crate::services::transaction_service::cancel_withdrawal_service(&state, id_transaksi).await

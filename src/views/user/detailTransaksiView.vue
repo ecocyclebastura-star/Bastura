@@ -61,9 +61,9 @@ const waktu = computed(() =>
 );
 
 onMounted(async () => {
-  const id = Number(route.params.id);
+  const id = route.params.id as string;
 
-  if (!Number.isFinite(id)) {
+  if (!id) {
     loadError.value = "Transaksi tidak ditemukan.";
     loading.value = false;
     return;

@@ -21,10 +21,10 @@ pub async fn upsert_transactions(
                 tanggal_transaksi = excluded.tanggal_transaksi
             "#,
         )
-        .bind(item.id_transaksi)
+        .bind(&item.id_transaksi)
         .bind(&item.jenis_transaksi)
         .bind(&item.deskripsi)
-        .bind(item.nominal)
+        .bind(&item.nominal)
         .bind(&item.status)
         .bind(&item.tanggal_transaksi)
         .execute(pool)
@@ -37,7 +37,7 @@ pub async fn upsert_transactions(
             QueryBuilder::new("DELETE FROM transaction_history_cache WHERE id_transaksi NOT IN (");
         let mut separated = query_builder.separated(", ");
         for item in transactions {
-            separated.push_bind(item.id_transaksi);
+            separated.push_bind(&item.id_transaksi);
         }
         separated.push_unseparated(")");
         query_builder.build().execute(pool).await?;
@@ -59,13 +59,18 @@ pub async fn get_cached_transaction_history(
     );
 
     if let Some(jenis) = &payload.jenis_transaksi {
-        query_builder.push(" AND jenis_transaksi = ");
-        query_builder.push_bind(jenis);
+        query_builder.push(" AND LOWER(jenis_transaksi) LIKE ");
+        query_builder.push_bind(format!("%{}%", jenis.to_lowercase()));
     }
 
     if let Some(status) = &payload.status {
-        query_builder.push(" AND status = ");
-        query_builder.push_bind(status);
+        let mapped_status = if status.to_lowercase() == "pending" {
+            "processed".to_string()
+        } else {
+            status.to_lowercase()
+        };
+        query_builder.push(" AND LOWER(status) LIKE ");
+        query_builder.push_bind(format!("%{}%", mapped_status));
     }
 
     if let Some(cursor) = &payload.cursor {
@@ -99,7 +104,7 @@ pub async fn get_cached_transaction_history(
 /// Update status satu baris di cache lokal setelah cancel withdrawal berhasil dikonfirmasi server.
 pub async fn update_transaction_status(
     pool: &SqlitePool,
-    id_transaksi: i64,
+    id_transaksi: &str,
     new_status: &str,
 ) -> Result<(), AppError> {
     sqlx::query(

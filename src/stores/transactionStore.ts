@@ -6,7 +6,7 @@ import { TRANSACTION_FILTERS } from "../constants/transactions";
 
 /** Bentuk `TransactionItem` dari src-tauri/src/models/transaction_model.rs. */
 export interface Transaction {
-  id_transaksi: number;
+  id_transaksi: string;
   jenis_transaksi: string;
   deskripsi: string | null;
   nominal: number;
@@ -38,7 +38,7 @@ export interface WithdrawalResult {
 
 /** Bentuk `CancelWithdrawalResponseData`. */
 export interface CancelResult {
-  id_transaksi: number;
+  id_transaksi: string;
   status: string;
   updated_at: string;
 }
@@ -186,7 +186,7 @@ export const useTransactionStore = defineStore("transaction", {
      * Dicek dulu dari yang sudah ada di memori; kalau tidak ketemu (misal
      * halaman detailnya dibuka langsung lewat URL) baru tarik ulang daftarnya.
      */
-    async findTransaction(id: number): Promise<Transaction | null> {
+    async findTransaction(id: string): Promise<Transaction | null> {
       const cached = [...this.items, ...this.recent].find(
         (item) => item.id_transaksi === id,
       );
@@ -205,7 +205,7 @@ export const useTransactionStore = defineStore("transaction", {
     },
 
     /** Batalkan penarikan yang masih menunggu persetujuan admin. */
-    cancelWithdrawal(idTransaksi: number) {
+    cancelWithdrawal(idTransaksi: string) {
       return invoke<CancelResult>("cancel_withdrawal_command", { idTransaksi });
     },
 

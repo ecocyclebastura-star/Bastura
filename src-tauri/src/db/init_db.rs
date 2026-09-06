@@ -39,6 +39,36 @@ pub async fn init_db(db_path: &Path) -> Result<SqlitePool, AppError> {
             .await;
     }
 
+    // Migrasi otomatis v2: id_transaksi berubah dari INTEGER ke TEXT (UUID)
+    let is_integer_id: bool = sqlx::query_scalar(
+        "SELECT COUNT(*) > 0 FROM pragma_table_info('transaction_history_cache') WHERE name = 'id_transaksi' AND type = 'INTEGER'",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap_or(false);
+
+    if is_integer_id {
+        tracing::info!("Mendeteksi skema INTEGER pada id_transaksi. Menghapus tabel untuk dibuat ulang dengan TEXT (UUID)...");
+        let _ = sqlx::query("DROP TABLE transaction_history_cache")
+            .execute(&pool)
+            .await;
+    }
+
+    // Migrasi otomatis v3: nominal dari TEXT ke INTEGER
+    let is_text_nominal: bool = sqlx::query_scalar(
+        "SELECT COUNT(*) > 0 FROM pragma_table_info('transaction_history_cache') WHERE name = 'nominal' AND type = 'TEXT'",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap_or(false);
+
+    if is_text_nominal {
+        tracing::info!("Mendeteksi skema TEXT pada nominal. Menghapus tabel untuk dibuat ulang dengan INTEGER...");
+        let _ = sqlx::query("DROP TABLE transaction_history_cache")
+            .execute(&pool)
+            .await;
+    }
+
     if let Err(e) = sqlx::query(
         "
         /* =========================================
@@ -66,7 +96,7 @@ pub async fn init_db(db_path: &Path) -> Result<SqlitePool, AppError> {
 
         -- 2. Tabungan Pribadi (Riwayat Transaksi)
         CREATE TABLE IF NOT EXISTS transaction_history_cache (
-            id_transaksi INTEGER PRIMARY KEY,         
+            id_transaksi TEXT PRIMARY KEY,         
             jenis_transaksi TEXT NOT NULL,            
             deskripsi TEXT,
             nominal INTEGER NOT NULL,      
