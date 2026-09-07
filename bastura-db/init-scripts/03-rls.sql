@@ -159,7 +159,7 @@ USING (
 
 CREATE POLICY "admin_bisa_insert_deposit" ON deposit
 FOR INSERT
-USING (
+WITH CHECK (
     current_setting('app.current_user_role', true) IN ('admin', 'super admin')
 );
 
@@ -181,7 +181,7 @@ USING (
 
 CREATE POLICY "user_bisa_insert_withdrawal" ON withdrawals
 FOR INSERT
-USING (
+WITH CHECK (
     current_setting('app.current_user_role', true) = 'user'
 );
 

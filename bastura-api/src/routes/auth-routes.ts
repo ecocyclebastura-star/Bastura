@@ -14,7 +14,7 @@ const authApp = new Hono()
 
 AccessTimer()
 
-authApp.post('/login', login)
+authApp.post('/login', login )
 authApp.post('/signup', signup)
 authApp.post('/refresh', checkAccessToken, refreshToken)
 authApp.post('/forgot-password', forgotpassword)
@@ -22,3 +22,4 @@ authApp.post('/reset-password', resetPassword)
 authApp.post('/logout', checkAccessToken, logout)
 
 export default authApp
+

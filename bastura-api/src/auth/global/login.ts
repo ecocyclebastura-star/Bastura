@@ -5,6 +5,7 @@ import { saveRefreshToken } from '../../model/auth/token-models'
 import { LoginPayload } from '../type/auth-type'
 import { getEnvJWT } from '../middleware/env'
 import { sendAuthResponse } from '../../logs/auth/auth-logs'
+import {checkUserStatus} from '../../model/auth/users-models'
 
 const JWT_SECRET = getEnvJWT.JWT_SECRET
 const JWT_REFRESH_SECRET = getEnvJWT.JWT_REFRESH_SECRET
@@ -30,6 +31,11 @@ export const login = async (c: Context) => {
 
     if (!isMatch) {
       return await sendAuthResponse(c, 401 , 'error' , 'Login Error ' , 'Email atau password salah' , 'Email atau password salah' , 'EMAIL_PASSWORD_WRONG'  )
+    }
+
+    const userStatus = await checkUserStatus(user.id)
+    if(userStatus !== 'active') {
+      return await sendAuthResponse(c, 401 , 'error' , 'Login Error ' , 'Akun sudah tidak aktif/dihapus' , 'Akun sudah tidak aktif/dihapus' , 'USER_NOT_ACTIVE'  )
     }
 
     const payload = {

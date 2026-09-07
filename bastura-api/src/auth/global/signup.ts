@@ -1,6 +1,6 @@
 import { Context } from 'hono'
 import { sign } from 'hono/jwt'
-import { createUser, getUserByEmail } from '../../model/auth/users-models'
+import { createUser, getUserByEmail, setNewUserBalance } from '../../model/auth/users-models'
 import { saveRefreshToken } from '../../model/auth/token-models'
 import { SignupPayload } from '../type/auth-type'
 import { getEnvJWT } from '../middleware/env'
@@ -63,7 +63,9 @@ export const signup = async (c: Context) => {
     const refresh_token = await sign(refreshPayload, JWT_REFRESH_SECRET)
 
     const expiresAt = new Date(Date.now() + (24 * 60 * 60 * 1000)) 
+    
     saveRefreshToken(newUser.id, refresh_token, expiresAt).catch(console.error)
+    setNewUserBalance(newUser.id, 0).catch(console.error)
 
     return await sendAuthResponse(c, 200 , 'success', 'Signup success' , 'User berhasil mendaftar' , 'User berhasil mendaftar' ,
       {

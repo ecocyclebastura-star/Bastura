@@ -1,13 +1,20 @@
 import {Context , Next} from 'hono'
 import { verify } from 'hono/jwt'
+import { checkadmin } from '../../model/auth/users-models'
+
 
 const JWT_SECRET = process.env.JWT_SECRET
 
 
 export const adminOnly = async(c: Context , next : Next) => {
     const jwtPayload = c.get('jwtPayload') as any;
+    if (!jwtPayload || (jwtPayload.role !== 2 && jwtPayload.role !== 3) ) {
+        return c.json({ status: 'error', message: 'Unauthorized: Sesi tidak valid' }, 401);
+    }
+    const sub = jwtPayload.sub as string;
+    const check_admin = await checkadmin(sub);
 
-    if (!jwtPayload || jwtPayload.role !== 'admin') {
+    if(check_admin === "ACCESS_DENIED_UR_NOT_ADMIN") {
         return c.json({ status: 'error', message: 'Unauthorized: Sesi tidak valid' }, 401);
     }
     await next();   
@@ -16,7 +23,7 @@ export const adminOnly = async(c: Context , next : Next) => {
 export const userOnly = async(c: Context , next : Next) => {
     const jwtPayload = c.get('jwtPayload') as any;
 
-    if (!jwtPayload || jwtPayload.role !== 'user') {
+    if (!jwtPayload || jwtPayload.role !== 1) {
         return c.json({ status: 'error', message: 'Unauthorized: Sesi tidak valid' }, 401);
     }
     await next();   
@@ -47,4 +54,5 @@ export const checkAccessToken = async(c: Context , next : Next) => {
     }
     await next();   
 }
+
 

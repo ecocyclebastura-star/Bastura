@@ -32,9 +32,8 @@ export const getUserById = async (id: string) => {
       u.email,
       u.name,
       u.phone,
-      r.roles as role
+      u.role_id as role
     FROM users u
-    LEFT JOIN roles r ON u.role_id = r.id_roles
     WHERE u.id_users = ${id}
     LIMIT 1
   `
@@ -91,3 +90,20 @@ export const updatePasswordByEmail = async (id: string, hashedPassword: string) 
   return result[0]
 }
  
+ export const setNewUserBalance = async (id: string, amount: 0 ) => {
+  const result = await sql`INSERT INTO balance (id_user, total_balance, created_at) VALUES (${id}, ${amount}, NOW()) RETURNING 'SUCCES' as status`
+  return result[0]
+}
+
+export const checkUserStatus = async (id: string) => {
+  const result = await sql`SELECT status_active FROM users WHERE id_users = ${id} LIMIT 1`
+  return result.length > 0 ? result[0].status_active as string : null
+}
+
+export const checkadmin = async (id: string) => {
+  const result = await sql`SELECT id_roles FROM users WHERE id_users = ${id} LIMIT 1`
+  if (result[0].id_roles === 2 || result[0].id_roles === 3) {
+    return "ACCESS_DENIED_UR_NOT_ADMIN"
+  }
+  return "ACCESS_GRANTED"
+}

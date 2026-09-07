@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS simba_content(
 );
 
 CREATE TABLE IF NOT EXISTS update_logs (
+    id_update SERIAL PRIMARY KEY NOT NULL,
     profile_up TIMESTAMPTZ NOT NULL,
     transaction_up TIMESTAMPTZ NOT NULL,
     announcements_up TIMESTAMPTZ NOT NULL,
@@ -88,7 +89,7 @@ CREATE TABLE IF NOT EXISTS users(
     updated_at TIMESTAMPTZ,
     reason_banned VARCHAR(200),
 
-    CONSTRAINT fk_role_id FOREIGN KEY (role_id) REFERENCES roles(id_roles)
+    CONSTRAINT fk_role_id FOREIGN KEY (role_id) REFERENCES roles(id_roles) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS refresh_tokens(
@@ -99,7 +100,7 @@ CREATE TABLE IF NOT EXISTS refresh_tokens(
     access_expired TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
-    CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES users(id_users) ON DELETE CASCADE
+    CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES users(id_users) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS waste_catalog(
@@ -113,7 +114,7 @@ CREATE TABLE IF NOT EXISTS waste_catalog(
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ,
 
-    CONSTRAINT fk_category_id FOREIGN KEY (category_id) REFERENCES waste_category(id_waste_category)
+    CONSTRAINT fk_category_id FOREIGN KEY (category_id) REFERENCES waste_category(id_waste_category) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS audit_logs(
@@ -124,8 +125,8 @@ CREATE TABLE IF NOT EXISTS audit_logs(
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ,
 
-    CONSTRAINT fk_actor_id FOREIGN KEY (actor_id) REFERENCES users(id_users),
-    CONSTRAINT fk_target_id FOREIGN KEY (target_id) REFERENCES users(id_users)   
+    CONSTRAINT fk_actor_id FOREIGN KEY (actor_id) REFERENCES users(id_users) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_target_id FOREIGN KEY (target_id) REFERENCES users(id_users) ON DELETE CASCADE ON UPDATE CASCADE   
 );
 
 CREATE TABLE IF NOT EXISTS error_logs(
@@ -149,8 +150,8 @@ CREATE TABLE IF NOT EXISTS transaction_logs(
     processed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     detail_tsc TEXT,
 
-    CONSTRAINT fk_id_tsc FOREIGN KEY (id_tsc) REFERENCES transactions(id_transaction),
-    CONSTRAINT fk_processed_by FOREIGN KEY (processed_by) REFERENCES users(id_users)
+    CONSTRAINT fk_id_tsc FOREIGN KEY (id_tsc) REFERENCES transactions(id_transaction) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_processed_by FOREIGN KEY (processed_by) REFERENCES users(id_users) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS balance(
@@ -160,22 +161,23 @@ CREATE TABLE IF NOT EXISTS balance(
     updated_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), 
 
-    CONSTRAINT fk_id_user FOREIGN KEY (id_user) REFERENCES users(id_users),
-    CONSTRAINT cek_total_balance CHECK (total_balance >= 0)
+    CONSTRAINT fk_id_user FOREIGN KEY (id_user) REFERENCES users(id_users) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT cek_total_balance CHECK (total_balance >= 0) 
 );
 
 CREATE TABLE IF NOT EXISTS deposit (
     id_deposit UUID DEFAULT gen_random_uuid() PRIMARY KEY NOT NULL,
     id_user UUID NOT NULL,
     catalog_id UUID NOT NULL,
+    amount_sb INT,
     weight_dp BIGINT NOT NULL,
     dp_status status_tf DEFAULT 'processed',
     dp_notes TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ,  
 
-    CONSTRAINT fk_id_user_deposit FOREIGN KEY (id_user) REFERENCES users(id_users),
-    CONSTRAINT fk_catalog_id FOREIGN KEY (catalog_id) REFERENCES waste_catalog(id_waste)
+    CONSTRAINT fk_id_user_deposit FOREIGN KEY (id_user) REFERENCES users(id_users) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_catalog_id FOREIGN KEY (catalog_id) REFERENCES waste_catalog(id_waste) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS withdrawals (
@@ -186,7 +188,7 @@ CREATE TABLE IF NOT EXISTS withdrawals (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ,  
 
-    CONSTRAINT fk_id_user_wd FOREIGN KEY (id_user) REFERENCES users(id_users),
+    CONSTRAINT fk_id_user_wd FOREIGN KEY (id_user) REFERENCES users(id_users) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT cek_amount CHECK (amount > 0)    
 );
 
@@ -199,7 +201,7 @@ CREATE TABLE IF NOT EXISTS split_bills (
     processed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     processed_by UUID NOT NULL,
 
-    CONSTRAINT fk_processed_by_sb FOREIGN KEY (processed_by) REFERENCES users(id_users)
+    CONSTRAINT fk_processed_by_sb FOREIGN KEY (processed_by) REFERENCES users(id_users) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS sb_allocations (
@@ -209,8 +211,14 @@ CREATE TABLE IF NOT EXISTS sb_allocations (
     final_amount BIGINT NOT NULL,
     allocated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
-    CONSTRAINT fk_id_sb FOREIGN KEY (id_sb) REFERENCES split_bills(id_sb),
-    CONSTRAINT fk_id_user_sba FOREIGN KEY (id_user) REFERENCES users(id_users),
+    CONSTRAINT fk_id_sb FOREIGN KEY (id_sb) REFERENCES split_bills(id_sb) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_id_user_sba FOREIGN KEY (id_user) REFERENCES users(id_users) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT cek_final_amount CHECK (final_amount > 0)
 );
 
+CREATE TABLE IF NOT EXISTS jadwal_setor (
+    id_jadwal UUID DEFAULT gen_random_uuid() PRIMARY KEY NOT NULL,
+    setor_time TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ
+);
