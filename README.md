@@ -4,7 +4,7 @@
 
 ![Status](https://img.shields.io/badge/Status-In%20Development-orange)
 ![Platform](https://img.shields.io/badge/Platform-Android-green)
-![Target Release](https://img.shields.io/badge/Target%20Release-8%20September%202026-blue)
+![Target Release](https://img.shields.io/badge/Target%20Release-30%20September%202026-blue)
 
 Bastura adalah aplikasi mobile berbasis arsitektur *Client-Server* yang dirancang secara khusus untuk memanajemen operasional Bank Sampah dalam skala lingkup perumahan, khususnya untuk warga RT 54 Perumahan Karang Joang KM.11, Balikpapan Utara. Aplikasi ini hadir sebagai solusi digital untuk mengatasi permasalahan pengelolaan sampah melalui pendekatan transparansi nilai ekonomi sampah berbasis AI.
 
