@@ -89,9 +89,29 @@ pub async fn get_cached_education(
         let content_json = row.content.unwrap_or_else(|| "{}".to_string());
 
         let content: EducationContent =
-            serde_json::from_str(&content_json).unwrap_or_else(|_| EducationContent {
-                tags: Vec::new(),
-                text: String::new(),
+            serde_json::from_str(&content_json).unwrap_or_else(|_| {
+                if let Ok(value) = serde_json::from_str::<serde_json::Value>(&content_json) {
+                    let text = value.get("materi_konten")
+                        .and_then(|m| m.get("pembahasan_inti"))
+                        .and_then(|t| t.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                        
+                    let tags = value.get("kata_kunci")
+                        .and_then(|k| k.as_array())
+                        .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+                        .unwrap_or_else(Vec::new);
+
+                    EducationContent {
+                        tags,
+                        text,
+                    }
+                } else {
+                    EducationContent {
+                        tags: Vec::new(),
+                        text: String::new(),
+                    }
+                }
             });
 
         let mut image_base64 = None;

@@ -11,7 +11,7 @@ pub async fn sync_education_from_server(state: &AppState) -> Result<(), AppError
 
     let token = state.get_valid_token().await?;
     let client = create_http_client();
-    let url = format!("{}/education/education", API_BASE_URL);
+    let url = format!("{}/education", API_BASE_URL);
 
     let res = client
         .get(&url)
@@ -37,10 +37,7 @@ pub async fn sync_education_from_server(state: &AppState) -> Result<(), AppError
                                         let full_url = if img_url.starts_with("http") {
                                             img_url.clone()
                                         } else {
-                                            format!(
-                                                "{}/education/education/photo/{}",
-                                                API_BASE_URL, filename
-                                            )
+                                            format!("{}/education/photo/{}", API_BASE_URL, filename)
                                         };
 
                                         let _ = crate::utils::file_utils::download_and_save_image(
@@ -121,7 +118,7 @@ pub async fn fetch_education_service(
                             img_url.clone()
                         } else {
                             format!(
-                                "{}/education/education/photo/{}",
+                                "{}/education/photo/{}",
                                 crate::utils::constants::API_BASE_URL,
                                 filename
                             )

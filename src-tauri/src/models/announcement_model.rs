@@ -10,7 +10,7 @@ pub struct AnnouncementContent {
 #[derive(Debug, Deserialize)]
 pub struct AnnouncementData {
     pub title: String,
-    pub content: AnnouncementContent,
+    pub content: serde_json::Value,
     pub announcements_img: Option<String>,
     pub created_at: String,
 }

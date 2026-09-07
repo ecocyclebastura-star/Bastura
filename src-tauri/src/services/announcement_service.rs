@@ -11,7 +11,7 @@ pub async fn sync_announcements_from_server(state: &AppState) -> Result<(), AppE
 
     let token = state.get_valid_token().await?;
     let client = create_http_client();
-    let url = format!("{}/announcements/announcements", API_BASE_URL);
+    let url = format!("{}/announcements", API_BASE_URL);
 
     let res = client
         .get(&url)
@@ -38,7 +38,7 @@ pub async fn sync_announcements_from_server(state: &AppState) -> Result<(), AppE
                                             img_url.clone()
                                         } else {
                                             format!(
-                                                "{}/announcements/announcements/photo/{}",
+                                                "{}/announcements/photo/{}",
                                                 API_BASE_URL, filename
                                             )
                                         };
@@ -121,7 +121,7 @@ pub async fn fetch_announcements_service(
                             img_url.clone()
                         } else {
                             format!(
-                                "{}/announcements/announcements/photo/{}",
+                                "{}/announcements/photo/{}",
                                 crate::utils::constants::API_BASE_URL,
                                 filename
                             )

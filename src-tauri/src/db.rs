@@ -5,4 +5,5 @@ pub mod education_queries;
 pub mod profile_queries;
 pub mod sync_queries;
 pub mod transaction_queries;
+pub mod waste_queries;
 

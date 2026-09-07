@@ -94,10 +94,37 @@ pub async fn get_cached_announcements(
         let content_json = row.content.unwrap_or_else(|| "{}".to_string());
 
         let content: AnnouncementContent =
-            serde_json::from_str(&content_json).unwrap_or_else(|_| AnnouncementContent {
-                text: String::new(),
-                author: String::new(),
-                important: false,
+            serde_json::from_str(&content_json).unwrap_or_else(|_| {
+                if let Ok(value) = serde_json::from_str::<serde_json::Value>(&content_json) {
+                    let text = value.get("isi_konten")
+                        .and_then(|i| i.get("inti"))
+                        .and_then(|t| t.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                        
+                    let author = value.get("kontak_informasi")
+                        .and_then(|k| k.get("nama_divisi"))
+                        .and_then(|a| a.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                        
+                    let important = value.get("pengaturan_tampilan")
+                        .and_then(|p| p.get("tampilkan_penulis"))
+                        .and_then(|i| i.as_bool())
+                        .unwrap_or(false);
+
+                    AnnouncementContent {
+                        text,
+                        author,
+                        important,
+                    }
+                } else {
+                    AnnouncementContent {
+                        text: String::new(),
+                        author: String::new(),
+                        important: false,
+                    }
+                }
             });
 
         let mut image_base64 = None;

@@ -9,7 +9,7 @@ pub struct EducationContent {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct EducationData {
     pub title: String,
-    pub content: EducationContent,
+    pub content: serde_json::Value,
     pub education_img: Option<String>,
     pub created_at: String,
 }

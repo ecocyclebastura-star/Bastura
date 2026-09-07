@@ -154,6 +154,28 @@ pub async fn run_smart_sync_service(state: &AppState) -> Result<bool, AppError> 
         }
     }
 
+    // 7. Sync Waste Catalog (simba_up)
+    if let Some(server_simba_up) = &server_data.simba_up {
+        let local_simba_up = get_last_sync(&state.db, "catalog").await?;
+
+        let needs_sync = match local_simba_up {
+            Some(local_ts) => server_simba_up > &local_ts,
+            None => true,
+        };
+
+        if needs_sync {
+            tracing::info!("Terdapat pembaruan Katalog Sampah. Mulai sinkronisasi...");
+            if let Err(e) = crate::services::waste_service::sync_catalog_from_server(state).await {
+                tracing::error!("Sinkronisasi katalog sampah gagal: {}", e);
+            } else {
+                update_last_sync(&state.db, "catalog", server_simba_up).await?;
+                tracing::info!("Sinkronisasi Katalog Sampah selesai.");
+            }
+        } else {
+            tracing::debug!("Katalog Sampah sudah up-to-date.");
+        }
+    }
+
     // Cleanup unused images after sync finishes
     crate::utils::file_utils::cleanup_unused_images(&state.app_handle, &state.db).await;
 

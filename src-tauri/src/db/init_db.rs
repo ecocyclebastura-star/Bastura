@@ -69,6 +69,21 @@ pub async fn init_db(db_path: &Path) -> Result<SqlitePool, AppError> {
             .await;
     }
 
+    // Migrasi otomatis v4: waste_catalog_cache skema lama
+    let is_old_catalog_schema: bool = sqlx::query_scalar(
+        "SELECT COUNT(*) > 0 FROM pragma_table_info('waste_catalog_cache') WHERE name = 'id'",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap_or(false);
+
+    if is_old_catalog_schema {
+        tracing::info!("Mendeteksi skema lama pada waste_catalog_cache. Menghapus tabel...");
+        let _ = sqlx::query("DROP TABLE waste_catalog_cache")
+            .execute(&pool)
+            .await;
+    }
+
     if let Err(e) = sqlx::query(
         "
         /* =========================================
@@ -106,13 +121,14 @@ pub async fn init_db(db_path: &Path) -> Result<SqlitePool, AppError> {
 
         -- 3. Katalog Sampah
         CREATE TABLE IF NOT EXISTS waste_catalog_cache (
-            id TEXT PRIMARY KEY,
-            jenis TEXT NOT NULL,             
-            category TEXT NOT NULL,          
-            description TEXT,                
-            unit TEXT NOT NULL,              
-            price_per_unit INTEGER NOT NULL, 
-            avatar_url TEXT                  
+            id_waste TEXT PRIMARY KEY,
+            name TEXT,
+            category_id INTEGER,
+            unit TEXT,
+            price INTEGER,
+            description TEXT,
+            catalog_img TEXT,
+            image_base64 TEXT
         );
 
         -- 4. Pengumuman

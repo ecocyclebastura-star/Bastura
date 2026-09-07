@@ -126,6 +126,7 @@ pub fn run() {
             crate::controllers::transaction_controller::get_transaction_history_command,
             crate::controllers::transaction_controller::create_withdrawal_command,
             crate::controllers::transaction_controller::cancel_withdrawal_command,
+            crate::controllers::waste_controller::get_catalog_command,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

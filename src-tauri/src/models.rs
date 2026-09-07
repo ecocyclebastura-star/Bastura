@@ -4,4 +4,5 @@ pub mod education_model;
 pub mod profile_model;
 pub mod sync_model;
 pub mod transaction_model;
+pub mod waste_model;
 
