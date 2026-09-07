@@ -31,7 +31,7 @@ const EXPLORE_ITEMS: ExploreItem[] = [
 const EXPLORE_ROUTES: Record<string, string | undefined> = {
   pengumuman: "user-pengumuman",
   edukasi: "user-edukasi",
-  "jenis-sampah": undefined, // TODO: belum ada command & halamannya.
+  "jenis-sampah": "user-jenis-sampah",
 };
 
 onMounted(() => contentStore.loadHighlights());
