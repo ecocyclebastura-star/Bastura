@@ -1,18 +1,23 @@
 <script setup lang="ts">
-import { formatHargaPerKg } from "../../constants/wasteTypes";
+import { computed } from "vue";
+import { formatHargaSatuan } from "../../constants/wasteCatalog";
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
-    name: string;
-    /** Harga per kg dari data; null dipakai kalau harganya belum ada. */
-    pricePerKg?: number | null;
-    /** URL gambar. Kalau kosong dipakai placeholder abu-abu. */
+    name: string | null;
+    /** Harga per satuan dari backend; null kalau belum diisi. */
+    price?: number | null;
+    /** Satuan harga, mis. "kg". */
+    unit?: string | null;
+    /** Data URI gambar. Kalau kosong dipakai placeholder abu-abu. */
     image?: string;
   }>(),
-  { pricePerKg: null, image: "" },
+  { price: null, unit: null, image: "" },
 );
 
 defineEmits<{ open: [] }>();
+
+const displayName = computed(() => props.name?.trim() || "Tanpa nama");
 </script>
 
 <template>
@@ -25,11 +30,11 @@ defineEmits<{ open: [] }>();
     <img
       v-if="image"
       :src="image"
-      :alt="name"
+      :alt="displayName"
       loading="lazy"
       class="aspect-4/3 w-full object-cover"
     />
-    <!-- Placeholder selama gambar dari backend belum tersedia. -->
+    <!-- Placeholder buat item yang belum punya gambar di server. -->
     <div
       v-else
       class="aspect-4/3 w-full bg-linear-to-br from-neutral-200 to-neutral-300"
@@ -38,14 +43,14 @@ defineEmits<{ open: [] }>();
 
     <div class="flex flex-1 flex-col p-3">
       <h3 class="text-body-sm leading-tight font-bold text-neutral-900">
-        {{ name }}
+        {{ displayName }}
       </h3>
 
       <!-- mt-auto: harga selalu menempel di dasar kartu, jadi baris harga
            tetap sejajar walaupun nama barangnya beda-beda panjangnya. -->
       <p class="mt-auto pt-2 text-body-tiny text-neutral-400">Estimasi harga</p>
       <p class="text-right text-body-sm font-bold text-primary-600">
-        {{ formatHargaPerKg(pricePerKg) }}
+        {{ formatHargaSatuan(price, unit) }}
       </p>
     </div>
   </button>

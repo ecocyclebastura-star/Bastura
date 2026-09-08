@@ -1,15 +1,43 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import EmptyState from "../../components/EmptyState.vue";
 import PageHeader from "../../components/PageHeader.vue";
-import { findWasteType, formatHargaPerKg } from "../../constants/wasteTypes";
+import { resolveAuthError } from "../../constants/authErrors";
+import {
+  formatHargaSatuan,
+  resolveWasteCategory,
+} from "../../constants/wasteCatalog";
+import { useWasteStore } from "../../stores/wasteStore";
+import type { CatalogItem } from "../../stores/wasteStore";
 
 const route = useRoute();
+const wasteStore = useWasteStore();
 
-// Datanya masih konstanta di frontend, jadi tidak ada state loading/error:
-// hasilnya langsung ada begitu route-nya dibuka.
-const wasteType = computed(() => findWasteType(String(route.params.id)));
+const item = ref<CatalogItem | null>(null);
+const loading = ref(true);
+const errorMessage = ref("");
+
+const displayName = computed(() => item.value?.name?.trim() || "Tanpa nama");
+const image = computed(() => item.value?.image_base64 ?? "");
+
+async function load() {
+  loading.value = true;
+  errorMessage.value = "";
+
+  try {
+    item.value = await wasteStore.findCatalogItem(String(route.params.id));
+  } catch (error) {
+    errorMessage.value = resolveAuthError(
+      error,
+      "Gagal memuat detail jenis sampah. Coba lagi sebentar lagi.",
+    );
+  } finally {
+    loading.value = false;
+  }
+}
+
+onMounted(load);
 </script>
 
 <template>
@@ -21,20 +49,42 @@ const wasteType = computed(() => findWasteType(String(route.params.id)));
   >
     <PageHeader title="Detail" fallback="user-jenis-sampah" />
 
+    <div v-if="loading" class="flex flex-col gap-3 pt-2" aria-hidden="true">
+      <div class="aspect-16/9 w-full animate-pulse rounded-2xl bg-neutral-200" />
+      <div class="h-7 w-2/3 animate-pulse rounded-lg bg-neutral-200" />
+      <div class="h-5 w-24 animate-pulse rounded-lg bg-neutral-200" />
+      <div class="mt-2 h-20 w-full animate-pulse rounded-lg bg-neutral-200" />
+    </div>
+
+    <div
+      v-else-if="errorMessage"
+      class="mt-2 rounded-2xl border border-red-200 bg-red-50 p-4"
+      role="alert"
+    >
+      <p class="text-body-sm text-red-700">{{ errorMessage }}</p>
+      <button
+        type="button"
+        class="mt-3 cursor-pointer rounded-full bg-red-600 px-4 py-2 text-body-sm font-bold text-white transition-colors duration-200 hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+        @click="load"
+      >
+        Coba Lagi
+      </button>
+    </div>
+
     <EmptyState
-      v-if="!wasteType"
+      v-else-if="!item"
       title="Jenis sampah tidak ditemukan"
-      message="Mungkin sudah dihapus atau namanya sudah diganti."
+      message="Mungkin sudah dihapus atau belum tersimpan di perangkat ini."
     />
 
     <template v-else>
       <img
-        v-if="wasteType.image_base64 || wasteType.image_url"
-        :src="wasteType.image_base64 ?? wasteType.image_url ?? ''"
-        :alt="wasteType.name"
+        v-if="image"
+        :src="image"
+        :alt="displayName"
         class="mt-4 aspect-16/9 w-full rounded-2xl object-cover"
       />
-      <!-- Placeholder selama gambar dari backend belum tersedia. -->
+      <!-- Placeholder buat item yang belum punya gambar di server. -->
       <div
         v-else
         class="mt-4 aspect-16/9 w-full rounded-2xl bg-linear-to-br from-neutral-200 to-neutral-300"
@@ -42,17 +92,19 @@ const wasteType = computed(() => findWasteType(String(route.params.id)));
       />
 
       <h1 class="mt-4 text-h5 leading-tight font-extrabold text-neutral-900">
-        {{ wasteType.name }}
+        {{ displayName }}
       </h1>
-      <p class="text-body-reg text-neutral-500">{{ wasteType.category }}</p>
+      <p class="text-body-reg text-neutral-500">
+        {{ resolveWasteCategory(item.category_id) }}
+      </p>
 
       <h2 class="mt-4 text-body-reg font-bold text-neutral-900">Deskripsi</h2>
 
       <p
-        v-if="wasteType.description"
+        v-if="item.description"
         class="mt-1 text-body-sm whitespace-pre-line text-neutral-700"
       >
-        {{ wasteType.description }}
+        {{ item.description }}
       </p>
       <p v-else class="mt-1 text-body-sm text-neutral-400">
         Deskripsi untuk jenis sampah ini belum tersedia.
@@ -66,7 +118,7 @@ const wasteType = computed(() => findWasteType(String(route.params.id)));
         <div class="flex items-center justify-between gap-3">
           <p class="text-body-reg text-neutral-500">Estimasi harga</p>
           <p class="text-h5 font-extrabold text-neutral-900">
-            {{ formatHargaPerKg(wasteType.price_per_kg) }}
+            {{ formatHargaSatuan(item.price, item.unit) }}
           </p>
         </div>
       </div>

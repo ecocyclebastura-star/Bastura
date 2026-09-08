@@ -6,36 +6,35 @@ import FilterChips from "../../components/FilterChips.vue";
 import WasteTypeCard from "../../components/cards/WasteTypeCard.vue";
 import {
   ALL_WASTE_CATEGORIES,
-  WASTE_CATEGORIES,
-  WASTE_TYPES,
-} from "../../constants/wasteTypes";
+  WASTE_CATEGORY_CHIPS,
+} from "../../constants/wasteCatalog";
+import { useSearchableList } from "../../composables/useSearchableList";
+import { useWasteStore } from "../../stores/wasteStore";
+import type { CatalogItem } from "../../stores/wasteStore";
 
 const router = useRouter();
+const wasteStore = useWasteStore();
+
+// Kata kuncinya sudah di-debounce di dalam useSearchableList, jadi mengetik
+// cepat tetap cuma menghasilkan satu panggilan get_catalog_command.
+const { searchTerm, items, loading, errorMessage, submit, clearSearch, reload } =
+  useSearchableList<CatalogItem>(
+    (search) => wasteStore.listCatalog({ search }),
+    { fallbackError: "Gagal memuat katalog sampah. Coba lagi sebentar lagi." },
+  );
 
 /**
- * Datanya masih dari constants/wasteTypes.ts, jadi pencarian & filternya
- * dikerjakan di sini tanpa debounce -- tidak ada command yang perlu direm.
- * Kalau nanti sudah ada command-nya, halaman ini tinggal ikut pola
- * pengumumanView: useSearchableList buat kata kunci, chip tetap di frontend.
+ * Command-nya sebenarnya bisa menyaring `category_id` sendiri, tapi filternya
+ * tetap dikerjakan di frontend seperti halaman pengumuman: tiap panggilan ikut
+ * memicu smart sync di backend, padahal datanya sudah ada di tangan.
  */
-const searchTerm = ref("");
 const activeCategory = ref<string>(ALL_WASTE_CATEGORIES);
 
 const visibleItems = computed(() => {
-  const keyword = searchTerm.value.trim().toLowerCase();
-
-  return WASTE_TYPES.filter((item) => {
-    const cocokKategori =
-      activeCategory.value === ALL_WASTE_CATEGORIES ||
-      item.category === activeCategory.value;
-
-    const cocokKata =
-      !keyword ||
-      item.name.toLowerCase().includes(keyword) ||
-      item.category.toLowerCase().includes(keyword);
-
-    return cocokKategori && cocokKata;
-  });
+  if (activeCategory.value === ALL_WASTE_CATEGORIES) return items.value;
+  return items.value.filter(
+    (item) => String(item.category_id ?? "") === activeCategory.value,
+  );
 });
 
 const isFiltered = computed(
@@ -55,6 +54,8 @@ function openDetail(id: string) {
     title="Jenis Sampah"
     search-placeholder="Besi, Botol..."
     search-label="Cari jenis sampah"
+    :loading="loading"
+    :error-message="errorMessage"
     :empty="visibleItems.length === 0"
     :filtered="isFiltered"
     empty-title="Belum ada jenis sampah"
@@ -62,18 +63,22 @@ function openDetail(id: string) {
     empty-filtered-title="Jenis sampah tidak ditemukan"
     empty-filtered-message="Coba ubah kata kunci atau pilih kategori lain."
     list-class="grid grid-cols-2 items-stretch gap-3"
+    @submit="submit"
+    @clear="clearSearch"
+    @retry="reload"
   >
     <template #filters>
-      <FilterChips v-model="activeCategory" :chips="WASTE_CATEGORIES" />
+      <FilterChips v-model="activeCategory" :chips="WASTE_CATEGORY_CHIPS" />
     </template>
 
     <WasteTypeCard
       v-for="item in visibleItems"
-      :key="item.id"
+      :key="item.id_waste"
       :name="item.name"
-      :price-per-kg="item.price_per_kg"
-      :image="item.image_base64 ?? item.image_url ?? ''"
-      @open="openDetail(item.id)"
+      :price="item.price"
+      :unit="item.unit"
+      :image="item.image_base64 ?? ''"
+      @open="openDetail(item.id_waste)"
     />
   </ContentListPage>
 </template>
