@@ -5,6 +5,7 @@ pub struct WasteCatalogData {
     pub id_waste: String,
     pub name: String,
     pub category_id: i64,
+    pub category_name: Option<String>,
     pub unit: String,
     pub price: String, // from JSON string
     pub description: Option<String>,
@@ -27,11 +28,11 @@ pub struct WasteCatalogDataWrapper {
 pub struct CatalogItemLocal {
     pub id_waste: String,
     pub name: Option<String>,
-    pub category_id: i64,
+    pub category_id: Option<i64>,
     pub category_name: Option<String>,
-    pub unit: String,
-    pub price: String,
-    pub description: String,
-    pub catalog_img: String,
+    pub unit: Option<String>,
+    pub price: Option<i64>,
+    pub description: Option<String>,
+    pub catalog_img: Option<String>,
     pub image_base64: Option<String>,
 }

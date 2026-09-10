@@ -126,7 +126,7 @@ pub async fn init_db(db_path: &Path) -> Result<SqlitePool, AppError> {
             category_id INTEGER,
             category_name TEXT,
             unit TEXT,
-            price TEXT,
+            price INTEGER,
             description TEXT,
             catalog_img TEXT,
             image_base64 TEXT
