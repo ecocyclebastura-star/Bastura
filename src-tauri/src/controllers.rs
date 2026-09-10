@@ -4,4 +4,4 @@ pub mod education_controller;
 pub mod profile_controller;
 pub mod transaction_controller;
 pub mod waste_controller;
-
+pub mod schedule_controller;

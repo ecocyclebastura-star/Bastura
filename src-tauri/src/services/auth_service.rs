@@ -389,7 +389,7 @@ pub async fn logout_session_service(state: &AppState) -> Result<bool, AppError> 
     Ok(true)
 }
 
-fn decode_jwt_role(token: &str) -> String {
+pub fn decode_jwt_role(token: &str) -> String {
     use base64::Engine as _;
     let parts: Vec<&str> = token.split('.').collect();
     if parts.len() == 3 {

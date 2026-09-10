@@ -6,3 +6,4 @@ pub mod profile_service;
 pub mod sync_service;
 pub mod transaction_service;
 pub mod waste_service;
+pub mod schedule_service;

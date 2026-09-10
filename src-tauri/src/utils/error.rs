@@ -27,6 +27,9 @@ pub enum AppError {
     #[error("Sesi telah kedaluwarsa")]
     Unauthorized,
 
+    #[error("{0}")]
+    Forbidden(String),
+
     #[error("Token tidak ditemukan")]
     MissingToken,
 
@@ -79,6 +82,11 @@ impl Serialize for AppError {
                 "UNAUTHORIZED".to_string(),
                 "Sesi telah kedaluwarsa".to_string(),
                 401,
+            ),
+            AppError::Forbidden(msg) => (
+                "FORBIDDEN".to_string(),
+                msg.clone(),
+                403,
             ),
             AppError::MissingToken => (
                 "UNAUTHORIZED".to_string(),

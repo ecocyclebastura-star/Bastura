@@ -127,6 +127,8 @@ pub fn run() {
             crate::controllers::transaction_controller::create_withdrawal_command,
             crate::controllers::transaction_controller::cancel_withdrawal_command,
             crate::controllers::waste_controller::get_catalog_command,
+            crate::controllers::schedule_controller::get_jadwal_command,
+            crate::controllers::schedule_controller::insert_jadwal_command,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
