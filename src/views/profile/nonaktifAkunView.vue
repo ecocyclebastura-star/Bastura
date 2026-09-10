@@ -4,12 +4,14 @@ import { useRouter } from "vue-router";
 import BaseButton from "../../components/BaseButton.vue";
 import BaseDialog from "../../components/BaseDialog.vue";
 import PageHeader from "../../components/PageHeader.vue";
+import { useSectionRoutes } from "../../composables/useSectionRoutes";
 import { useAuthStore } from "../../stores/authStore";
 import { useProfileStore } from "../../stores/profileStore";
 
 const router = useRouter();
 const authStore = useAuthStore();
 const profileStore = useProfileStore();
+const { routeName } = useSectionRoutes();
 
 type Dialog = "none" | "confirm" | "success" | "error";
 
@@ -55,7 +57,7 @@ function finish() {
 
 <template>
   <main class="mx-auto flex w-full max-w-sm flex-col px-6 pt-safe">
-    <PageHeader title="Nonaktifkan Akun" fallback="user-profil" />
+    <PageHeader title="Nonaktifkan Akun" :fallback="routeName('profil')" />
 
     <section class="mt-8">
       <h2 class="text-body-md font-extrabold text-neutral-900">

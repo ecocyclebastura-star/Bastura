@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import PageHeader from "../../components/PageHeader.vue";
+import { useSectionRoutes } from "../../composables/useSectionRoutes";
 import { FAQ_ITEMS } from "../../constants/helpCenter";
+
+const { routeName } = useSectionRoutes();
 
 /**
  * Akordeon satu-terbuka: membuka pertanyaan lain menutup yang sebelumnya,
@@ -16,7 +19,7 @@ function toggle(index: number) {
 
 <template>
   <main class="mx-auto flex w-full max-w-sm flex-col px-6 pt-safe">
-    <PageHeader fallback="user-pusat-bantuan" />
+    <PageHeader :fallback="routeName('pusat-bantuan')" />
 
     <h1 class="mt-2 text-h4 font-extrabold text-neutral-900">FAQ</h1>
     <p class="mt-1 text-body-reg font-bold text-neutral-900">

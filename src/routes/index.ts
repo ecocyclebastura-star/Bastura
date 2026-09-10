@@ -15,6 +15,60 @@ declare module "vue-router" {
   }
 }
 
+/**
+ * Cabang halaman profil, dipasang di bawah /user maupun /admin.
+ *
+ * Komponennya satu set yang sama (views/profile) karena desainnya memang
+ * identik untuk kedua role. Yang dibedakan cuma awalan nama route, supaya
+ * tiap role tetap berada di dalam shell dan bottom navigation-nya sendiri.
+ * Awalan itu juga yang dibaca halamannya lewat `useSectionRoutes` waktu
+ * menentukan tujuan menu.
+ */
+function profileRoutes(prefix: "user" | "admin"): RouteRecordRaw[] {
+  return [
+    {
+      path: "profil",
+      name: `${prefix}-profil`,
+      component: () => import("../views/profile/profilView.vue"),
+    },
+    {
+      path: "profil/edit",
+      name: `${prefix}-edit-profil`,
+      component: () => import("../views/profile/editProfilView.vue"),
+    },
+    {
+      path: "profil/ganti-password",
+      name: `${prefix}-ganti-password`,
+      component: () => import("../views/profile/gantiPasswordView.vue"),
+    },
+    {
+      path: "profil/nonaktif-akun",
+      name: `${prefix}-nonaktif-akun`,
+      component: () => import("../views/profile/nonaktifAkunView.vue"),
+    },
+    {
+      path: "profil/bantuan",
+      name: `${prefix}-pusat-bantuan`,
+      component: () => import("../views/profile/pusatBantuanView.vue"),
+    },
+    {
+      path: "profil/bantuan/faq",
+      name: `${prefix}-faq`,
+      component: () => import("../views/profile/faqView.vue"),
+    },
+    {
+      path: "profil/bantuan/tentang",
+      name: `${prefix}-tentang`,
+      component: () => import("../views/profile/tentangBasturaView.vue"),
+    },
+    {
+      path: "profil/bantuan/hubungi",
+      name: `${prefix}-hubungi-kami`,
+      component: () => import("../views/profile/hubungiKamiView.vue"),
+    },
+  ];
+}
+
 const routes: RouteRecordRaw[] = [
   {
     path: "/",
@@ -27,31 +81,31 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/onboarding",
     name: "onboarding",
-    component: () => import("../views/onboardingView.vue"),
+    component: () => import("../views/auth/onboardingView.vue"),
     meta: { guestOnly: true },
   },
   {
     path: "/login",
     name: "login",
-    component: () => import("../views/loginView.vue"),
+    component: () => import("../views/auth/loginView.vue"),
     meta: { guestOnly: true },
   },
   {
     path: "/register",
     name: "register",
-    component: () => import("../views/signUpView.vue"),
+    component: () => import("../views/auth/signUpView.vue"),
     meta: { guestOnly: true },
   },
   {
     path: "/forgot-password",
     name: "forgot-password",
-    component: () => import("../views/forgotPasswordView.vue"),
+    component: () => import("../views/auth/forgotPasswordView.vue"),
     meta: { guestOnly: true },
   },
   {
     path: "/reset-password",
     name: "reset-password",
-    component: () => import("../views/resetPasswordView.vue"),
+    component: () => import("../views/auth/resetPasswordView.vue"),
     meta: { guestOnly: true },
     // Tanpa email tujuan OTP halaman ini tidak ada artinya.
     beforeEnter: (to) => (to.query.email ? true : { name: "forgot-password" }),
@@ -117,53 +171,37 @@ const routes: RouteRecordRaw[] = [
         name: "user-riwayat-detail",
         component: () => import("../views/user/detailTransaksiView.vue"),
       },
-      {
-        path: "profil",
-        name: "user-profil",
-        component: () => import("../views/user/profilView.vue"),
-      },
-      {
-        path: "profil/edit",
-        name: "user-edit-profil",
-        component: () => import("../views/user/editProfilView.vue"),
-      },
-      {
-        path: "profil/ganti-password",
-        name: "user-ganti-password",
-        component: () => import("../views/user/gantiPasswordView.vue"),
-      },
-      {
-        path: "profil/nonaktif-akun",
-        name: "user-nonaktif-akun",
-        component: () => import("../views/user/nonaktifAkunView.vue"),
-      },
-      {
-        path: "profil/bantuan",
-        name: "user-pusat-bantuan",
-        component: () => import("../views/user/pusatBantuanView.vue"),
-      },
-      {
-        path: "profil/bantuan/faq",
-        name: "user-faq",
-        component: () => import("../views/user/faqView.vue"),
-      },
-      {
-        path: "profil/bantuan/tentang",
-        name: "user-tentang",
-        component: () => import("../views/user/tentangBasturaView.vue"),
-      },
-      {
-        path: "profil/bantuan/hubungi",
-        name: "user-hubungi-kami",
-        component: () => import("../views/user/hubungiKamiView.vue"),
-      },
+      ...profileRoutes("user"),
     ],
   },
   {
+    // Shell role admin: sama polanya dengan /user, cuma bottom nav-nya beda.
     path: "/admin",
-    name: "dashboard-admin",
-    component: () => import("../views/admin/dashboardAdmin.vue"),
+    component: () => import("../layouts/AdminLayout.vue"),
     meta: { requiresAuth: true, roles: ADMIN_ROLES },
+    children: [
+      {
+        path: "",
+        name: "dashboard-admin",
+        component: () => import("../views/admin/dashboardAdmin.vue"),
+      },
+      {
+        path: "warga",
+        name: "admin-warga",
+        component: () => import("../views/admin/wargaView.vue"),
+      },
+      {
+        path: "setoran",
+        name: "admin-setoran",
+        component: () => import("../views/admin/setoranView.vue"),
+      },
+      {
+        path: "riwayat",
+        name: "admin-riwayat",
+        component: () => import("../views/admin/riwayatAdminView.vue"),
+      },
+      ...profileRoutes("admin"),
+    ],
   },
 ];
 

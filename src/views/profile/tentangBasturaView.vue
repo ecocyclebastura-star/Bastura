@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import PageHeader from "../../components/PageHeader.vue";
+import { useSectionRoutes } from "../../composables/useSectionRoutes";
 import {
   ABOUT_FEATURES,
   ABOUT_INTRO,
   ABOUT_OUTRO,
 } from "../../constants/helpCenter";
+
+const { routeName } = useSectionRoutes();
 </script>
 
 <template>
   <main class="mx-auto flex w-full max-w-sm flex-col px-6 pt-safe">
-    <PageHeader fallback="user-pusat-bantuan" />
+    <PageHeader :fallback="routeName('pusat-bantuan')" />
 
     <article class="pb-8">
       <h1 class="mt-2 text-h4 font-extrabold text-neutral-900">

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
-import BaseButton from "../components/BaseButton.vue";
-import { useOnboardingStore } from "../stores/onboardingStore";
-import ilustrasiKelolaSampah from "../assets/onboarding-kelola-sampah.webp";
-import ilustrasiTabungan from "../assets/onboarding-tabungan.webp";
-import ilustrasiLingkungan from "../assets/onboarding-lingkungan.webp";
+import BaseButton from "../../components/BaseButton.vue";
+import { useOnboardingStore } from "../../stores/onboardingStore";
+import ilustrasiKelolaSampah from "../../assets/onboarding-kelola-sampah.webp";
+import ilustrasiTabungan from "../../assets/onboarding-tabungan.webp";
+import ilustrasiLingkungan from "../../assets/onboarding-lingkungan.webp";
 
 const router = useRouter();
 const onboardingStore = useOnboardingStore();

@@ -4,12 +4,14 @@ import AlertToast from "../../components/AlertToast.vue";
 import BaseButton from "../../components/BaseButton.vue";
 import BaseInput from "../../components/BaseInput.vue";
 import PageHeader from "../../components/PageHeader.vue";
+import { useSectionRoutes } from "../../composables/useSectionRoutes";
 import { resolveAuthError } from "../../constants/authErrors";
 import { useToast } from "../../composables/useToast";
 import { useAuthStore } from "../../stores/authStore";
 import { PASSWORD_HINT, PASSWORD_RE } from "../../utils/validators";
 
 const authStore = useAuthStore();
+const { routeName } = useSectionRoutes();
 const { toastMessage, toastVariant, showToast } = useToast();
 
 const currentPassword = ref("");
@@ -83,14 +85,14 @@ async function handleSave() {
   <main class="mx-auto flex w-full max-w-sm flex-col px-6 pt-safe">
     <AlertToast :message="toastMessage" :variant="toastVariant" />
 
-    <PageHeader title="Ganti Password" fallback="user-profil" />
+    <PageHeader title="Ganti Password" :fallback="routeName('profil')" />
 
     <form class="mt-8 flex flex-col gap-5" @submit.prevent="handleSave">
       <BaseInput
         v-model="currentPassword"
         variant="line"
         type="password"
-        icon="none"
+        icon="password"
         label="Password sebelumnya"
         placeholder="Masukkan password saat ini"
         autocomplete="current-password"
@@ -101,7 +103,7 @@ async function handleSave() {
         v-model="newPassword"
         variant="line"
         type="password"
-        icon="none"
+        icon="password"
         label="Password baru"
         placeholder="Masukkan password baru"
         autocomplete="new-password"
@@ -112,7 +114,7 @@ async function handleSave() {
         v-model="confirmPassword"
         variant="line"
         type="password"
-        icon="none"
+        icon="password"
         label="Konfirmasi Password baru"
         placeholder="Masukkan kembali password baru"
         autocomplete="new-password"

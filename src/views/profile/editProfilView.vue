@@ -9,6 +9,7 @@ import BaseButton from "../../components/BaseButton.vue";
 import BaseInput from "../../components/BaseInput.vue";
 import PageHeader from "../../components/PageHeader.vue";
 import { resolveAuthError } from "../../constants/authErrors";
+import { useSectionRoutes } from "../../composables/useSectionRoutes";
 import { useToast } from "../../composables/useToast";
 import { useProfileStore } from "../../stores/profileStore";
 import {
@@ -21,6 +22,7 @@ import {
 } from "../../utils/validators";
 
 const profileStore = useProfileStore();
+const { routeName } = useSectionRoutes();
 const { toastMessage, toastVariant, showToast } = useToast();
 
 const name = ref("");
@@ -168,7 +170,7 @@ onBeforeRouteLeave(() => {
   <main class="mx-auto flex w-full max-w-sm flex-col px-6 pt-safe">
     <AlertToast :message="toastMessage" :variant="toastVariant" />
 
-    <PageHeader title="Edit Profil" fallback="user-profil" />
+    <PageHeader title="Edit Profil" :fallback="routeName('profil')" />
 
     <section class="mt-6 flex flex-col items-center">
       <AvatarPhoto :src="avatarSrc" alt="Foto profil" class="size-30" />

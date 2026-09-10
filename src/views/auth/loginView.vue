@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import AuthLayout from "../layouts/AuthLayout.vue";
-import AlertToast from "../components/AlertToast.vue";
-import BaseInput from "../components/BaseInput.vue";
-import BaseButton from "../components/BaseButton.vue";
-import { useToast } from "../composables/useToast";
-import { resolveAuthError } from "../constants/authErrors";
-import { homeRouteName } from "../constants/roleRoutes";
-import { useAuthStore } from "../stores/authStore";
-import { EMAIL_HINT, EMAIL_RE } from "../utils/validators";
-import logoBastura from "../assets/Property 1=Logo Large.svg";
+import AuthLayout from "../../layouts/AuthLayout.vue";
+import AlertToast from "../../components/AlertToast.vue";
+import BaseInput from "../../components/BaseInput.vue";
+import BaseButton from "../../components/BaseButton.vue";
+import { useToast } from "../../composables/useToast";
+import { resolveAuthError } from "../../constants/authErrors";
+import { homeRouteName } from "../../constants/roleRoutes";
+import { useAuthStore } from "../../stores/authStore";
+import { EMAIL_HINT, EMAIL_RE } from "../../utils/validators";
+import logoBastura from "../../assets/Property 1=Logo Large.svg";
 
 const route = useRoute();
 const router = useRouter();

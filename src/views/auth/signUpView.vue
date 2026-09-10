@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from "vue";
 import { useRouter } from "vue-router";
-import AuthLayout from "../layouts/AuthLayout.vue";
-import AlertToast from "../components/AlertToast.vue";
-import BaseInput from "../components/BaseInput.vue";
-import BaseButton from "../components/BaseButton.vue";
-import { useToast } from "../composables/useToast";
-import { resolveAuthError, toAppError } from "../constants/authErrors";
-import { homeRouteName } from "../constants/roleRoutes";
-import { useAuthStore } from "../stores/authStore";
+import AuthLayout from "../../layouts/AuthLayout.vue";
+import AlertToast from "../../components/AlertToast.vue";
+import BaseInput from "../../components/BaseInput.vue";
+import BaseButton from "../../components/BaseButton.vue";
+import { useToast } from "../../composables/useToast";
+import { resolveAuthError, toAppError } from "../../constants/authErrors";
+import { homeRouteName } from "../../constants/roleRoutes";
+import { useAuthStore } from "../../stores/authStore";
 import {
   DIGITS_RE,
   EMAIL_HINT,
@@ -16,7 +16,7 @@ import {
   NAME_RE,
   PASSWORD_HINT,
   PASSWORD_RE,
-} from "../utils/validators";
+} from "../../utils/validators";
 
 const router = useRouter();
 const authStore = useAuthStore();

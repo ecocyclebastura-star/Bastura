@@ -14,6 +14,16 @@ const ROLE_HOME_ROUTE: Record<string, string> = {
 /** Role yang boleh membuka halaman admin. */
 export const ADMIN_ROLES = ["admin", "super admin"];
 
+export const SUPER_ADMIN_ROLE = "super admin";
+
+/**
+ * Super admin dapat menu tambahan yang tidak dipegang admin biasa, mis.
+ * pengaturan komisi setoran di dashboard.
+ */
+export function isSuperAdmin(role: string): boolean {
+  return role.trim().toLowerCase() === SUPER_ADMIN_ROLE;
+}
+
 export function homeRouteName(role: string): string {
   return ROLE_HOME_ROUTE[role.trim().toLowerCase()] ?? "dashboard-user";
 }

@@ -22,6 +22,12 @@ import trashIcon from "../assets/icon-trash.svg?raw";
 import infoIcon from "../assets/icon-info.svg?raw";
 import phoneIcon from "../assets/icon-phone.svg?raw";
 import mailIcon from "../assets/icon-mail.svg?raw";
+import personSearchIcon from "../assets/icon-person-search.svg?raw";
+import truckIcon from "../assets/icon-truck.svg?raw";
+import calendarIcon from "../assets/icon-calendar.svg?raw";
+import clockIcon from "../assets/icon-clock.svg?raw";
+import documentIcon from "../assets/icon-document.svg?raw";
+import handCoinIcon from "../assets/icon-hand-coin.svg?raw";
 
 export const APP_ICONS = {
   home: homeIcon,
@@ -40,6 +46,12 @@ export const APP_ICONS = {
   info: infoIcon,
   phone: phoneIcon,
   mail: mailIcon,
+  personSearch: personSearchIcon,
+  truck: truckIcon,
+  calendar: calendarIcon,
+  clock: clockIcon,
+  document: documentIcon,
+  handCoin: handCoinIcon,
 } as const;
 
 export type IconName = keyof typeof APP_ICONS;

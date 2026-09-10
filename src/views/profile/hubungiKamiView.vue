@@ -3,9 +3,11 @@ import { computed, onMounted } from "vue";
 import AppIcon from "../../components/AppIcon.vue";
 import BaseButton from "../../components/BaseButton.vue";
 import PageHeader from "../../components/PageHeader.vue";
+import { useSectionRoutes } from "../../composables/useSectionRoutes";
 import { useProfileStore } from "../../stores/profileStore";
 
 const profileStore = useProfileStore();
+const { routeName } = useSectionRoutes();
 
 onMounted(() => profileStore.loadAdminContact());
 
@@ -46,7 +48,7 @@ async function open(url: string) {
 
 <template>
   <main class="mx-auto flex w-full max-w-sm flex-col px-6 pt-safe">
-    <PageHeader fallback="user-pusat-bantuan" />
+    <PageHeader :fallback="routeName('pusat-bantuan')" />
 
     <h1 class="mt-2 text-h4 font-extrabold text-neutral-900">Hubungi kami</h1>
 

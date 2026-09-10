@@ -6,19 +6,25 @@ import BaseButton from "../../components/BaseButton.vue";
 import MenuCard from "../../components/MenuCard.vue";
 import PageHeader from "../../components/PageHeader.vue";
 import type { MenuItem } from "../../components/MenuCard.vue";
+import { useSectionRoutes } from "../../composables/useSectionRoutes";
 import { useAuthStore } from "../../stores/authStore";
 import { useProfileStore } from "../../stores/profileStore";
 
 const router = useRouter();
 const authStore = useAuthStore();
 const profileStore = useProfileStore();
+const { routeName } = useSectionRoutes();
 
-/** Rute tujuan tiap menu. Yang belum ada halamannya dibiarkan kosong. */
+/**
+ * Rute tujuan tiap menu, ditulis tanpa awalan role: halaman ini dipakai warga
+ * dan admin, jadi awalannya menyusul dari `routeName`. Menu yang belum ada
+ * halamannya dibiarkan kosong.
+ */
 const MENU_ROUTES: Record<string, string | undefined> = {
-  "edit-profil": "user-edit-profil",
-  "ganti-password": "user-ganti-password",
-  "pusat-bantuan": "user-pusat-bantuan",
-  "hapus-akun": "user-nonaktif-akun",
+  "edit-profil": "edit-profil",
+  "ganti-password": "ganti-password",
+  "pusat-bantuan": "pusat-bantuan",
+  "hapus-akun": "nonaktif-akun",
 };
 
 // Profil dipakai buat nama, email, dan foto. Kalau gagal dimuat (offline dan
@@ -58,8 +64,8 @@ onMounted(async () => {
 const currentYear = computed(() => new Date().getFullYear());
 
 function handleMenu(key: string) {
-  const name = MENU_ROUTES[key];
-  if (name) router.push({ name });
+  const suffix = MENU_ROUTES[key];
+  if (suffix) router.push({ name: routeName(suffix) });
 }
 
 async function handleLogout() {
@@ -79,7 +85,7 @@ async function handleLogout() {
   <main
     class="mx-auto flex min-h-[calc(100vh-7rem)] w-full max-w-sm flex-col px-6 pt-safe"
   >
-    <PageHeader title="Profil" fallback="user-profil" />
+    <PageHeader title="Profil" :fallback="routeName('profil')" />
 
     <!-- Identitas -->
     <section class="mt-8 flex flex-col items-center">

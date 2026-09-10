@@ -91,3 +91,32 @@ export function formatJamWita(value: string | null | undefined): string {
 
   return `${jam.length === 5 ? `${jam}:00` : jam} WITA`;
 }
+
+const TANGGAL_LENGKAP_FORMATTER = new Intl.DateTimeFormat("id-ID", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+});
+
+/**
+ * Tanggal berikut nama harinya, mis. "Selasa, 28 Juli 2026".
+ *
+ * Dipakai di kartu jadwal setor, yang isinya "yyyy-mm-dd" dari
+ * <input type="date"> -- bukan timestamp server. String itu kalau dilempar
+ * ke `new Date()` dibaca sebagai UTC, jadi di zona kita bisa mundur sehari;
+ * karena itu bagiannya dipecah sendiri dan disusun sebagai tanggal lokal.
+ */
+export function formatTanggalLengkap(value: string | null | undefined): string {
+  const raw = value?.trim();
+  if (!raw) return "";
+
+  const parts = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const parsed = parts
+    ? new Date(Number(parts[1]), Number(parts[2]) - 1, Number(parts[3]))
+    : new Date(raw);
+
+  if (Number.isNaN(parsed.getTime())) return raw;
+
+  return TANGGAL_LENGKAP_FORMATTER.format(parsed);
+}
