@@ -12,12 +12,13 @@ pub async fn upsert_catalog_item(
     sqlx::query(
         r#"
         INSERT INTO waste_catalog_cache (
-            id_waste, name, category_id, unit, price, description, catalog_img, image_base64
+            id_waste, name, category_id, category_name, unit, price, description, catalog_img, image_base64
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id_waste) DO UPDATE SET
             name = excluded.name,
             category_id = excluded.category_id,
+            category_name = excluded.category_name,
             unit = excluded.unit,
             price = excluded.price,
             description = excluded.description,
@@ -28,6 +29,7 @@ pub async fn upsert_catalog_item(
     .bind(&item.id_waste)
     .bind(&item.name)
     .bind(item.category_id)
+    .bind(&item.category_name)
     .bind(&item.unit)
     .bind(price)
     .bind(&item.description)
@@ -45,7 +47,7 @@ pub async fn get_cached_catalog(
     category_id: Option<i64>,
 ) -> Result<Vec<CatalogItemLocal>, AppError> {
     let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(
-        "SELECT id_waste, name, category_id, unit, price, description, catalog_img, image_base64 FROM waste_catalog_cache WHERE 1=1"
+        "SELECT id_waste, name, category_id, category_name, unit, price, description, catalog_img, image_base64 FROM waste_catalog_cache WHERE 1=1"
     );
 
     if let Some(s) = search_query {

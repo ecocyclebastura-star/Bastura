@@ -122,10 +122,11 @@ pub async fn init_db(db_path: &Path) -> Result<SqlitePool, AppError> {
         -- 3. Katalog Sampah
         CREATE TABLE IF NOT EXISTS waste_catalog_cache (
             id_waste TEXT PRIMARY KEY,
-            name TEXT,
+            name TEXT NOT NULL,
             category_id INTEGER,
+            category_name TEXT,
             unit TEXT,
-            price INTEGER,
+            price TEXT,
             description TEXT,
             catalog_img TEXT,
             image_base64 TEXT
