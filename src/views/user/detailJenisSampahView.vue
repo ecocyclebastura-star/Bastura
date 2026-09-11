@@ -95,7 +95,7 @@ onMounted(load);
         {{ displayName }}
       </h1>
       <p class="text-body-reg text-neutral-500">
-        {{ resolveWasteCategory(item.category_id) }}
+        {{ resolveWasteCategory(item.category_name) }}
       </p>
 
       <h2 class="mt-4 text-body-reg font-bold text-neutral-900">Deskripsi</h2>

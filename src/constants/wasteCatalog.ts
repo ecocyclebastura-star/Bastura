@@ -1,47 +1,51 @@
 /** Penerjemah nilai mentah katalog sampah jadi bentuk yang siap ditampilkan. */
 import { formatRupiah } from "../utils/formatters";
+import type { CatalogItem } from "../stores/wasteStore";
 
 /** Nilai khusus buat chip "Semua": tidak menyaring apa pun. */
 export const ALL_WASTE_CATEGORIES = "";
 
+/** Nama kategori satu item; yang belum diberi nama oleh server masuk ke "Lainnya". */
+export function resolveWasteCategory(name: string | null | undefined): string {
+  return name?.trim() || "Lainnya";
+}
+
 /**
- * Nama kategori per `category_id`.
+ * Tambahkan kategori dari `items` ke daftar yang sudah dikenal, tanpa
+ * mengubah `known`.
  *
- * MASIH PERLU DICOCOKKAN DENGAN BACKEND. Yang dikirim server cuma angka
- * `category_id` (lihat CatalogItemLocal di
- * src-tauri/src/models/waste_model.rs); nama kategorinya belum ada di
- * mana-mana -- tidak di tabel waste_catalog_cache, tidak juga di command-nya.
- * Angka 1-8 di bawah disusun mengikuti urutan chip pada mockup, jadi masih
- * tebakan. Kalau id aslinya beda, cukup betulkan angkanya di sini; sisa
- * halamannya ikut menyesuaikan sendiri.
+ * Nama kategorinya sekarang dikirim server lewat `category_name`, jadi daftar
+ * chip disusun dari katalog itu sendiri, bukan daftar tetap di sini. Hasilnya
+ * sengaja dikumpulkan dari tiap pemanggilan, bukan cuma hasil terakhir: kalau
+ * tidak, chip yang sedang aktif bisa hilang begitu kata kuncinya tidak cocok
+ * dengan kategori itu.
  */
-export const WASTE_CATEGORY_LABELS: Record<number, string> = {
-  1: "Plastik PET",
-  2: "Plastik Non-PET",
-  3: "Plastik Lunak",
-  4: "Kertas & Kardus",
-  5: "Logam",
-  6: "Kaca",
-  7: "Elektronik",
-  8: "Lainnya",
-};
+export function mergeWasteCategories(
+  known: ReadonlyMap<number, string>,
+  items: readonly CatalogItem[],
+): Map<number, string> {
+  const merged = new Map(known);
+  for (const item of items) {
+    if (item.category_id == null) continue;
+    merged.set(item.category_id, resolveWasteCategory(item.category_name));
+  }
+  return merged;
+}
 
 /**
  * Chip filter; `value`-nya berupa `category_id` dalam bentuk string, karena
- * FilterChips bekerja dengan string.
+ * FilterChips bekerja dengan string. Diurutkan per id supaya posisi chip
+ * tidak berpindah-pindah waktu kategori baru ikut terkumpul.
  */
-export const WASTE_CATEGORY_CHIPS: { value: string; label: string }[] = [
-  { value: ALL_WASTE_CATEGORIES, label: "Semua" },
-  ...Object.entries(WASTE_CATEGORY_LABELS).map(([id, label]) => ({
-    value: id,
-    label,
-  })),
-];
-
-/** Nama kategori satu item; id yang tidak dikenal masuk ke "Lainnya". */
-export function resolveWasteCategory(id: number | null | undefined): string {
-  if (id == null) return "Lainnya";
-  return WASTE_CATEGORY_LABELS[id] ?? "Lainnya";
+export function buildWasteCategoryChips(
+  categories: ReadonlyMap<number, string>,
+): { value: string; label: string }[] {
+  return [
+    { value: ALL_WASTE_CATEGORIES, label: "Semua" },
+    ...[...categories]
+      .sort(([a], [b]) => a - b)
+      .map(([id, label]) => ({ value: String(id), label })),
+  ];
 }
 
 /**

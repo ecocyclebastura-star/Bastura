@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useBalanceStore } from "./balanceStore";
 import { useContentStore } from "./contentStore";
 import { useProfileStore } from "./profileStore";
+import { useScheduleStore } from "./scheduleStore";
 import { useTransactionStore } from "./transactionStore";
 
 /** Bentuk `LoginSuccessResponse` dari src-tauri/src/models/auth_model.rs. */
@@ -132,6 +133,7 @@ export const useAuthStore = defineStore("auth", {
       useBalanceStore().reset();
       useContentStore().reset();
       useProfileStore().reset();
+      useScheduleStore().reset();
       useTransactionStore().reset();
     },
   },

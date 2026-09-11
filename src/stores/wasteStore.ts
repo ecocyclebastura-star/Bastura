@@ -11,6 +11,8 @@ export interface CatalogItem {
   id_waste: string;
   name: string | null;
   category_id: number | null;
+  /** Nama kategori dari server, mis. "Plastik PET". */
+  category_name: string | null;
   /** Satuan harga, mis. "kg". */
   unit: string | null;
   /** Harga per satuan dalam rupiah penuh; di SQLite disimpan sebagai INTEGER. */

@@ -92,6 +92,47 @@ export function formatJamWita(value: string | null | undefined): string {
   return `${jam.length === 5 ? `${jam}:00` : jam} WITA`;
 }
 
+/** Pecahan tanggal & jam di WITA; locale en-CA dipilih karena urutannya yyyy-mm-dd. */
+const WITA_PARTS_FORMATTER = new Intl.DateTimeFormat("en-CA", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+  timeZone: "Asia/Makassar",
+});
+
+/**
+ * Pecah timestamp server jadi nilai mentah <input>: `date` "yyyy-mm-dd" dan
+ * `time` "HH:mm", dalam WITA. Aturan zonanya sama dengan formatJamWita: cuma
+ * dikonversi kalau string-nya memuat zona waktu. Bagian yang tidak bisa
+ * dibaca dikembalikan sebagai string kosong.
+ */
+export function splitTanggalJamWita(value: string | null | undefined): {
+  date: string;
+  time: string;
+} {
+  const raw = value?.trim();
+  if (!raw) return { date: "", time: "" };
+
+  if (HAS_TIMEZONE_RE.test(raw)) {
+    const parsed = new Date(raw);
+    if (!Number.isNaN(parsed.getTime())) {
+      const part = Object.fromEntries(
+        WITA_PARTS_FORMATTER.formatToParts(parsed).map((p) => [p.type, p.value]),
+      );
+      return {
+        date: `${part.year}-${part.month}-${part.day}`,
+        time: `${part.hour}:${part.minute}`,
+      };
+    }
+  }
+
+  const parts = raw.match(/^(\d{4}-\d{2}-\d{2})(?:[T ](\d{2}:\d{2}))?/);
+  return { date: parts?.[1] ?? "", time: parts?.[2] ?? "" };
+}
+
 const TANGGAL_LENGKAP_FORMATTER = new Intl.DateTimeFormat("id-ID", {
   weekday: "long",
   day: "numeric",

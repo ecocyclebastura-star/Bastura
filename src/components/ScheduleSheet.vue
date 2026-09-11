@@ -9,6 +9,8 @@ const props = defineProps<{
   date?: string;
   /** Nilai awal form, "HH:mm". */
   time?: string;
+  /** Jadwal sedang dikirim ke server; sheet tidak bisa ditutup dulu. */
+  saving?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -33,8 +35,12 @@ watch(
   { immediate: true },
 );
 
+function handleClose() {
+  if (!props.saving) emit("close");
+}
+
 function handleConfirm() {
-  if (!draftDate.value || !draftTime.value) return;
+  if (props.saving || !draftDate.value || !draftTime.value) return;
   emit("confirm", { date: draftDate.value, time: draftTime.value });
 }
 
@@ -57,7 +63,7 @@ const inputClass =
       role="dialog"
       aria-modal="true"
       :aria-labelledby="`${uid}-title`"
-      @click.self="emit('close')"
+      @click.self="handleClose"
     >
       <div
         class="w-full max-w-sm rounded-t-3xl bg-neutral-50 px-6 pt-3 pb-6 shadow-xl"
@@ -123,13 +129,15 @@ const inputClass =
               label="Batal"
               variant="warning"
               type="button"
-              @click="emit('close')"
+              :disabled="saving"
+              @click="handleClose"
             />
             <BaseButton
               label="Konfirmasi"
               variant="primary"
               type="submit"
               :disabled="!draftDate || !draftTime"
+              :loading="saving"
             />
           </div>
         </form>

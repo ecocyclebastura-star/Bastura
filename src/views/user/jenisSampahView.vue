@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, shallowRef, watch } from "vue";
 import { useRouter } from "vue-router";
 import ContentListPage from "../../components/ContentListPage.vue";
 import FilterChips from "../../components/FilterChips.vue";
 import WasteTypeCard from "../../components/cards/WasteTypeCard.vue";
 import {
   ALL_WASTE_CATEGORIES,
-  WASTE_CATEGORY_CHIPS,
+  buildWasteCategoryChips,
+  mergeWasteCategories,
 } from "../../constants/wasteCatalog";
 import { useSearchableList } from "../../composables/useSearchableList";
 import { useWasteStore } from "../../stores/wasteStore";
@@ -29,6 +30,16 @@ const { searchTerm, items, loading, errorMessage, submit, clearSearch, reload } 
  * memicu smart sync di backend, padahal datanya sudah ada di tangan.
  */
 const activeCategory = ref<string>(ALL_WASTE_CATEGORIES);
+
+/** Semua kategori yang pernah muncul di hasil command, id -> nama. */
+const knownCategories = shallowRef<Map<number, string>>(new Map());
+watch(items, (list) => {
+  knownCategories.value = mergeWasteCategories(knownCategories.value, list);
+});
+
+const categoryChips = computed(() =>
+  buildWasteCategoryChips(knownCategories.value),
+);
 
 const visibleItems = computed(() => {
   if (activeCategory.value === ALL_WASTE_CATEGORIES) return items.value;
@@ -68,7 +79,7 @@ function openDetail(id: string) {
     @retry="reload"
   >
     <template #filters>
-      <FilterChips v-model="activeCategory" :chips="WASTE_CATEGORY_CHIPS" />
+      <FilterChips v-model="activeCategory" :chips="categoryChips" />
     </template>
 
     <WasteTypeCard
