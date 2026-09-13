@@ -27,9 +27,8 @@ defineEmits<{ select: [key: string] }>();
       class="flex w-full cursor-pointer items-center gap-3 px-3 py-3 text-left transition-colors duration-200 hover:bg-primary-100 focus:outline-none focus-visible:bg-primary-100"
       @click="$emit('select', item.key)"
     >
-      <!-- Kotak hijau: ikonnya monokrom, bingkainya yang memberi warna. -->
       <span
-        class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary-500 text-secondary-200 ring-1 ring-secondary-400"
+        class="flex size-11 shrink-0 items-center justify-center rounded-xl scheme-4 bg-scheme-bg text-secondary-300 ring-1 ring-scheme-border"
         aria-hidden="true"
       >
         <AppIcon :name="item.icon" class="size-7" />
