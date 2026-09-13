@@ -22,6 +22,22 @@ type AdminTransactionPage = Omit<TransactionPage, "data"> & {
   data: AdminTransaction[];
 };
 
+/**
+ * Permintaan penarikan yang menunggu keputusan admin. `total_saldo` adalah
+ * saldo warga saat ini, supaya admin bisa menilai sebelum menyetujui.
+ *
+ * Catatan: tiga command verifikasi di bawah juga BELUM ADA di src-tauri.
+ */
+export interface PendingWithdrawal {
+  id_transaksi: string;
+  id_user: string;
+  nama_warga: string;
+  nominal: number;
+  total_saldo: number;
+  status: string;
+  tanggal_transaksi: string;
+}
+
 const PAGE_LIMIT = 20;
 
 export const useAdminTransactionStore = defineStore("adminTransaction", {
@@ -126,6 +142,19 @@ export const useAdminTransactionStore = defineStore("adminTransaction", {
 
       const page = await this.fetchAll({ limit: 100 });
       return page.data.find((item) => item.id_transaksi === id) ?? null;
+    },
+
+    /** Penarikan berstatus diproses dari semua warga. */
+    fetchPendingWithdrawals() {
+      return invokeCommand<PendingWithdrawal[]>("get_pending_withdrawals_command");
+    },
+
+    approveWithdrawal(idTransaksi: string) {
+      return invokeCommand<unknown>("approve_withdrawal_command", { idTransaksi });
+    },
+
+    rejectWithdrawal(idTransaksi: string) {
+      return invokeCommand<unknown>("reject_withdrawal_command", { idTransaksi });
     },
 
     reset() {

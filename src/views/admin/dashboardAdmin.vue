@@ -72,7 +72,7 @@ const menuItems = computed(() =>
 
 /** Tujuan tiap menu. Yang belum punya halaman sengaja dikosongkan. */
 const MENU_ROUTES: Record<string, string | undefined> = {
-  "verifikasi-penarikan": undefined,
+  "verifikasi-penarikan": "admin-verifikasi-penarikan",
   "jenis-sampah": undefined,
   pengumuman: undefined,
   edukasi: undefined,

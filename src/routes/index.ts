@@ -210,6 +210,11 @@ const routes: RouteRecordRaw[] = [
         name: "admin-riwayat-detail",
         component: () => import("../views/admin/detailTransaksiAdminView.vue"),
       },
+      {
+        path: "verifikasi-penarikan",
+        name: "admin-verifikasi-penarikan",
+        component: () => import("../views/admin/verifikasiPenarikanView.vue"),
+      },
       ...profileRoutes("admin"),
     ],
   },
