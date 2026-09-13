@@ -104,8 +104,13 @@
   --color-neutral-700: #565650;
   --color-neutral-800: #353531;
   --color-neutral-900: #1C1C1A;
+}
 
-  /* Semantic Color Schemes (Variabel Dinamis) */
+/* Semantic Color Schemes (Variabel Dinamis).
+   Wajib `inline`: tanpa itu Tailwind menaruh var ini di :root, tempat
+   --scheme-* belum ada, jadi bg-scheme-* berakhir transparan. Dengan inline,
+   utility-nya langsung pakai var(--scheme-*) dan ikut kelas .scheme-N. */
+@theme inline {
   --color-scheme-text: var(--scheme-text);
   --color-scheme-bg: var(--scheme-bg);
   --color-scheme-fg: var(--scheme-fg);
