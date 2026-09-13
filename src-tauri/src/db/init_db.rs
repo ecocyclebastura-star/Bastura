@@ -84,6 +84,21 @@ pub async fn init_db(db_path: &Path) -> Result<SqlitePool, AppError> {
             .await;
     }
 
+    // Migrasi otomatis v5: daftar_warga_cache skema lama
+    let is_old_warga_schema: bool = sqlx::query_scalar(
+        "SELECT COUNT(*) > 0 FROM pragma_table_info('daftar_warga_cache') WHERE name = 'id'",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap_or(false);
+
+    if is_old_warga_schema {
+        tracing::info!("Mendeteksi skema lama pada daftar_warga_cache. Menghapus tabel...");
+        let _ = sqlx::query("DROP TABLE daftar_warga_cache")
+            .execute(&pool)
+            .await;
+    }
+
     if let Err(e) = sqlx::query(
         "
         /* =========================================
@@ -156,12 +171,15 @@ pub async fn init_db(db_path: &Path) -> Result<SqlitePool, AppError> {
 
         -- 6. Daftar Seluruh Warga
         CREATE TABLE IF NOT EXISTS daftar_warga_cache (
-            id TEXT PRIMARY KEY,           
-            name TEXT NOT NULL,
-            email TEXT NOT NULL,                 
-            phone TEXT NOT NULL,
-            avatar_url TEXT,
-            balance INTEGER DEFAULT 0
+            id_users TEXT PRIMARY KEY,
+            name TEXT,
+            email TEXT,
+            phone TEXT,
+            created_at TEXT,
+            status_active TEXT,
+            balance_held INTEGER,
+            total_balance INTEGER,
+            total_weight INTEGER
         );
 
         -- 7. Daftar Setoran Global

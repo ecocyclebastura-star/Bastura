@@ -129,6 +129,10 @@ pub fn run() {
             crate::controllers::waste_controller::get_catalog_command,
             crate::controllers::schedule_controller::get_jadwal_command,
             crate::controllers::schedule_controller::insert_jadwal_command,
+            crate::controllers::admin_controller::get_daftar_warga_command,
+            crate::controllers::admin_controller::block_warga_command,
+            crate::controllers::admin_controller::unblock_warga_command,
+            crate::controllers::admin_controller::get_user_transactions_admin_command,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

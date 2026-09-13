@@ -6,3 +6,4 @@ pub mod sync_model;
 pub mod transaction_model;
 pub mod waste_model;
 pub mod schedule_model;
+pub mod admin_model;

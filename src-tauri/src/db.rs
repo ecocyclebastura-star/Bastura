@@ -6,4 +6,4 @@ pub mod profile_queries;
 pub mod sync_queries;
 pub mod transaction_queries;
 pub mod waste_queries;
-
+pub mod admin_queries;
