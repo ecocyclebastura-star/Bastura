@@ -1,10 +1,12 @@
 import { defineStore } from "pinia";
 import { invoke } from "@tauri-apps/api/core";
+import { useAdminTransactionStore } from "./adminTransactionStore";
 import { useBalanceStore } from "./balanceStore";
 import { useContentStore } from "./contentStore";
 import { useProfileStore } from "./profileStore";
 import { useScheduleStore } from "./scheduleStore";
 import { useTransactionStore } from "./transactionStore";
+import { useWargaStore } from "./wargaStore";
 
 /** Bentuk `LoginSuccessResponse` dari src-tauri/src/models/auth_model.rs. */
 export interface AuthUser {
@@ -135,6 +137,8 @@ export const useAuthStore = defineStore("auth", {
       useProfileStore().reset();
       useScheduleStore().reset();
       useTransactionStore().reset();
+      useWargaStore().reset();
+      useAdminTransactionStore().reset();
     },
   },
 

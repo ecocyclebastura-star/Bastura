@@ -191,6 +191,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import("../views/admin/wargaView.vue"),
       },
       {
+        path: "warga/:id",
+        name: "admin-warga-detail",
+        component: () => import("../views/admin/detailWargaView.vue"),
+      },
+      {
         path: "setoran",
         name: "admin-setoran",
         component: () => import("../views/admin/setoranView.vue"),
@@ -199,6 +204,11 @@ const routes: RouteRecordRaw[] = [
         path: "riwayat",
         name: "admin-riwayat",
         component: () => import("../views/admin/riwayatAdminView.vue"),
+      },
+      {
+        path: "riwayat/:id",
+        name: "admin-riwayat-detail",
+        component: () => import("../views/admin/detailTransaksiAdminView.vue"),
       },
       ...profileRoutes("admin"),
     ],

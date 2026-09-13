@@ -16,7 +16,11 @@ import { formatRupiah, formatTanggal } from "../utils/formatters";
 import iconSetoran from "../assets/icon-transaksi-setoran.svg";
 import iconPenarikan from "../assets/icon-transaksi-penarikan.svg";
 
-const props = defineProps<{ item: Transaction }>();
+const props = defineProps<{
+  item: Transaction;
+  /** Menimpa judul bawaan jenis transaksi, mis. nama warga di riwayat admin. */
+  title?: string;
+}>();
 
 defineEmits<{ open: [] }>();
 
@@ -26,7 +30,9 @@ const icon = computed(() =>
   kind.value === "setoran" ? iconSetoran : iconPenarikan,
 );
 
-const title = computed(() => kindTitle(props.item.jenis_transaksi));
+const title = computed(
+  () => props.title?.trim() || kindTitle(props.item.jenis_transaksi),
+);
 const subtitle = computed(() =>
   kindSubtitle(props.item.jenis_transaksi, props.item.deskripsi),
 );

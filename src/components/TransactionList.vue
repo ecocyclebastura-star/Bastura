@@ -1,12 +1,19 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends Transaction">
 import { computed } from "vue";
 import TransactionListItem from "./TransactionListItem.vue";
 import type { Transaction } from "../stores/transactionStore";
 import { formatBulanTahun } from "../utils/formatters";
 
-const props = defineProps<{ items: Transaction[] }>();
+const props = defineProps<{
+  items: T[];
+  /**
+   * Judul tiap baris, mis. nama warga di riwayat admin. Kosong = judul bawaan
+   * sesuai jenis transaksi ("Setoran Sampah", "Penarikan Saldo").
+   */
+  titleOf?: (item: T) => string;
+}>();
 
-defineEmits<{ open: [item: Transaction] }>();
+defineEmits<{ open: [item: T] }>();
 
 /**
  * Kelompokkan per bulan. Datanya sudah urut dari yang terbaru (backend
@@ -14,7 +21,7 @@ defineEmits<{ open: [item: Transaction] }>();
  * perlu diurutkan ulang di sini.
  */
 const groups = computed(() => {
-  const result: Array<{ label: string; items: Transaction[] }> = [];
+  const result: Array<{ label: string; items: T[] }> = [];
 
   for (const item of props.items) {
     const label = formatBulanTahun(item.tanggal_transaksi);
@@ -38,6 +45,7 @@ const groups = computed(() => {
           v-for="item in group.items"
           :key="item.id_transaksi"
           :item="item"
+          :title="titleOf?.(item)"
           @open="$emit('open', item)"
         />
       </div>

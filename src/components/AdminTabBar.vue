@@ -25,7 +25,9 @@ const TABS_RIGHT: Tab[] = [
 
 const route = useRoute();
 
-const isActive = (name: string) => route.name === name;
+// Halaman turunan (mis. admin-warga-detail) tetap menyalakan tab induknya.
+const isActive = (name: string) =>
+  route.name === name || String(route.name ?? "").startsWith(`${name}-`);
 const isSetoranActive = computed(() => route.name === "admin-setoran");
 
 // Kelas dipakai di dua kolom (kiri & kanan), jadi ditaruh sekali di sini.
