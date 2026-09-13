@@ -28,6 +28,7 @@ import calendarIcon from "../assets/icon-calendar.svg?raw";
 import clockIcon from "../assets/icon-clock.svg?raw";
 import documentIcon from "../assets/icon-document.svg?raw";
 import handCoinIcon from "../assets/icon-hand-coin.svg?raw";
+import iconPenarikan from "../assets/icon-transaksi-penarikan.svg?raw";
 
 export const APP_ICONS = {
   home: homeIcon,
@@ -52,6 +53,7 @@ export const APP_ICONS = {
   clock: clockIcon,
   document: documentIcon,
   handCoin: handCoinIcon,
+  penarikan: iconPenarikan,
 } as const;
 
 export type IconName = keyof typeof APP_ICONS;

@@ -30,7 +30,7 @@ const MENU_ITEMS: readonly ManagementItem[] = [
     key: "verifikasi-penarikan",
     label: "Verifikasi Penarikan Saldo",
     description: "Setujui penarikan saldo para warga",
-    icon: "wallet",
+    icon: "penarikan",
   },
   {
     key: "jenis-sampah",
