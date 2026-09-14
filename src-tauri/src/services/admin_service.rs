@@ -257,7 +257,7 @@ pub async fn get_user_transactions_admin_service(
     let url = format!("{}/transaction/transaction-logs/admin/user", API_BASE_URL);
 
     let payload = AdminGetUserLogRequest {
-        id_users: target_user_id.clone(),
+        user_id: target_user_id.clone(),
     };
 
     let res = client
@@ -267,49 +267,42 @@ pub async fn get_user_transactions_admin_service(
         .send()
         .await;
 
-    // FUNGSI FALLBACK / MOCK: Karena endpoint mungkin rusak, kita tangkap semua error
-    // HTTP dan error deserialisasi, lalu keluarkan mock fallback.
     let response = match res {
         Ok(r) => {
             if r.status().is_success() {
                 r
             } else {
+                let status = r.status();
+                let body_text = r.text().await.unwrap_or_default();
                 tracing::warn!(
-                    "API transaction-logs merespons dengan status error: {}. Beralih ke fallback mock.",
-                    r.status()
+                    "API transaction-logs merespons dengan status error: {} - {}",
+                    status,
+                    body_text
                 );
-                return Ok(mock_transaction_data(target_user_id));
+                return Err(AppError::ApiError {
+                    http_status: status.as_u16(),
+                    status: "error".to_string(),
+                    code: None,
+                    message: format!("HTTP Status: {} - {}", status, body_text),
+                });
             }
         }
         Err(e) => {
             tracing::warn!(
-                "Gagal mengambil riwayat transaksi dari server (Mungkin offline): {}. Beralih ke fallback mock.",
+                "Gagal mengambil riwayat transaksi dari server (Mungkin offline): {}",
                 e
             );
-            return Ok(mock_transaction_data(target_user_id));
+            return Err(e.into());
         }
     };
 
-    let api_response: Result<crate::models::transaction_model::TransactionLogApiResponse, _> = response.json().await;
-    match api_response {
-        Ok(data) => Ok(data.data.data),
+    let api_response: crate::models::transaction_model::TransactionLogApiResponse = match response.json().await {
+        Ok(data) => data,
         Err(e) => {
-            tracing::error!("Gagal memparsing respons JSON dari transaction-logs: {}. Beralih ke fallback mock.", e);
-            Ok(mock_transaction_data(target_user_id))
+            tracing::error!("Gagal memparsing respons JSON dari transaction-logs: {}", e);
+            return Err(e.into());
         }
-    }
-}
-
-// Data Dummy Fallback
-fn mock_transaction_data(user_id: String) -> Vec<crate::models::transaction_model::TransactionItem> {
-    vec![
-        crate::models::transaction_model::TransactionItem {
-            id_transaksi: format!("mock-{}", user_id),
-            jenis_transaksi: "Penarikan Saldo".to_string(),
-            deskripsi: Some("Saldo Dompet".to_string()),
-            nominal: -10000,
-            status: "processed".to_string(),
-            tanggal_transaksi: "2026-09-13T02:33:22.238Z".to_string(),
-        }
-    ]
+    };
+    
+    Ok(api_response.data.data)
 }

@@ -88,5 +88,5 @@ pub struct UnblockWargaApiResponse {
 
 #[derive(Debug, Serialize)]
 pub struct AdminGetUserLogRequest {
-    pub id_users: String,
+    pub user_id: String,
 }
