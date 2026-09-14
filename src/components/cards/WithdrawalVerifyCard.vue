@@ -3,8 +3,7 @@ import { computed } from "vue";
 import { resolveStatus, resolveStatusKey } from "../../constants/transactions";
 import type { PendingWithdrawal } from "../../stores/adminTransactionStore";
 import { formatRupiah, formatTanggal } from "../../utils/formatters";
-// Ikon berwarna (kotak hijau + gambar), jadi lewat <img> seperti di daftar transaksi.
-import iconPenarikan from "../../assets/icon-transaksi-penarikan.svg";
+import TransactionKindIcon from "../TransactionKindIcon.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -27,7 +26,7 @@ const actionClass =
 
 <template>
   <article class="flex items-center gap-3 rounded-2xl bg-neutral-100 px-3 py-4">
-    <img :src="iconPenarikan" alt="" aria-hidden="true" class="size-11 shrink-0" />
+    <TransactionKindIcon kind="penarikan" />
 
     <div class="min-w-0 flex-1">
       <div class="flex items-start justify-between gap-3">

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import StatusBadge from "./StatusBadge.vue";
+import TransactionKindIcon from "./TransactionKindIcon.vue";
 import type { Transaction } from "../stores/transactionStore";
 import {
   kindSign,
@@ -10,11 +11,6 @@ import {
   resolveStatusKey,
 } from "../constants/transactions";
 import { formatRupiah, formatTanggal } from "../utils/formatters";
-// Dua ikon ini punya warna sendiri (kotak hijau + gambar di dalamnya), jadi
-// dipasang lewat <img> seperti scan-button, bukan lewat AppIcon yang isinya
-// ikon satu warna mengikuti currentColor.
-import iconSetoran from "../assets/icon-transaksi-setoran.svg";
-import iconPenarikan from "../assets/icon-transaksi-penarikan.svg";
 
 const props = defineProps<{
   item: Transaction;
@@ -26,8 +22,8 @@ defineEmits<{ open: [] }>();
 
 const kind = computed(() => resolveKind(props.item.jenis_transaksi));
 
-const icon = computed(() =>
-  kind.value === "setoran" ? iconSetoran : iconPenarikan,
+const iconKind = computed(() =>
+  kind.value === "setoran" ? "setoran" : "penarikan",
 );
 
 const title = computed(
@@ -65,7 +61,7 @@ const amountClass = computed(() =>
     class="flex w-full cursor-pointer items-center gap-3 rounded-2xl bg-neutral-100 px-3 py-3 text-left transition-colors duration-200 hover:bg-neutral-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
     @click="$emit('open')"
   >
-    <img :src="icon" alt="" aria-hidden="true" class="size-11 shrink-0" />
+    <TransactionKindIcon :kind="iconKind" />
 
     <div class="min-w-0 flex-1">
       <p class="truncate text-body-sm font-extrabold text-neutral-900">

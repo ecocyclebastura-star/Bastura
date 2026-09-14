@@ -1,15 +1,31 @@
 import { defineStore } from "pinia";
+import type { AppErrorResponse } from "../constants/authErrors";
+import { resolveKind, resolveStatusKey } from "../constants/transactions";
 import { invokeCommand as call } from "../utils/invokeCommand";
-import type { TransactionPage, TransactionQuery } from "./transactionStore";
+import type { Transaction, TransactionPage, TransactionQuery } from "./transactionStore";
 
 export { COMMAND_UNAVAILABLE } from "../utils/invokeCommand";
 
+/** Bentuk `WargaLocalItem` dari src-tauri/src/models/admin_model.rs. */
+interface WargaLocalItem {
+  id_users: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  created_at: string | null;
+  /** "active" | "blocked", ditulis juga oleh `update_warga_status_local`. */
+  status_active: string | null;
+  balance_held: number | null;
+  total_balance: number | null;
+  total_weight: number | null;
+}
+
 /**
- * Data satu warga dari sudut pandang admin.
+ * Data satu warga yang dipakai halaman & kartu admin.
  *
- * Catatan: command-command di file ini BELUM ADA di src-tauri. Nama field dan
- * nama command-nya usulan frontend -- samakan dengan struct Rust-nya begitu
- * backend-nya dibuat, cukup di file ini saja.
+ * Bentuk ini sengaja tidak mengikuti struct Rust apa adanya; `toWarga` di
+ * bawah yang menerjemahkan. Kalau backend berubah, cukup sesuaikan
+ * `WargaLocalItem` dan `toWarga` tanpa menyentuh halaman.
  */
 export interface Warga {
   id: string;
@@ -29,8 +45,47 @@ export interface Warga {
   avatar_base64: string | null;
 }
 
+function toWarga(item: WargaLocalItem): Warga {
+  return {
+    id: item.id_users,
+    name: item.name ?? "",
+    email: item.email ?? "",
+    phone: item.phone ?? "",
+    // Endpoint /users/account/warga cuma berisi akun warga dan tidak membawa
+    // role maupun foto.
+    role: "warga",
+    is_blocked: /block/i.test(item.status_active ?? ""),
+    total_saldo: item.total_balance ?? 0,
+    total_sampah: item.total_weight ?? 0,
+    joined_at: item.created_at ?? "",
+    avatar_base64: null,
+  };
+}
+
 /**
- * Jembatan ke command kelola warga.
+ * `get_user_transactions_admin_command` mengembalikan semua transaksi sekaligus
+ * tanpa filter & cursor, jadi chip filter dicocokkan di sini dengan pola yang
+ * sama seperti tampilan badge-nya.
+ */
+function matchesQuery(item: Transaction, query: TransactionQuery): boolean {
+  if (query.jenis && resolveKind(item.jenis_transaksi) !== resolveKind(query.jenis)) {
+    return false;
+  }
+  if (query.status && resolveStatusKey(item.status) !== resolveStatusKey(query.status)) {
+    return false;
+  }
+  return true;
+}
+
+function byNewest(a: Transaction, b: Transaction): number {
+  return (
+    (Date.parse(b.tanggal_transaksi) || 0) - (Date.parse(a.tanggal_transaksi) || 0)
+  );
+}
+
+/**
+ * Jembatan ke command kelola warga di
+ * src-tauri/src/controllers/admin_controller.rs.
  *
  * Hak aksesnya tetap wajib dijaga backend (`require_admin`, dan khusus super
  * admin untuk ubah role); pembatasan tombol di frontend cuma soal tampilan.
@@ -42,16 +97,34 @@ export const useWargaStore = defineStore("warga", {
   }),
 
   actions: {
-    async list(search: string) {
-      const result = await call<Warga[]>("get_warga_list_command", {
-        search: search || null,
+    async fetchList(search: string | null) {
+      const result = await call<WargaLocalItem[]>("get_daftar_warga_command", {
+        searchQuery: search || null,
       });
+      return result.map(toWarga);
+    },
+
+    async list(search: string) {
+      const result = await this.fetchList(search);
       this.items = result;
       return result;
     },
 
-    fetchDetail(idUser: string) {
-      return call<Warga>("get_warga_detail_command", { idUser });
+    /**
+     * Belum ada command detail, jadi dicari dari daftar lengkap. Command
+     * daftar sudah menyinkronkan data server dulu, jadi isinya tetap terbaru.
+     */
+    async fetchDetail(idUser: string): Promise<Warga> {
+      const all = await this.fetchList(null);
+      const found = all.find((item) => item.id === idUser);
+      if (found) return found;
+
+      const notFound: AppErrorResponse = {
+        code: "NOT_FOUND",
+        message: "Data warga tidak ditemukan.",
+        http_status: 404,
+      };
+      throw notFound;
     },
 
     findCached(idUser: string): Warga | null {
@@ -59,36 +132,37 @@ export const useWargaStore = defineStore("warga", {
     },
 
     /** Riwayat transaksi milik warga tertentu; bentuknya sama dengan riwayat user. */
-    fetchTransactions(idUser: string, query: TransactionQuery = {}) {
-      return call<TransactionPage>("get_warga_transactions_command", {
-        idUser,
-        payload: {
-          limit: query.limit ?? null,
-          cursor: query.cursor ?? null,
-          jenis_transaksi: query.jenis ?? null,
-          status: query.status ?? null,
-        },
+    async fetchTransactions(
+      idUser: string,
+      query: TransactionQuery = {},
+    ): Promise<TransactionPage> {
+      const result = await call<Transaction[]>("get_user_transactions_admin_command", {
+        targetUserId: idUser,
       });
+      return {
+        data: result.filter((item) => matchesQuery(item, query)).sort(byNewest),
+        next_cursor: null,
+      };
     },
 
-    /** Khusus super admin. */
+    /** Khusus super admin. Command-nya BELUM ADA di src-tauri. */
     promoteToAdmin(idUser: string) {
       return call<unknown>("promote_admin_command", { idUser });
     },
 
-    /** Khusus super admin. */
+    /** Khusus super admin. Command-nya BELUM ADA di src-tauri. */
     demoteToWarga(idUser: string) {
       return call<unknown>("demote_admin_command", { idUser });
     },
 
     /** Admin dan super admin. */
     block(idUser: string) {
-      return call<unknown>("block_warga_command", { idUser });
+      return call<unknown>("block_warga_command", { targetUserId: idUser });
     },
 
     /** Admin dan super admin. */
     unblock(idUser: string) {
-      return call<unknown>("unblock_warga_command", { idUser });
+      return call<unknown>("unblock_warga_command", { targetUserId: idUser });
     },
 
     /** Samakan salinan di daftar setelah warga diubah dari halaman detail. */
