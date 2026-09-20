@@ -36,9 +36,52 @@ export function toAppError(error: unknown): AppErrorResponse | null {
   return typeof candidate.code === "string" ? (candidate as AppErrorResponse) : null;
 }
 
+/** Panjang wajar satu kalimat toast; lebih dari ini hampir pasti dump teknis. */
+const MAX_MESSAGE_LENGTH = 160;
+
+/**
+ * Kupas pesan server sampai ketemu kalimat yang layak dibaca pengguna.
+ *
+ * Service admin di src-tauri meneruskan body respons apa adanya lewat
+ * `format!("HTTP Status: {} - {}", status, body_text)`, jadi pesannya sering
+ * berbentuk `HTTP Status: 400 Bad Request - {"status":"error",...}`. Yang
+ * diambil cuma `message` di dalam JSON-nya. Kalau tidak ada kalimat yang bisa
+ * dipertanggungjawabkan, hasilnya null supaya pemanggil memakai kalimat
+ * sendiri -- lebih baik umum tapi manusiawi daripada JSON mentah.
+ */
+function unwrapServerMessage(message: string): string | null {
+  const text = message.trim();
+
+  if (!text.startsWith("HTTP Status:")) {
+    // Pesan buatan Rust sendiri (Forbidden, ValidationError, dsb.) sudah
+    // berupa kalimat, jadi dipakai apa adanya selama masih sepanjang toast.
+    return text && text.length <= MAX_MESSAGE_LENGTH ? text : null;
+  }
+
+  const separator = text.indexOf(" - ");
+  if (separator === -1) return null;
+
+  // Sisanya body respons mentah: cuma `message` di dalam JSON yang layak
+  // dibaca pengguna. Body non-JSON (halaman error HTML, "Internal Server
+  // Error") sengaja ditolak, biar halaman memakai kalimatnya sendiri.
+  const body = text.slice(separator + 3).trim();
+  if (!body.startsWith("{")) return null;
+
+  try {
+    const parsed = JSON.parse(body) as { message?: unknown };
+    // Sebagian endpoint memakai `message` sebagai pembungkus data, bukan
+    // kalimat, jadi yang bukan string langsung ditolak.
+    const detail = typeof parsed.message === "string" ? parsed.message.trim() : "";
+    return detail && detail.length <= MAX_MESSAGE_LENGTH ? detail : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Ubah error dari `invoke` jadi kalimat yang siap ditampilkan di toast.
- * `fallback` dipakai kalau errornya bukan AppError (misal IPC putus).
+ * `fallback` dipakai kalau errornya bukan AppError (misal IPC putus) atau
+ * pesan servernya tidak layak tampil.
  */
 export function resolveAuthError(error: unknown, fallback: string): string {
   const appError = toAppError(error);
@@ -48,7 +91,27 @@ export function resolveAuthError(error: unknown, fallback: string): string {
     return OVERRIDE_MESSAGES[appError.code];
   }
 
-  return appError.message?.trim() || fallback;
+  return unwrapServerMessage(appError.message ?? "") || fallback;
+}
+
+/**
+ * Kalimat cadangan sesuai kode status HTTP, dipakai sebagai `fallback`
+ * resolveAuthError supaya halaman tetap bicara bahasa pengguna -- bukan
+ * bahasa server -- waktu pesan aslinya tidak bisa ditampilkan.
+ *
+ * Status 5xx yang tidak terdaftar ikut memakai kalimat 500 kalau ada, karena
+ * bagi pengguna 502 dan 503 sama saja: server sedang bermasalah.
+ */
+export function statusFallback(
+  error: unknown,
+  messages: Record<number, string>,
+  fallback: string,
+): string {
+  const status = toAppError(error)?.http_status ?? 0;
+
+  if (status in messages) return messages[status];
+  if (status >= 500) return messages[500] ?? fallback;
+  return fallback;
 }
 
 /**

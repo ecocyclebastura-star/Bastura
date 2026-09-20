@@ -6,6 +6,7 @@ import {
   resolveKind,
   resolveStatusKey,
 } from "../constants/transactions";
+import type { DetailAudience } from "../constants/transactions";
 import type { Transaction } from "../stores/transactionStore";
 import { formatJamWita, formatRupiah, formatTanggal } from "../utils/formatters";
 import logoBastura from "../assets/Property 1=Logo Large.svg";
@@ -14,16 +15,21 @@ import logoBastura from "../assets/Property 1=Logo Large.svg";
  * Isi halaman detail transaksi, dipakai bareng halaman warga dan admin.
  * Tombol tambahan (mis. batalkan penarikan) dipasang lewat default slot.
  */
-const props = defineProps<{
-  transaction: Transaction;
-  /** Nama pemilik transaksi. Bagian "Penerima" cuma tampil kalau diisi. */
-  recipient?: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    transaction: Transaction;
+    /** Nama pemilik transaksi. Bagian "Penerima" cuma tampil kalau diisi. */
+    recipient?: string;
+    /** Penentu sudut pandang naskah status & catatan; admin memeriksa transaksi milik warga. */
+    audience?: DetailAudience;
+  }>(),
+  { audience: "warga" },
+);
 
 const kind = computed(() => resolveKind(props.transaction.jenis_transaksi));
 
 const copy = computed(() =>
-  detailCopy(props.transaction.jenis_transaksi, props.transaction.status),
+  detailCopy(props.transaction.jenis_transaksi, props.transaction.status, props.audience),
 );
 
 const setoran = computed(() => parseSetoranDeskripsi(props.transaction.deskripsi));

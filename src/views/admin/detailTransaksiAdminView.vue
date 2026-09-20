@@ -60,6 +60,7 @@ onMounted(async () => {
       v-else-if="transaction"
       :transaction="transaction"
       :recipient="transaction.nama_warga || '-'"
+      audience="admin"
     />
   </main>
 </template>

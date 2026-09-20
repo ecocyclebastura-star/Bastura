@@ -232,48 +232,96 @@ const HEADINGS: Record<StatusKey, string> = {
 };
 
 /**
+ * Halaman detail transaksi dipakai bersama warga dan admin, padahal yang
+ * membaca berbeda: warga melihat transaksinya sendiri ("saldo kamu"),
+ * sedangkan admin sedang memeriksa transaksi milik orang lain. Naskahnya
+ * karena itu dipisah per pembaca supaya admin tidak dikira pemilik transaksi.
+ */
+export type DetailAudience = "warga" | "admin";
+
+/**
  * Keterangan status & catatan per kombinasi jenis dan status, mengikuti
  * naskah di desain. Kombinasi yang tidak digambar desain (mis. setoran yang
  * ditolak) tetap diisi kalimat sendiri supaya halamannya tidak kosong.
  */
 const DETAIL_COPY: Record<
-  "setoran" | "penarikan",
-  Record<StatusKey, { statusText: string; note: string }>
+  DetailAudience,
+  Record<"setoran" | "penarikan", Record<StatusKey, { statusText: string; note: string }>>
 > = {
-  penarikan: {
-    diproses: {
-      statusText: "Menunggu persetujuan admin",
-      note: "Mohon tunggu sampai permintaan penarikan selesai diperiksa dan diverifikasi oleh admin.",
+  warga: {
+    penarikan: {
+      diproses: {
+        statusText: "Menunggu persetujuan admin",
+        note: "Mohon tunggu sampai permintaan penarikan selesai diperiksa dan diverifikasi oleh admin.",
+      },
+      disetujui: {
+        statusText: "Disetujui oleh admin",
+        note: "Permintaan penarikan kamu sudah disetujui. Saldo telah diproses untuk penarikan.",
+      },
+      ditolak: {
+        statusText: "Ditolak oleh admin",
+        note: "Penarikan saldo ditolak oleh admin. Silakan hubungi admin jika membutuhkan informasi lebih lanjut.",
+      },
+      dibatalkan: {
+        statusText: "Dibatalkan oleh anda",
+        note: "Penarikan saldo dibatalkan atas permintaan anda sebelum diproses lebih lanjut.",
+      },
     },
-    disetujui: {
-      statusText: "Disetujui oleh admin",
-      note: "Permintaan penarikan kamu sudah disetujui. Saldo telah diproses untuk penarikan.",
-    },
-    ditolak: {
-      statusText: "Ditolak oleh admin",
-      note: "Penarikan saldo ditolak oleh admin. Silakan hubungi admin jika membutuhkan informasi lebih lanjut.",
-    },
-    dibatalkan: {
-      statusText: "Dibatalkan oleh anda",
-      note: "Penarikan saldo dibatalkan atas permintaan anda sebelum diproses lebih lanjut.",
+    setoran: {
+      diproses: {
+        statusText: "Menunggu hasil setoran",
+        note: "Sampah kamu sudah diterima oleh petugas. Saat ini, setoran sedang menunggu hasil penjualan ke Bank Sampah Induk. Saldo akan ditambahkan setelah hasil penjualan diterima.",
+      },
+      disetujui: {
+        statusText: "Disetujui",
+        note: "Setoran kamu sudah selesai diproses. Hasil penjualan sampah telah ditambahkan ke saldo kamu.",
+      },
+      ditolak: {
+        statusText: "Ditolak oleh admin",
+        note: "Setoran ini ditolak oleh admin. Silakan hubungi admin jika membutuhkan informasi lebih lanjut.",
+      },
+      dibatalkan: {
+        statusText: "Dibatalkan",
+        note: "Setoran ini dibatalkan sebelum hasil penjualannya selesai diproses.",
+      },
     },
   },
-  setoran: {
-    diproses: {
-      statusText: "Menunggu hasil setoran",
-      note: "Sampah kamu sudah diterima oleh petugas. Saat ini, setoran sedang menunggu hasil penjualan ke Bank Sampah Induk. Saldo akan ditambahkan setelah hasil penjualan diterima.",
+  admin: {
+    penarikan: {
+      diproses: {
+        statusText: "Menunggu verifikasi admin",
+        note: "Permintaan penarikan ini belum diverifikasi. Periksa saldo warga di halaman Verifikasi Penarikan sebelum menyetujui atau menolaknya.",
+      },
+      disetujui: {
+        statusText: "Disetujui oleh admin",
+        note: "Permintaan penarikan warga sudah disetujui dan saldonya diproses untuk penarikan.",
+      },
+      ditolak: {
+        statusText: "Ditolak oleh admin",
+        note: "Permintaan penarikan ini ditolak. Warga masih dapat mengajukan penarikan baru bila diperlukan.",
+      },
+      dibatalkan: {
+        statusText: "Dibatalkan oleh warga",
+        note: "Warga membatalkan sendiri penarikan ini sebelum sempat diverifikasi admin.",
+      },
     },
-    disetujui: {
-      statusText: "Disetujui",
-      note: "Setoran kamu sudah selesai diproses. Hasil penjualan sampah telah ditambahkan ke saldo kamu.",
-    },
-    ditolak: {
-      statusText: "Ditolak oleh admin",
-      note: "Setoran ini ditolak oleh admin. Silakan hubungi admin jika membutuhkan informasi lebih lanjut.",
-    },
-    dibatalkan: {
-      statusText: "Dibatalkan",
-      note: "Setoran ini dibatalkan sebelum hasil penjualannya selesai diproses.",
+    setoran: {
+      diproses: {
+        statusText: "Menunggu hasil setoran",
+        note: "Sampah sudah diterima petugas dan setorannya menunggu hasil penjualan ke Bank Sampah Induk. Saldo warga bertambah setelah hasil penjualan diterima.",
+      },
+      disetujui: {
+        statusText: "Disetujui",
+        note: "Setoran ini sudah selesai diproses. Hasil penjualan sampah telah ditambahkan ke saldo warga.",
+      },
+      ditolak: {
+        statusText: "Ditolak oleh admin",
+        note: "Setoran ini ditolak. Siapkan alasannya bila warga menanyakannya lewat kontak admin.",
+      },
+      dibatalkan: {
+        statusText: "Dibatalkan",
+        note: "Setoran ini dibatalkan sebelum hasil penjualannya selesai diproses.",
+      },
     },
   },
 };
@@ -288,13 +336,14 @@ const JENIS_LABEL: Record<TransactionKind, string> = {
 export function detailCopy(
   jenis: string | null | undefined,
   status: string | null | undefined,
+  audience: DetailAudience = "warga",
 ): TransactionDetailCopy {
   const kind = resolveKind(jenis);
   const statusKey = resolveStatusKey(status);
   const fallbackStatus = resolveStatus(status).label;
 
   const copy =
-    kind === "lainnya" || !statusKey ? null : DETAIL_COPY[kind][statusKey];
+    kind === "lainnya" || !statusKey ? null : DETAIL_COPY[audience][kind][statusKey];
 
   return {
     heading: statusKey ? HEADINGS[statusKey] : "Detail transaksi",
