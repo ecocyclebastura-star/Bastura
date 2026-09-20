@@ -156,6 +156,36 @@ export const TRANSACTION_FILTERS: readonly TransactionFilter[] = [
   { value: "pending", label: "Pending", status: "pending" },
 ];
 
+/**
+ * Command transaksi admin (`get_all_transactions_admin_command` dan
+ * `get_user_transactions_admin_command`) mengembalikan semua baris sekaligus
+ * tanpa filter maupun cursor, jadi chip filternya dicocokkan di aplikasi.
+ * Polanya sengaja sama dengan yang dipakai badge status supaya hasil saringan
+ * dan label yang tampil tidak pernah berbeda.
+ */
+export function matchesQuery(
+  item: { jenis_transaksi: string; status: string },
+  query: { jenis?: string; status?: string },
+): boolean {
+  if (query.jenis && resolveKind(item.jenis_transaksi) !== resolveKind(query.jenis)) {
+    return false;
+  }
+  if (query.status && resolveStatusKey(item.status) !== resolveStatusKey(query.status)) {
+    return false;
+  }
+  return true;
+}
+
+/** Urutan daftar transaksi: yang terbaru di atas. */
+export function byNewest(
+  a: { tanggal_transaksi: string },
+  b: { tanggal_transaksi: string },
+): number {
+  return (
+    (Date.parse(b.tanggal_transaksi) || 0) - (Date.parse(a.tanggal_transaksi) || 0)
+  );
+}
+
 /* ============================ HALAMAN DETAIL ============================ */
 
 /**

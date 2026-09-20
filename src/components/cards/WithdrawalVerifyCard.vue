@@ -38,8 +38,10 @@ const actionClass =
         </p>
       </div>
 
+      <!-- Saldo tidak ikut di command penarikan; "-" kalau daftar warganya gagal diambil. -->
       <p class="text-body-sm text-neutral-900">
-        Total Saldo: {{ formatRupiah(item.total_saldo) }}
+        Total Saldo:
+        {{ item.total_saldo === null ? "-" : formatRupiah(item.total_saldo) }}
       </p>
 
       <div class="flex items-end justify-between gap-2">

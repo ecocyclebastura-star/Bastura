@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import type { AppErrorResponse } from "../constants/authErrors";
-import { resolveKind, resolveStatusKey } from "../constants/transactions";
+import { byNewest, matchesQuery } from "../constants/transactions";
 import { invokeCommand as call } from "../utils/invokeCommand";
 import type { Transaction, TransactionPage, TransactionQuery } from "./transactionStore";
 
@@ -60,27 +60,6 @@ function toWarga(item: WargaLocalItem): Warga {
     joined_at: item.created_at ?? "",
     avatar_base64: null,
   };
-}
-
-/**
- * `get_user_transactions_admin_command` mengembalikan semua transaksi sekaligus
- * tanpa filter & cursor, jadi chip filter dicocokkan di sini dengan pola yang
- * sama seperti tampilan badge-nya.
- */
-function matchesQuery(item: Transaction, query: TransactionQuery): boolean {
-  if (query.jenis && resolveKind(item.jenis_transaksi) !== resolveKind(query.jenis)) {
-    return false;
-  }
-  if (query.status && resolveStatusKey(item.status) !== resolveStatusKey(query.status)) {
-    return false;
-  }
-  return true;
-}
-
-function byNewest(a: Transaction, b: Transaction): number {
-  return (
-    (Date.parse(b.tanggal_transaksi) || 0) - (Date.parse(a.tanggal_transaksi) || 0)
-  );
 }
 
 /**
