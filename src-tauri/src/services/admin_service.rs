@@ -306,3 +306,199 @@ pub async fn get_user_transactions_admin_service(
     
     Ok(api_response.data.data)
 }
+
+pub async fn sync_global_transactions_from_server(state: &AppState) -> Result<(), AppError> {
+    let token = require_admin(state).await?;
+
+    let client = create_http_client();
+    let url = format!("{}/transaction/transaction-logs/admin", API_BASE_URL);
+
+    let res = client
+        .get(&url)
+        .header(AUTHORIZATION, format!("Bearer {}", token))
+        .send()
+        .await;
+
+    let response = match res {
+        Ok(r) => {
+            if r.status().is_success() {
+                r
+            } else {
+                let status = r.status();
+                let body_text = r.text().await.unwrap_or_default();
+                tracing::warn!(
+                    "API transaction-logs/admin merespons dengan status error: {} - {}",
+                    status,
+                    body_text
+                );
+                return Err(AppError::ApiError {
+                    http_status: status.as_u16(),
+                    status: "error".to_string(),
+                    code: None,
+                    message: format!("HTTP Status: {} - {}", status, body_text),
+                });
+            }
+        }
+        Err(e) => {
+            tracing::warn!(
+                "Gagal mengambil riwayat transaksi global dari server (Mungkin offline): {}",
+                e
+            );
+            return Err(e.into());
+        }
+    };
+
+    let api_response: crate::models::transaction_model::TransactionLogApiResponse = match response.json().await {
+        Ok(data) => data,
+        Err(e) => {
+            tracing::error!("Gagal memparsing respons JSON dari transaction-logs/admin: {}", e);
+            return Err(e.into());
+        }
+    };
+
+    let items = api_response.data.data;
+    if !items.is_empty() {
+        if let Err(e) = crate::db::admin_queries::upsert_transaksi_global_batch(&state.db, &items).await {
+            tracing::error!("Gagal menyimpan batch transaksi global ke SQLite: {}", e);
+            return Err(e);
+        }
+        tracing::info!("Berhasil sinkronisasi {} data transaksi global ke SQLite.", items.len());
+    }
+
+    Ok(())
+}
+
+pub async fn get_all_transactions_admin_service(
+    state: &AppState,
+) -> Result<Vec<crate::models::transaction_model::TransactionItem>, AppError> {
+    require_admin(state).await?;
+
+    // Call smart sync, if it fails, DO NOT RETURN CACHE (return the error directly)
+    crate::services::sync_service::run_smart_sync_service(state).await?;
+
+    crate::db::admin_queries::get_cached_transaksi_global(&state.db).await
+}
+
+pub async fn get_admin_withdrawals_service(
+    state: &AppState,
+) -> Result<Vec<crate::models::admin_model::AdminWithdrawalItem>, AppError> {
+    let token = require_admin(state).await?;
+
+    let client = create_http_client();
+    let url = format!("{}/transaction/verify-withdrawal/admin", API_BASE_URL);
+
+    let res = client
+        .get(&url)
+        .header(AUTHORIZATION, format!("Bearer {}", token))
+        .send()
+        .await;
+
+    let response = match res {
+        Ok(r) => {
+            if r.status().is_success() {
+                r
+            } else {
+                let status = r.status();
+                let body_text = r.text().await.unwrap_or_default();
+                tracing::warn!(
+                    "API verify-withdrawal/admin merespons dengan status error: {} - {}",
+                    status,
+                    body_text
+                );
+                return Err(AppError::ApiError {
+                    http_status: status.as_u16(),
+                    status: "error".to_string(),
+                    code: None,
+                    message: format!("HTTP Status: {} - {}", status, body_text),
+                });
+            }
+        }
+        Err(e) => {
+            tracing::warn!(
+                "Gagal mengambil daftar penarikan (withdrawals) dari server (Mungkin offline): {}",
+                e
+            );
+            return Err(e.into());
+        }
+    };
+
+    let api_response: crate::models::admin_model::AdminWithdrawalApiResponse = match response.json().await {
+        Ok(data) => data,
+        Err(e) => {
+            tracing::error!("Gagal memparsing respons JSON dari verify-withdrawal/admin: {}", e);
+            return Err(e.into());
+        }
+    };
+
+    Ok(api_response.data.data)
+}
+
+pub async fn verify_withdrawal_service(
+    state: &AppState,
+    id_tsc: String,
+    is_approve: bool,
+) -> Result<crate::models::admin_model::VerifyWithdrawalResult, AppError> {
+    let token = require_admin(state).await?;
+
+    let client = create_http_client();
+    let url = format!("{}/transaction/verify-withdrawal/admin", API_BASE_URL);
+
+    let p_type = if is_approve { "success".to_string() } else { "canceled".to_string() };
+
+    let payload = crate::models::admin_model::VerifyWithdrawalRequest {
+        id_tsc,
+        proccess_type: p_type, // Mengikuti typo API Naufal
+    };
+
+    let res = client
+        .post(&url)
+        .header(AUTHORIZATION, format!("Bearer {}", token))
+        .json(&payload)
+        .send()
+        .await;
+
+    let response = match res {
+        Ok(r) => {
+            if r.status().is_success() {
+                r
+            } else {
+                let status = r.status();
+                let body_text = r.text().await.unwrap_or_default();
+                tracing::warn!(
+                    "API POST verify-withdrawal/admin merespons error: {} - {}",
+                    status,
+                    body_text
+                );
+                return Err(AppError::ApiError {
+                    http_status: status.as_u16(),
+                    status: "error".to_string(),
+                    code: None,
+                    message: format!("HTTP Status: {} - {}", status, body_text),
+                });
+            }
+        }
+        Err(e) => {
+            tracing::warn!(
+                "Gagal melakukan verify withdrawal (Mungkin offline): {}",
+                e
+            );
+            return Err(e.into());
+        }
+    };
+
+    let api_response: crate::models::admin_model::VerifyWithdrawalApiResponse = match response.json().await {
+        Ok(data) => data,
+        Err(e) => {
+            tracing::error!("Gagal memparsing respons JSON verifikasi penarikan: {}", e);
+            return Err(e.into());
+        }
+    };
+
+    let balance_i64 = api_response.data.balance.unwrap_or_default().parse::<i64>().unwrap_or(0);
+
+    Ok(crate::models::admin_model::VerifyWithdrawalResult {
+        success: api_response.data.success.unwrap_or_default(),
+        balance: balance_i64,
+        id_users: api_response.data.id_users.unwrap_or_default(),
+    })
+}

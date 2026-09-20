@@ -1,6 +1,6 @@
 use serde::{Deserialize, Deserializer, Serialize};
 
-fn deserialize_nominal<'de, D>(deserializer: D) -> Result<i64, D::Error>
+pub fn deserialize_nominal<'de, D>(deserializer: D) -> Result<i64, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -21,6 +21,9 @@ pub struct TransactionItem {
     pub nominal: i64,
     pub status: String,
     pub tanggal_transaksi: String,
+    #[sqlx(default)]
+    #[serde(default)]
+    pub name: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

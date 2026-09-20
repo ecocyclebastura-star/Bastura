@@ -99,6 +99,21 @@ pub async fn init_db(db_path: &Path) -> Result<SqlitePool, AppError> {
             .await;
     }
 
+    // Migrasi otomatis v6: transaksi_global_cache skema lama
+    let is_old_global_tx_schema: bool = sqlx::query_scalar(
+        "SELECT COUNT(*) > 0 FROM pragma_table_info('transaksi_global_cache') WHERE name = 'id_user'",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap_or(false);
+
+    if is_old_global_tx_schema {
+        tracing::info!("Mendeteksi skema lama pada transaksi_global_cache. Menghapus tabel...");
+        let _ = sqlx::query("DROP TABLE transaksi_global_cache")
+            .execute(&pool)
+            .await;
+    }
+
     if let Err(e) = sqlx::query(
         "
         /* =========================================
@@ -184,15 +199,13 @@ pub async fn init_db(db_path: &Path) -> Result<SqlitePool, AppError> {
 
         -- 7. Daftar Setoran Global
         CREATE TABLE IF NOT EXISTS transaksi_global_cache (
-            id TEXT PRIMARY KEY, 
-            id_user TEXT NOT NULL,               
-            nama_warga TEXT NOT NULL,            
-            type TEXT NOT NULL,
-            title TEXT NOT NULL,
-            subtitle TEXT,
-            amount INTEGER NOT NULL,      
-            status TEXT NOT NULL,             
-            date TEXT NOT NULL
+            id_transaksi TEXT PRIMARY KEY,
+            jenis_transaksi TEXT NOT NULL,
+            deskripsi TEXT,
+            nominal INTEGER NOT NULL,
+            status TEXT NOT NULL,
+            tanggal_transaksi TEXT NOT NULL,
+            name TEXT
         );
 
         /* =========================================

@@ -1,7 +1,7 @@
 use crate::AppError;
 use sqlx::SqlitePool;
 use crate::models::admin_model::WargaLocalItem;
-
+use crate::models::transaction_model::TransactionItem;
 pub async fn upsert_warga_batch(pool: &SqlitePool, warga_list: &[WargaLocalItem]) -> Result<(), AppError> {
     let mut tx = pool.begin().await?;
 
@@ -74,4 +74,55 @@ pub async fn update_warga_status_local(
         .await?;
 
     Ok(())
+}
+
+pub async fn upsert_transaksi_global_batch(
+    pool: &SqlitePool,
+    transactions: &[crate::models::transaction_model::TransactionItem],
+) -> Result<(), AppError> {
+    let mut tx = pool.begin().await?;
+
+    for tx_item in transactions {
+        sqlx::query(
+            r#"
+            INSERT INTO transaksi_global_cache (
+                id_transaksi, jenis_transaksi, deskripsi, nominal, status, tanggal_transaksi, name
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id_transaksi) DO UPDATE SET
+                jenis_transaksi = excluded.jenis_transaksi,
+                deskripsi = excluded.deskripsi,
+                nominal = excluded.nominal,
+                status = excluded.status,
+                tanggal_transaksi = excluded.tanggal_transaksi,
+                name = excluded.name
+            "#,
+        )
+        .bind(&tx_item.id_transaksi)
+        .bind(&tx_item.jenis_transaksi)
+        .bind(&tx_item.deskripsi)
+        .bind(tx_item.nominal)
+        .bind(&tx_item.status)
+        .bind(&tx_item.tanggal_transaksi)
+        .bind(&tx_item.name)
+        .execute(&mut *tx)
+        .await?;
+    }
+
+    tx.commit().await?;
+    Ok(())
+}
+
+pub async fn get_cached_transaksi_global(
+    pool: &SqlitePool,
+) -> Result<Vec<crate::models::transaction_model::TransactionItem>, AppError> {
+    let result = sqlx::query_as::<_, crate::models::transaction_model::TransactionItem>(
+        "SELECT * FROM transaksi_global_cache ORDER BY tanggal_transaksi DESC"
+    )
+    .fetch_all(pool)
+    .await?;
+
+    tracing::info!("get_cached_transaksi_global mengembalikan {} data.", result.len());
+
+    Ok(result)
 }

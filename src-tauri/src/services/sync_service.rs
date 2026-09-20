@@ -141,10 +141,19 @@ pub async fn run_smart_sync_service(state: &AppState) -> Result<bool, AppError> 
 
         if needs_sync {
             tracing::info!("Terdapat pembaruan Riwayat Transaksi. Mulai sinkronisasi...");
-            if let Err(e) =
+            let is_admin = crate::middlewares::role_guard::require_admin(state).await.is_ok();
+            
+            let sync_result = if is_admin {
+                crate::services::admin_service::sync_global_transactions_from_server(state).await
+            } else {
                 crate::services::transaction_service::sync_transaction_log_from_server(state).await
-            {
+            };
+
+            if let Err(e) = sync_result {
                 tracing::error!("Sinkronisasi riwayat transaksi gagal: {}", e);
+                if is_admin {
+                    return Err(e);
+                }
             } else {
                 update_last_sync(&state.db, "transaction", server_transaction_up).await?;
                 tracing::info!("Sinkronisasi Riwayat Transaksi selesai.");
