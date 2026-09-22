@@ -1,8 +1,9 @@
 import { Context } from "hono";
 import { updateAddUserPhotoModel } from "../../model/profile/update-add-user-photo";
-import { sendprofileResponse } from "../../logs/profile/profile-logs";
+import { sendprofileResponse , profilelog } from "../../logs/profile/profile-logs";
 import { updateProfileImg } from "../type/profile-type";
 import { getUserData } from "../../model/profile/get-user-data";
+import { selectphotoname } from "../../model/profile/update-add-user-photo";
 import path from 'node:path'
 
 export const updateAddProfileImgController = async (c : Context) => {
@@ -37,6 +38,7 @@ export const updateAddProfileImgController = async (c : Context) => {
             }
         }
 
+        const old_name = await selectphotoname(sub)
         const fileExt = path.extname(avatar.name);
         const safeName = name.replace(/[^a-zA-Z0-9]/g, '');
         const createimagefilename = `profile-${safeName}-${Date.now()}${fileExt}`
@@ -47,6 +49,26 @@ export const updateAddProfileImgController = async (c : Context) => {
         try {
             const arrayBuffer = await (avatar as File).arrayBuffer() 
             await Bun.write(savepath, arrayBuffer);
+
+            if (old_name?.avatar_url) {
+                const oldfilepath = path.join(dirpath, old_name.avatar_url);
+                const oldfile = Bun.file(oldfilepath)
+
+                if (await oldfile.exists()) {
+                    try{
+                        await oldfile.delete();
+                    }
+                    catch (err) {
+                        await profilelog({
+                            message: `Gagal menghapus file lama: ${old_name.avatar_url}`,
+                            status: 'error',
+                            procces: action,
+                            profile_type: action,
+                            timestamp: new Date()
+                        })
+                    }
+                }
+            }
         } catch (err) {
             return sendprofileResponse(c, 500, 'UPLOAD_ADD_PROFILE_IMG', 'error', action, 'Gagal menyimpan gambar ke server', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR');
         }

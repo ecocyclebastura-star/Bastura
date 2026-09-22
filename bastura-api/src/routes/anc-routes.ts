@@ -6,7 +6,7 @@ import { checkAccessToken } from "../auth/middleware/auth-middleware"
 const ancApp = new Hono()
 
 ancApp.use('/*', checkAccessToken)
-ancApp.get('/announcements', getAncController)
-ancApp.get('/announcements/photo/:filename', getAncPhotoController)
+ancApp.get('/', getAncController)
+ancApp.get('/photo/:filename', getAncPhotoController)
 
 export default ancApp

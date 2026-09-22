@@ -7,14 +7,14 @@ import { forgotpassword } from '../auth/global/forgotpass'
 import { resetPassword } from '../auth/global/resetpass'
 import { checkAccessToken } from "../auth/middleware/auth-middleware";
 import { AccessTimer } from "../model/auth/database-cron-jobs";
-// import { changePassword } from '../auth/global/chagepass'
-// import { userOnly } from '../auth/global/auth-middleware'
+import { startLogRotationJob } from "../auth/cron-jobs/delete-logs";
 
 const authApp = new Hono()
 
-AccessTimer()
+AccessTimer();
+startLogRotationJob();
 
-authApp.post('/login', login )
+authApp.post('/login', login ) 
 authApp.post('/signup', signup)
 authApp.post('/refresh', checkAccessToken, refreshToken)
 authApp.post('/forgot-password', forgotpassword)

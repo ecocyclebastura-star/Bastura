@@ -6,11 +6,13 @@
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "hono": "^4.13.0",
+    "node-cron": "^4.6.0",
     "postgres": "^3.4.9",
     "resend": "^6.19.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/node-cron": "^3.0.11"
   }
 }

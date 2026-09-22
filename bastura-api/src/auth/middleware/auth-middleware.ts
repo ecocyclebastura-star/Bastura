@@ -8,7 +8,8 @@ const JWT_SECRET = process.env.JWT_SECRET
 
 export const adminOnly = async(c: Context , next : Next) => {
     const jwtPayload = c.get('jwtPayload') as any;
-    if (!jwtPayload || (jwtPayload.role !== 2 && jwtPayload.role !== 3) ) {
+    const allowedRoles = [2, 3];
+    if (!jwtPayload || !allowedRoles.includes(jwtPayload.role)) {
         return c.json({ status: 'error', message: 'Unauthorized: Sesi tidak valid' }, 401);
     }
     const sub = jwtPayload.sub as string;

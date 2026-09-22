@@ -6,7 +6,7 @@ import { checkAccessToken } from "../auth/middleware/auth-middleware"
 const eduApp = new Hono()
 
 eduApp.use('/*', checkAccessToken)
-eduApp.get('/education', getEduController)
-eduApp.get('/education/photo/:filename', getEduPhotoController)
+eduApp.get('/', getEduController)
+eduApp.get('/photo/:filename', getEduPhotoController)
 
 export default eduApp

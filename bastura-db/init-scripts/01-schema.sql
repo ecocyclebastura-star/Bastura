@@ -87,7 +87,6 @@ CREATE TABLE IF NOT EXISTS users(
     deleted_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ,
-    reason_banned VARCHAR(200),
 
     CONSTRAINT fk_role_id FOREIGN KEY (role_id) REFERENCES roles(id_roles) ON DELETE CASCADE ON UPDATE CASCADE
 );
@@ -217,7 +216,7 @@ CREATE TABLE IF NOT EXISTS sb_allocations (
 );
 
 CREATE TABLE IF NOT EXISTS jadwal_setor (
-    id_jadwal UUID DEFAULT gen_random_uuid() PRIMARY KEY NOT NULL,
+    id_jadwal SERIAL PRIMARY KEY NOT NULL,
     setor_time TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ

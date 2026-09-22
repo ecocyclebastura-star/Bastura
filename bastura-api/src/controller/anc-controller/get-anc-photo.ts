@@ -15,7 +15,7 @@ export const getAncPhotoController = async (c: Context) => {
         }
 
         
-        const baseDir = resolve(process.cwd(), 'src', 'img', 'catalog');
+        const baseDir = resolve(process.cwd(), 'src', 'img', 'anc');
         const imagePath = resolve(baseDir, filename);
 
         if (!imagePath.startsWith(baseDir)) {

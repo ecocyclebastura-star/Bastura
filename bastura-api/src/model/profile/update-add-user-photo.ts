@@ -14,3 +14,9 @@ export const updateAddUserPhotoModel = async (id : string  , avatar_url : string
         throw error
     }
 }
+
+export const selectphotoname = async (id : string) => {
+
+    const result = await sql`SELECT avatar_url FROM users WHERE id_users = ${id}`
+    return result[0]
+}
