@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { invoke } from "@tauri-apps/api/core";
 import { useAdminTransactionStore } from "./adminTransactionStore";
+import { useAnnouncementAdminStore } from "./announcementAdminStore";
 import { useBalanceStore } from "./balanceStore";
 import { useContentStore } from "./contentStore";
 import { useProfileStore } from "./profileStore";
@@ -141,6 +142,7 @@ export const useAuthStore = defineStore("auth", {
       useWargaStore().reset();
       useAdminTransactionStore().reset();
       useSetoranStore().reset();
+      useAnnouncementAdminStore().reset();
     },
   },
 

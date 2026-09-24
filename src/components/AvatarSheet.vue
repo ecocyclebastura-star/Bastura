@@ -1,15 +1,20 @@
 <script setup lang="ts">
 import AppIcon from "./AppIcon.vue";
 
-defineProps<{
-  open: boolean;
-  /**
-   * Tombol hapus cuma aktif buat membatalkan foto yang baru dipilih tapi
-   * belum disimpan. Menghapus avatar yang sudah ada di server belum bisa,
-   * backend-nya belum punya command untuk itu.
-   */
-  canRemove?: boolean;
-}>();
+withDefaults(
+  defineProps<{
+    open: boolean;
+    /** Judul sheet; dipakai juga untuk foto lampiran pengumuman. */
+    title?: string;
+    /**
+     * Tombol hapus cuma aktif buat membatalkan foto yang baru dipilih tapi
+     * belum disimpan. Menghapus avatar yang sudah ada di server belum bisa,
+     * backend-nya belum punya command untuk itu.
+     */
+    canRemove?: boolean;
+  }>(),
+  { title: "Foto Profil", canRemove: false },
+);
 
 const emit = defineEmits<{ close: []; pick: []; remove: [] }>();
 </script>
@@ -26,7 +31,7 @@ const emit = defineEmits<{ close: []; pick: []; remove: [] }>();
       class="fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/50"
       role="dialog"
       aria-modal="true"
-      aria-label="Foto Profil"
+      :aria-label="title"
       @click.self="emit('close')"
     >
       <div
@@ -52,7 +57,7 @@ const emit = defineEmits<{ close: []; pick: []; remove: [] }>();
             </svg>
           </button>
 
-          <h2 class="flex-1 text-center text-body-md font-bold">Foto Profil</h2>
+          <h2 class="flex-1 text-center text-body-md font-bold">{{ title }}</h2>
 
           <button
             type="button"

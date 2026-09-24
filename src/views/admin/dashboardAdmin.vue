@@ -74,7 +74,7 @@ const menuItems = computed(() =>
 const MENU_ROUTES: Record<string, string | undefined> = {
   "verifikasi-penarikan": "admin-verifikasi-penarikan",
   "jenis-sampah": undefined,
-  pengumuman: undefined,
+  pengumuman: "admin-pengumuman",
   edukasi: undefined,
   "template-simba": undefined,
   "komisi-setoran": undefined,

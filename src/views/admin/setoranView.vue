@@ -123,10 +123,10 @@ onMounted(() => {
     <section class="rounded-2xl border border-primary-500 bg-primary-100 px-4 pt-5 pb-4">
       <div class="flex items-center gap-4">
         <span
-          class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary-500 text-white"
+          class="flex size-12 shrink-0 items-center justify-center rounded-xl border border-secondary-400 bg-primary-500 text-secondary-200"
           aria-hidden="true"
         >
-          <AppIcon name="wallet" class="size-8" />
+          <AppIcon name="penarikan" class="size-10" />
         </span>
         <p class="text-body-reg text-neutral-900">
           Bagikan hasil penjualan sampah kepada warga berdasarkan dari setoran mereka.

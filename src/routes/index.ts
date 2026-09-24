@@ -241,6 +241,28 @@ const routes: RouteRecordRaw[] = [
         component: () => import("../views/admin/detailTransaksiAdminView.vue"),
       },
       {
+        path: "pengumuman",
+        name: "admin-pengumuman",
+        component: () => import("../views/admin/pengumumanAdminView.vue"),
+      },
+      {
+        // Tambah & edit memakai satu form; bedanya ada tidaknya :id.
+        path: "pengumuman/tambah",
+        name: "admin-pengumuman-tambah",
+        component: () => import("../views/admin/formPengumumanView.vue"),
+      },
+      {
+        path: "pengumuman/:id/edit",
+        name: "admin-pengumuman-edit",
+        component: () => import("../views/admin/formPengumumanView.vue"),
+      },
+      {
+        // Tampilan detailnya sama persis dengan versi warga.
+        path: "pengumuman/:id",
+        name: "admin-pengumuman-detail",
+        component: () => import("../views/user/detailPengumumanView.vue"),
+      },
+      {
         path: "verifikasi-penarikan",
         name: "admin-verifikasi-penarikan",
         component: () => import("../views/admin/verifikasiPenarikanView.vue"),

@@ -8,6 +8,7 @@ import {
   resolveCategory,
 } from "../../constants/announcementCategories";
 import { resolveAuthError } from "../../constants/authErrors";
+import { useSectionRoutes } from "../../composables/useSectionRoutes";
 import { useContentStore } from "../../stores/contentStore";
 import type { Announcement } from "../../stores/contentStore";
 import { formatTanggal } from "../../utils/formatters";
@@ -15,6 +16,7 @@ import { formatTanggal } from "../../utils/formatters";
 const route = useRoute();
 const router = useRouter();
 const contentStore = useContentStore();
+const { routeName } = useSectionRoutes();
 
 const announcement = ref<Announcement | null>(null);
 const loading = ref(true);
@@ -47,14 +49,15 @@ onMounted(load);
 /**
  * Halaman ini bisa dibuka dari dashboard maupun dari daftar pengumuman, jadi
  * tombol kembali mengikuti riwayat. Kalau tidak ada riwayat (misal aplikasinya
- * dibuka langsung di URL ini), jatuhkan ke daftar pengumuman.
+ * dibuka langsung di URL ini), jatuhkan ke daftar pengumuman -- milik warga
+ * atau admin, sesuai bagian aplikasi yang membukanya.
  */
 function goBack() {
   if (window.history.state?.back) {
     router.back();
     return;
   }
-  router.push({ name: "user-pengumuman" });
+  router.push({ name: routeName("pengumuman") });
 }
 </script>
 

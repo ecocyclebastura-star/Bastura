@@ -22,6 +22,8 @@ withDefaults(
     filtered?: boolean;
     /** Kelas pembungkus daftar; dipakai buat mengatur jarak antar item. */
     listClass?: string;
+    /** Nama route tujuan tombol kembali. */
+    backTo?: string;
   }>(),
   {
     searchPlaceholder: "Cari...",
@@ -35,6 +37,7 @@ withDefaults(
     emptyFilteredMessage: "Coba ubah kata kunci atau filternya.",
     filtered: false,
     listClass: "flex flex-col",
+    backTo: "dashboard-user",
   },
 );
 
@@ -49,7 +52,7 @@ const emit = defineEmits<{ submit: []; clear: []; retry: [] }>();
          halaman, bukan di tengah sisa ruang setelah tombol. -->
     <header class="relative flex items-center justify-center pt-6 pb-1">
       <RouterLink
-        :to="{ name: 'dashboard-user' }"
+        :to="{ name: backTo }"
         class="absolute left-0 flex size-10 items-center justify-center rounded-full text-neutral-900 transition-colors duration-200 hover:bg-neutral-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
         aria-label="Kembali ke beranda"
       >
