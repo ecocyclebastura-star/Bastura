@@ -161,3 +161,43 @@ export function formatTanggalLengkap(value: string | null | undefined): string {
 
   return TANGGAL_LENGKAP_FORMATTER.format(parsed);
 }
+
+/** "yyyy-mm-dd" dari <input type="date"> jadi Date lokal; alasannya sama dengan formatTanggalLengkap. */
+function parseTanggalInput(value: string): Date | null {
+  const parts = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!parts) return null;
+  return new Date(Number(parts[1]), Number(parts[2]) - 1, Number(parts[3]));
+}
+
+const HARI_FORMATTER = new Intl.DateTimeFormat("id-ID", { day: "2-digit" });
+const HARI_BULAN_FORMATTER = new Intl.DateTimeFormat("id-ID", {
+  day: "2-digit",
+  month: "short",
+});
+
+/**
+ * Rentang tanggal setoran yang ringkas, mis. "01–31 Juli 2026".
+ *
+ * Bagian yang sama di kedua ujung tidak ditulis dua kali: satu bulan cuma
+ * menulis tanggalnya, beda bulan di tahun yang sama menulis "28 Jun – 05 Jul
+ * 2026", dan beda tahun ditulis lengkap. Isian yang tidak bisa dibaca
+ * dikembalikan apa adanya.
+ */
+export function formatPeriode(start: string, end: string): string {
+  const from = parseTanggalInput(start);
+  const to = parseTanggalInput(end);
+  if (!from || !to) return [start, end].filter(Boolean).join(" – ");
+
+  const sameYear = from.getFullYear() === to.getFullYear();
+
+  if (sameYear && from.getMonth() === to.getMonth()) {
+    if (from.getDate() === to.getDate()) return TANGGAL_FORMATTER.format(to);
+    return `${HARI_FORMATTER.format(from)}–${TANGGAL_FORMATTER.format(to)}`;
+  }
+
+  if (sameYear) {
+    return `${HARI_BULAN_FORMATTER.format(from)} – ${HARI_BULAN_FORMATTER.format(to)} ${to.getFullYear()}`;
+  }
+
+  return `${TANGGAL_FORMATTER.format(from)} – ${TANGGAL_FORMATTER.format(to)}`;
+}

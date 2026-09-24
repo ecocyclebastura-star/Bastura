@@ -12,6 +12,8 @@ declare module "vue-router" {
     guestOnly?: boolean;
     /** Kalau diisi, hanya role di daftar ini yang boleh masuk. */
     roles?: string[];
+    /** Halaman dengan bar aksi sendiri di bawah; bottom navigation disembunyikan. */
+    hideTabBar?: boolean;
   }
 }
 
@@ -199,6 +201,34 @@ const routes: RouteRecordRaw[] = [
         path: "setoran",
         name: "admin-setoran",
         component: () => import("../views/admin/setoranView.vue"),
+      },
+      {
+        // Tambah & edit memakai satu form; bedanya ada tidaknya :id.
+        path: "setoran/tambah",
+        name: "admin-setoran-tambah",
+        component: () => import("../views/admin/formSetoranView.vue"),
+        meta: { hideTabBar: true },
+      },
+      {
+        path: "setoran/:id/edit",
+        name: "admin-setoran-edit",
+        component: () => import("../views/admin/formSetoranView.vue"),
+        meta: { hideTabBar: true },
+      },
+      {
+        path: "setoran/bagi-hasil",
+        name: "admin-setoran-bagi-hasil",
+        component: () => import("../views/admin/bagiHasilInputView.vue"),
+      },
+      {
+        path: "setoran/bagi-hasil/alokasi",
+        name: "admin-setoran-bagi-hasil-alokasi",
+        component: () => import("../views/admin/bagiHasilAlokasiView.vue"),
+      },
+      {
+        path: "setoran/bagi-hasil/alokasi/:idUser",
+        name: "admin-setoran-bagi-hasil-detail",
+        component: () => import("../views/admin/bagiHasilDetailView.vue"),
       },
       {
         path: "riwayat",

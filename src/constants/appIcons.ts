@@ -28,6 +28,8 @@ import calendarIcon from "../assets/icon-calendar.svg?raw";
 import clockIcon from "../assets/icon-clock.svg?raw";
 import documentIcon from "../assets/icon-document.svg?raw";
 import handCoinIcon from "../assets/icon-hand-coin.svg?raw";
+import bankIcon from "../assets/icon-bank.svg?raw";
+import trashRoundedIcon from "../assets/icon-trash-rounded.svg?raw";
 // Kotak berwarna di daftar transaksi dibuat lewat TransactionKindIcon.vue.
 import setoranIcon from "../assets/icon-setoran.svg?raw";
 import penarikanIcon from "../assets/icon-penarikan.svg?raw";
@@ -55,6 +57,8 @@ export const APP_ICONS = {
   clock: clockIcon,
   document: documentIcon,
   handCoin: handCoinIcon,
+  bank: bankIcon,
+  trashRounded: trashRoundedIcon,
   setoran: setoranIcon,
   penarikan: penarikanIcon,
 } as const;

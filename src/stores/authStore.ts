@@ -5,6 +5,7 @@ import { useBalanceStore } from "./balanceStore";
 import { useContentStore } from "./contentStore";
 import { useProfileStore } from "./profileStore";
 import { useScheduleStore } from "./scheduleStore";
+import { useSetoranStore } from "./setoranStore";
 import { useTransactionStore } from "./transactionStore";
 import { useWargaStore } from "./wargaStore";
 
@@ -139,6 +140,7 @@ export const useAuthStore = defineStore("auth", {
       useTransactionStore().reset();
       useWargaStore().reset();
       useAdminTransactionStore().reset();
+      useSetoranStore().reset();
     },
   },
 
