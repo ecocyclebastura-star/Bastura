@@ -102,7 +102,7 @@ export const checkUserStatus = async (id: string) => {
 
 export const checkadmin = async (id: string) => {
   const result = await sql`SELECT role_id FROM users WHERE id_users = ${id} LIMIT 1`
-  if (result[0].role_id === 1) {
+  if (result.length === 0 || result[0].role_id === 1) {
     return "ACCESS_DENIED_UR_NOT_ADMIN"
   }
   return "ACCESS_GRANTED"

@@ -74,3 +74,29 @@ GROUP BY
     nominal,
     w.wd_status,
     w.created_at;  
+
+-- View untuk detail splitbills beserta alokasi warga dan info fee
+CREATE OR REPLACE VIEW view_splitbills_detail AS
+SELECT
+    sb.id_sb,
+    sb.total_sb,
+    sb.date_start,
+    sb.date_end,
+    sb.remaining_sb,
+    sb.status,
+    sb.processed_at,
+    sb.processed_by,
+    f.amount_fee                                       AS fee_persen,
+    (sb.total_sb - (sb.total_sb * f.amount_fee / 100)) AS dana_setelah_pajak,
+    sba.id_sb_allocations,
+    sba.id_user,
+    u.name                                             AS nama_warga,
+    u.email,
+    sba.final_amount,
+    sba.allocated_at
+FROM split_bills sb
+LEFT JOIN sb_allocations sba ON sb.id_sb = sba.id_sb
+LEFT JOIN users u ON sba.id_user = u.id_users
+CROSS JOIN LATERAL (
+    SELECT amount_fee FROM fee ORDER BY created_at DESC LIMIT 1
+) f;

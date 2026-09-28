@@ -7,6 +7,7 @@ import eduApp from './routes/edu-routes'
 import updateApp from './routes/update-routes'
 import profileApp from './routes/profile-routes'
 import catalogApp from './routes/catalog-route'
+import splitbillsApp from './routes/splitbills-routes'
 
 const app = new Hono()
 
@@ -37,5 +38,6 @@ app.route('/api/v1/education', eduApp)
 app.route('/api/v1/updates', updateApp)
 app.route('/api/v1/users/account', profileApp)
 app.route('/api/v1/waste/', catalogApp)
+app.route('/api/v1/splitbills', splitbillsApp)
 
 export default app

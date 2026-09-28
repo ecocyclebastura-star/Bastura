@@ -10,6 +10,8 @@ export const AccessTimer = () => {
             setTimeout(runTimer, 60000);
         }
     };
-    runTimer();
+    
+    // Tunda eksekusi pertama 15 detik agar DB sempat booting
+    setTimeout(runTimer, 15000);
 };
 

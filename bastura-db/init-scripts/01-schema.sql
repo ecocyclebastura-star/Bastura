@@ -197,6 +197,7 @@ CREATE TABLE IF NOT EXISTS split_bills (
     date_start TIMESTAMPTZ, 
     date_end TIMESTAMPTZ,
     remaining_sb BIGINT NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'completed', 'canceled')),
     processed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     processed_by UUID NOT NULL,
 
@@ -212,7 +213,8 @@ CREATE TABLE IF NOT EXISTS sb_allocations (
 
     CONSTRAINT fk_id_sb FOREIGN KEY (id_sb) REFERENCES split_bills(id_sb) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_id_user_sba FOREIGN KEY (id_user) REFERENCES users(id_users) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT cek_final_amount CHECK (final_amount > 0)
+    CONSTRAINT cek_final_amount CHECK (final_amount > 0),
+    CONSTRAINT unique_user_per_sb UNIQUE (id_sb, id_user)
 );
 
 CREATE TABLE IF NOT EXISTS jadwal_setor (
