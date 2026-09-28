@@ -6,9 +6,16 @@ where
 {
     let value = serde_json::Value::deserialize(deserializer)?;
     match value {
+        serde_json::Value::Null => Ok(0),
         serde_json::Value::Number(n) => n.as_i64().ok_or_else(|| serde::de::Error::custom("Invalid number")),
-        serde_json::Value::String(s) => s.parse::<i64>().map_err(serde::de::Error::custom),
-        _ => Err(serde::de::Error::custom("Expected string or number for nominal")),
+        serde_json::Value::String(s) => {
+            if s.trim().is_empty() {
+                Ok(0)
+            } else {
+                s.parse::<i64>().map_err(serde::de::Error::custom)
+            }
+        },
+        _ => Err(serde::de::Error::custom("Expected string, number, or null for nominal")),
     }
 }
 

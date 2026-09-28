@@ -17,13 +17,22 @@ pub fn start_balance_worker(app: tauri::AppHandle, state: AppState) {
             tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
 
             // --- Cek sesi: lewati siklus jika user belum login ---
-            let has_token = {
+            let access_token_opt = {
                 let auth = state.auth.lock().await;
-                auth.access_token.is_some()
+                auth.access_token.clone()
             };
 
-            if !has_token {
-                tracing::debug!("Balance Worker: Tidak ada sesi aktif, melewati siklus ini...");
+            let access_token = match access_token_opt {
+                Some(token) => token,
+                None => {
+                    tracing::debug!("Balance Worker: Tidak ada sesi aktif, melewati siklus ini...");
+                    continue;
+                }
+            };
+
+            // --- Cek role: lewati siklus jika role bukan user biasa (misal Admin) ---
+            let role = crate::services::auth_service::decode_jwt_role(&access_token);
+            if role.to_lowercase() != "warga" {
                 continue;
             }
 
@@ -74,6 +83,20 @@ pub fn start_balance_worker(app: tauri::AppHandle, state: AppState) {
 /// Berguna untuk dipanggil langsung setelah transaksi (seperti penarikan saldo)
 /// agar UI langsung ter-update tanpa menunggu siklus 60 detik worker.
 pub async fn force_fetch_and_emit_balance(state: &AppState) {
+    // --- Cek role: abaikan jika bukan user biasa ---
+    let access_token_opt = {
+        let auth = state.auth.lock().await;
+        auth.access_token.clone()
+    };
+    if let Some(token) = access_token_opt {
+        let role = crate::services::auth_service::decode_jwt_role(&token);
+        if role.to_lowercase() != "warga" {
+            return;
+        }
+    } else {
+        return;
+    }
+
     let balance = match transaction_service::fetch_real_balance(state).await {
         Ok(val) => val,
         Err(e) => {

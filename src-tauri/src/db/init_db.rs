@@ -232,6 +232,25 @@ pub async fn init_db(db_path: &Path) -> Result<SqlitePool, AppError> {
             allocations_payload TEXT NOT NULL,
             last_saved DATETIME DEFAULT CURRENT_TIMESTAMP
         );
+        
+        -- 10. Cache Transaksi Split Bill
+        CREATE TABLE IF NOT EXISTS splitbill_transaction_cache (
+            id_transaksi TEXT PRIMARY KEY,
+            id_user TEXT,
+            id_users TEXT,
+            jenis_transaksi TEXT NOT NULL,
+            deskripsi TEXT,
+            nominal INTEGER NOT NULL,
+            status TEXT NOT NULL,
+            tanggal_transaksi TEXT NOT NULL,
+            name TEXT
+        );
+
+        -- 11. Cache Katalog Split Bill
+        CREATE TABLE IF NOT EXISTS splitbill_catalog_cache (
+            name TEXT PRIMARY KEY,
+            price REAL NOT NULL
+        );
         ",
     )
     .execute(&pool)

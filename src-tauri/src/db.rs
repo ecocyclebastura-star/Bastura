@@ -7,3 +7,4 @@ pub mod sync_queries;
 pub mod transaction_queries;
 pub mod waste_queries;
 pub mod admin_queries;
+pub mod splitbill_queries;

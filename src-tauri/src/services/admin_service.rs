@@ -400,6 +400,13 @@ pub async fn get_admin_withdrawals_service(
             } else {
                 let status = r.status();
                 let body_text = r.text().await.unwrap_or_default();
+                
+                // Jika error karena data memang kosong, kembalikan list kosong agar UI tampil cantik
+                if body_text.contains("WITHDRAWAL_NOT_FOUND") {
+                    tracing::info!("Tidak ada penarikan yang menunggu (WITHDRAWAL_NOT_FOUND). Mengembalikan list kosong.");
+                    return Ok(vec![]);
+                }
+
                 tracing::warn!(
                     "API verify-withdrawal/admin merespons dengan status error: {} - {}",
                     status,

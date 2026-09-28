@@ -6,3 +6,4 @@ pub mod transaction_controller;
 pub mod waste_controller;
 pub mod schedule_controller;
 pub mod admin_controller;
+pub mod splitbill_controller;

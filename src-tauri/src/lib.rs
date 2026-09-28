@@ -136,6 +136,10 @@ pub fn run() {
             crate::controllers::admin_controller::get_all_transactions_admin_command,
             crate::controllers::admin_controller::get_admin_withdrawals_command,
             crate::controllers::admin_controller::verify_withdrawal_command,
+            crate::controllers::splitbill_controller::init_splitbill_command,
+            crate::controllers::splitbill_controller::confirm_splitbill_command,
+            crate::controllers::splitbill_controller::get_splitbill_history_command,
+            crate::controllers::splitbill_controller::get_user_splitbill_detail_command,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

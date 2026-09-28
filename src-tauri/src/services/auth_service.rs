@@ -125,6 +125,13 @@ async fn establish_session(state: &AppState, data: ApiData) -> LoginSuccessRespo
 
     tracing::info!("Sesi berhasil dibuat.");
 
+    if role_str.to_lowercase() == "warga" {
+        let state_clone = state.clone();
+        tokio::spawn(async move {
+            crate::services::balance_worker::force_fetch_and_emit_balance(&state_clone).await;
+        });
+    }
+
     LoginSuccessResponse {
         id: data.user.id,
         name: data.user.name,
@@ -266,6 +273,8 @@ pub async fn cleanup_session_service(state: &AppState) {
         "transaction_history_cache",
         "daftar_warga_cache",
         "transaksi_global_cache",
+        "splitbill_transaction_cache",
+        "splitbill_catalog_cache",
     ];
 
     let _ = crate::db::sync_queries::clear_user_cache_and_sync_logs(&state.db, &tables_to_clear).await;
