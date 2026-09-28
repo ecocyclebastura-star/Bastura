@@ -13,6 +13,7 @@ import { resolveAuthError } from "../../constants/authErrors";
 import { useToast } from "../../composables/useToast";
 import { useSetoranStore } from "../../stores/setoranStore";
 import type { AlokasiWarga } from "../../stores/setoranStore";
+import { formatBerat } from "../../constants/setoran";
 import { formatRupiah } from "../../utils/formatters";
 
 const router = useRouter();
@@ -27,7 +28,10 @@ if (!setoranStore.draft) {
 const draft = computed(() => setoranStore.draft);
 const warga = computed(() => draft.value?.warga ?? []);
 
-const komisiLabel = computed(() => `${draft.value?.komisi_persen ?? 0}%`);
+/** Potongan pajak & biaya admin; backend cuma memberi nominalnya, jadi persennya dihitung. */
+const komisiLabel = computed(
+  () => `${new Intl.NumberFormat("id-ID", { maximumFractionDigits: 1 }).format(setoranStore.potonganPersen)}%`,
+);
 
 /** Pesan di bawah kartu dana selama pembagiannya belum pas. */
 const sisaWarning = computed(() => {
@@ -58,6 +62,15 @@ function confirmRemove() {
   setoranStore.removeAlokasi(target.id_user);
   removeTarget.value = null;
   showToast("Perubahan berhasil disimpan.", "success");
+}
+
+/* =============================== KEMBALIKAN =============================== */
+
+const dikeluarkan = computed(() => draft.value?.dikeluarkan ?? []);
+
+function restore(item: AlokasiWarga) {
+  setoranStore.restoreAlokasi(item.id_user);
+  showToast(`${item.nama_warga} kembali ke daftar pembagian dengan bagian Rp0.`, "success");
 }
 
 /* =============================== KONFIRMASI =============================== */
@@ -157,7 +170,7 @@ async function distribute() {
       <EmptyState
         v-if="warga.length === 0"
         title="Daftar pembagian kosong"
-        message="Semua warga sudah dikeluarkan. Kembali ke Input Data untuk memilih periode lagi."
+        message="Semua warga sudah dikeluarkan. Kembalikan warga dari daftar di bawah, atau kembali ke Input Data untuk memilih periode lain."
       />
 
       <AlokasiWargaCard
@@ -169,6 +182,36 @@ async function distribute() {
         @detail="openDetail(item)"
         @remove="removeTarget = item"
       />
+    </section>
+
+    <!-- Warga yang dikeluarkan bisa dikembalikan tanpa mengulang Input Data. -->
+    <section v-if="dikeluarkan.length > 0" class="flex flex-col gap-3">
+      <h2 class="text-body-md font-extrabold text-neutral-900">Dikeluarkan dari Pembagian</h2>
+
+      <article
+        v-for="item in dikeluarkan"
+        :key="item.id_user"
+        class="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-neutral-100 px-4 py-2"
+      >
+        <div class="min-w-0 flex-1">
+          <h3 class="truncate text-body-reg font-bold text-neutral-700">
+            {{ item.nama_warga || "-" }}
+          </h3>
+          <p class="text-body-tiny text-neutral-600">
+            Total Setoran :
+            <span class="font-bold">{{ formatBerat(item.total_berat) }}</span>
+          </p>
+        </div>
+
+        <button
+          type="button"
+          class="shrink-0 cursor-pointer rounded-full bg-primary-500 px-4 py-0.5 text-body-tiny font-bold text-white transition-colors duration-200 hover:bg-primary-600 active:bg-primary-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1"
+          :aria-label="`Kembalikan ${item.nama_warga} ke daftar pembagian`"
+          @click="restore(item)"
+        >
+          Kembalikan
+        </button>
+      </article>
     </section>
 
     <BaseButton
@@ -183,7 +226,7 @@ async function distribute() {
     <BaseDialog
       :open="removeTarget !== null"
       title="Hapus dari Daftar Pembagian?"
-      message="Warga ini akan dikeluarkan dari daftar pembagian hasil setoran. Data setoran tetap tersimpan dan tidak akan dihapus."
+      message="Warga ini akan dikeluarkan dari daftar pembagian hasil setoran. Data setoran tetap tersimpan dan warga bisa dikembalikan lagi sebelum dana dibagikan."
       dismissible
       @close="removeTarget = null"
     >

@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import AvatarPhoto from "../../components/AvatarPhoto.vue";
+import EmptyState from "../../components/EmptyState.vue";
 import PageHeader from "../../components/PageHeader.vue";
 import StatusBadge from "../../components/StatusBadge.vue";
 import TransactionKindIcon from "../../components/TransactionKindIcon.vue";
-import { formatBerat, splitProportional } from "../../constants/setoran";
+import { resolveAuthError } from "../../constants/authErrors";
+import { formatBerat } from "../../constants/setoran";
 import { useSetoranStore } from "../../stores/setoranStore";
+import type { RincianSetoran } from "../../stores/setoranStore";
 import { formatPeriode, formatRibuan, formatRupiah, formatTanggal } from "../../utils/formatters";
 
 const route = useRoute();
@@ -29,19 +32,32 @@ const periode = computed(() =>
 );
 
 /**
- * Bagian warga dipecah per setoran sebanding beratnya -- cara yang sama
- * dengan yang dikirim waktu dana dibagikan, jadi angkanya pasti cocok.
+ * Bagian warga dipecah per setoran oleh backend, dari nominal yang sedang
+ * diatur admin -- jadi angkanya ikut berubah kalau nominalnya diubah.
  */
-const riwayat = computed(() => {
-  const target = alokasi.value;
-  if (!target) return [];
+const riwayat = ref<RincianSetoran[]>([]);
+const loading = ref(false);
+const errorMessage = ref("");
 
-  const shares = splitProportional(
-    target.nominal,
-    target.setoran.map((item) => item.berat),
-  );
-  return target.setoran.map((item, index) => ({ ...item, bagian: shares[index] }));
-});
+async function loadRiwayat() {
+  const target = alokasi.value;
+  if (!target || loading.value) return;
+
+  loading.value = true;
+  errorMessage.value = "";
+  try {
+    riwayat.value = await setoranStore.fetchRincian(target.id_user);
+  } catch (error) {
+    errorMessage.value = resolveAuthError(
+      error,
+      "Gagal memuat riwayat setoran. Coba lagi sebentar lagi.",
+    );
+  } finally {
+    loading.value = false;
+  }
+}
+
+onMounted(loadRiwayat);
 </script>
 
 <template>
@@ -71,28 +87,55 @@ const riwayat = computed(() => {
     <section class="mt-2 flex flex-col gap-4 pb-4">
       <h2 class="text-body-md font-extrabold text-neutral-900">Riwayat Setoran</h2>
 
-      <article
-        v-for="item in riwayat"
-        :key="item.id_setoran"
-        class="flex items-center gap-3 rounded-2xl bg-neutral-100 px-3 py-4"
+      <div v-if="loading" class="flex flex-col gap-4" aria-hidden="true">
+        <div v-for="n in 2" :key="n" class="h-24 animate-pulse rounded-2xl bg-neutral-200" />
+      </div>
+
+      <div
+        v-else-if="errorMessage"
+        class="rounded-2xl border border-red-200 bg-red-50 p-4"
+        role="alert"
       >
-        <TransactionKindIcon kind="setoran" />
+        <p class="text-body-sm text-red-700">{{ errorMessage }}</p>
+        <button
+          type="button"
+          class="mt-3 cursor-pointer rounded-full bg-red-600 px-4 py-2 text-body-sm font-bold text-white transition-colors duration-200 hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+          @click="loadRiwayat"
+        >
+          Coba Lagi
+        </button>
+      </div>
 
-        <div class="min-w-0 flex-1">
-          <p class="truncate text-body-sm font-extrabold text-neutral-900">Setoran Sampah</p>
-          <p class="truncate text-body-sm text-neutral-900">
-            {{ item.deskripsi?.trim() || item.category_name || "-" }}/<span class="font-bold">{{
-              formatBerat(item.berat)
-            }}</span>
-          </p>
-          <p class="text-body-tiny text-neutral-400">{{ formatTanggal(item.tanggal_setoran) }}</p>
-        </div>
+      <EmptyState
+        v-else-if="riwayat.length === 0"
+        title="Riwayat setoran kosong"
+        message="Setoran warga ini di periode tersebut belum ditemukan."
+      />
 
-        <div class="flex shrink-0 flex-col items-end gap-2">
-          <StatusBadge :status="item.status" />
-          <p class="text-body-reg font-bold text-primary-700">+Rp {{ formatRibuan(item.bagian) }}</p>
-        </div>
-      </article>
+      <template v-else>
+        <article
+          v-for="item in riwayat"
+          :key="item.id_transaksi"
+          class="flex items-center gap-3 rounded-2xl bg-neutral-100 px-3 py-4"
+        >
+          <TransactionKindIcon kind="setoran" />
+
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-body-sm font-extrabold text-neutral-900">Setoran Sampah</p>
+            <p class="truncate text-body-sm text-neutral-900">
+              {{ item.jenis_sampah || "-" }}<template v-if="item.berat"
+                >/<span class="font-bold">{{ item.berat }}</span></template
+              >
+            </p>
+            <p class="text-body-tiny text-neutral-400">{{ formatTanggal(item.tanggal_transaksi) }}</p>
+          </div>
+
+          <div class="flex shrink-0 flex-col items-end gap-2">
+            <StatusBadge :status="item.status" />
+            <p class="text-body-reg font-bold text-primary-700">+Rp {{ formatRibuan(item.bagian) }}</p>
+          </div>
+        </article>
+      </template>
     </section>
   </main>
 </template>

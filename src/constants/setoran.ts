@@ -93,14 +93,5 @@ export function splitProportional(total: number, weights: readonly number[]): nu
   return result;
 }
 
-/**
- * Potongan komisi bank sampah dari total dana BSI. Sisanya yang dibagikan ke
- * warga. Komisinya dibulatkan ke rupiah terdekat.
- */
-export function danaUntukWarga(totalDana: number, komisiPersen: number): number {
-  const komisi = Math.round((totalDana * komisiPersen) / 100);
-  return Math.max(0, totalDana - komisi);
-}
-
 /** Langkah tombol +/- di kartu alokasi warga. */
 export const ALOKASI_STEP = 1_000;

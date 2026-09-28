@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Shell halaman role admin: isi halaman + bottom navigation yang selalu tampil.
+// Shell halaman role admin: isi halaman + bottom navigation.
 import { RouterView, useRoute } from "vue-router";
 import AdminTabBar from "../components/AdminTabBar.vue";
 
@@ -13,7 +13,8 @@ const route = useRoute();
       <RouterView />
     </div>
 
-    <!-- Halaman form punya bar Simpan sendiri di posisi yang sama. -->
+    <!-- Halaman tugas (form & alur bagi hasil) cukup memakai tombol kembali;
+         form setoran malah punya bar Simpan sendiri di posisi yang sama. -->
     <AdminTabBar v-if="!route.meta.hideTabBar" />
   </div>
 </template>

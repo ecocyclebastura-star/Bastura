@@ -12,7 +12,12 @@ declare module "vue-router" {
     guestOnly?: boolean;
     /** Kalau diisi, hanya role di daftar ini yang boleh masuk. */
     roles?: string[];
-    /** Halaman dengan bar aksi sendiri di bawah; bottom navigation disembunyikan. */
+    /**
+     * Sembunyikan bottom navigation. Dipakai halaman tugas (form & alur
+     * beberapa langkah), supaya isian tidak hilang gara-gara tab tertekan dan
+     * tombol utamanya tidak bersaing dengan bar. Halaman detail yang cuma
+     * dibaca tetap menampilkannya.
+     */
     hideTabBar?: boolean;
   }
 }
@@ -37,16 +42,19 @@ function profileRoutes(prefix: "user" | "admin"): RouteRecordRaw[] {
       path: "profil/edit",
       name: `${prefix}-edit-profil`,
       component: () => import("../views/profile/editProfilView.vue"),
+      meta: { hideTabBar: true },
     },
     {
       path: "profil/ganti-password",
       name: `${prefix}-ganti-password`,
       component: () => import("../views/profile/gantiPasswordView.vue"),
+      meta: { hideTabBar: true },
     },
     {
       path: "profil/nonaktif-akun",
       name: `${prefix}-nonaktif-akun`,
       component: () => import("../views/profile/nonaktifAkunView.vue"),
+      meta: { hideTabBar: true },
     },
     {
       path: "profil/bantuan",
@@ -157,6 +165,7 @@ const routes: RouteRecordRaw[] = [
         path: "dompet/tarik-saldo",
         name: "user-tarik-saldo",
         component: () => import("../views/user/tarikSaldoView.vue"),
+        meta: { hideTabBar: true },
       },
       {
         path: "scan",
@@ -219,16 +228,19 @@ const routes: RouteRecordRaw[] = [
         path: "setoran/bagi-hasil",
         name: "admin-setoran-bagi-hasil",
         component: () => import("../views/admin/bagiHasilInputView.vue"),
+        meta: { hideTabBar: true },
       },
       {
         path: "setoran/bagi-hasil/alokasi",
         name: "admin-setoran-bagi-hasil-alokasi",
         component: () => import("../views/admin/bagiHasilAlokasiView.vue"),
+        meta: { hideTabBar: true },
       },
       {
         path: "setoran/bagi-hasil/alokasi/:idUser",
         name: "admin-setoran-bagi-hasil-detail",
         component: () => import("../views/admin/bagiHasilDetailView.vue"),
+        meta: { hideTabBar: true },
       },
       {
         path: "riwayat",
@@ -250,11 +262,13 @@ const routes: RouteRecordRaw[] = [
         path: "pengumuman/tambah",
         name: "admin-pengumuman-tambah",
         component: () => import("../views/admin/formPengumumanView.vue"),
+        meta: { hideTabBar: true },
       },
       {
         path: "pengumuman/:id/edit",
         name: "admin-pengumuman-edit",
         component: () => import("../views/admin/formPengumumanView.vue"),
+        meta: { hideTabBar: true },
       },
       {
         // Tampilan detailnya sama persis dengan versi warga.

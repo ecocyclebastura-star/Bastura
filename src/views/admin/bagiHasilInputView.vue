@@ -50,6 +50,12 @@ const today = (() => {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 })();
 
+/** "yyyy-mm-dd" dari <input type="date"> jadi "dd/mm/yyyy" seperti di desain. */
+function formatTanggalIsian(value: string): string {
+  const parts = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return parts ? `${parts[3]}/${parts[2]}/${parts[1]}` : value;
+}
+
 // Format "yyyy-mm-dd" bisa dibandingkan langsung sebagai string.
 const rangeError = computed(() =>
   dateStart.value && dateEnd.value && dateEnd.value < dateStart.value
@@ -92,6 +98,11 @@ function proceed() {
 const fieldClass =
   "rounded-2xl border border-primary-700 bg-white text-body-reg text-neutral-900 focus-within:border-primary-500 focus-within:ring-1 focus-within:ring-primary-500";
 const labelClass = "text-body-reg font-medium text-neutral-900";
+
+const dateFieldClass = "relative flex min-w-0 flex-1 items-center gap-0.5 overflow-hidden px-2 py-3";
+const dateTextClass = "min-w-0 flex-1 truncate text-body-tiny min-[360px]:text-body-sm";
+const dateInputClass =
+  "absolute inset-0 size-full min-w-0 cursor-pointer appearance-none opacity-0";
 </script>
 
 <template>
@@ -125,22 +136,37 @@ const labelClass = "text-body-reg font-medium text-neutral-900";
         <fieldset class="flex flex-col gap-1.5">
           <legend :class="[labelClass, 'mb-1.5']">Rentang Tanggal Setoran</legend>
 
-          <div class="flex items-center gap-2">
-            <div :class="[fieldClass, 'flex min-w-0 flex-1 items-center gap-1 px-3 py-3']">
+          <!--
+            Android WebView menggambar <input type="date"> sendiri: tanpa
+            placeholder, ada panah dropdown, dan lebar minimalnya tidak bisa
+            menyusut sehingga kolom kedua terdorong keluar layar. Karena itu
+            yang terlihat adalah teks kita sendiri, sementara input aslinya
+            dibentangkan transparan di atasnya supaya ketukan tetap membuka
+            date picker sistem.
+          -->
+          <div class="flex items-center gap-1.5">
+            <div :class="[fieldClass, dateFieldClass]">
+              <span :class="[dateTextClass, dateStart ? 'text-neutral-900' : 'text-neutral-400']" aria-hidden="true">
+                {{ dateStart ? formatTanggalIsian(dateStart) : "dd/mm/yyyy" }}
+              </span>
+              <AppIcon name="calendar" class="size-5 shrink-0 text-primary-800" />
               <input
                 v-model="dateStart"
                 type="date"
                 required
                 :max="dateEnd || today"
                 aria-label="Tanggal awal"
-                class="min-w-0 flex-1 bg-transparent text-body-sm focus:outline-none"
+                :class="dateInputClass"
               />
-              <AppIcon name="calendar" class="size-6 text-primary-800" />
             </div>
 
-            <span class="h-0.5 w-3 shrink-0 bg-neutral-900" aria-hidden="true" />
+            <span class="h-0.5 w-2.5 shrink-0 bg-neutral-900" aria-hidden="true" />
 
-            <div :class="[fieldClass, 'flex min-w-0 flex-1 items-center gap-1 px-3 py-3']">
+            <div :class="[fieldClass, dateFieldClass]">
+              <span :class="[dateTextClass, dateEnd ? 'text-neutral-900' : 'text-neutral-400']" aria-hidden="true">
+                {{ dateEnd ? formatTanggalIsian(dateEnd) : "dd/mm/yyyy" }}
+              </span>
+              <AppIcon name="calendar" class="size-5 shrink-0 text-primary-800" />
               <input
                 v-model="dateEnd"
                 type="date"
@@ -148,9 +174,8 @@ const labelClass = "text-body-reg font-medium text-neutral-900";
                 :min="dateStart || undefined"
                 :max="today"
                 aria-label="Tanggal akhir"
-                class="min-w-0 flex-1 bg-transparent text-body-sm focus:outline-none"
+                :class="dateInputClass"
               />
-              <AppIcon name="calendar" class="size-6 text-primary-800" />
             </div>
           </div>
 
@@ -219,19 +244,15 @@ const labelClass = "text-body-reg font-medium text-neutral-900";
 </template>
 
 <style scoped>
-/* Sama seperti ScheduleSheet: ikon kalender bawaan browser disembunyikan
-   tapi dibentangkan sepenuh kolom, jadi ketukan di mana pun tetap membuka
-   date picker sistem sementara yang terlihat ikon kita. */
-input[type="date"] {
-  position: relative;
-}
-
+/* Input-nya sudah transparan & dibentangkan (dateInputClass). Ikon kalender
+   bawaannya ikut dibentangkan sepenuh kolom supaya di browser desktop pun
+   klik di mana saja langsung membuka date picker, bukan cuma memilih
+   bagian hari/bulan/tahun. */
 input[type="date"]::-webkit-calendar-picker-indicator {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   cursor: pointer;
-  opacity: 0;
 }
 </style>
