@@ -33,15 +33,26 @@ const komisiLabel = computed(
   () => `${new Intl.NumberFormat("id-ID", { maximumFractionDigits: 1 }).format(setoranStore.potonganPersen)}%`,
 );
 
-/** Pesan di bawah kartu dana selama pembagiannya belum pas. */
-const sisaWarning = computed(() => {
+/**
+ * Server menolak alokasi yang nominalnya 0 (INVALID_AMOUNT), jadi warga
+ * seperti itu harus diberi bagian atau dikeluarkan dulu sebelum konfirmasi.
+ */
+const jumlahWargaNol = computed(() => warga.value.filter((item) => item.nominal <= 0).length);
+
+/** Pesan di bawah kartu dana selama pembagiannya belum bisa dikonfirmasi. */
+const warning = computed(() => {
   if (setoranStore.sisaDana > 0) return "Masih terdapat sisa dana yang belum dibagikan";
   if (setoranStore.sisaDana < 0) return "Dana terbagi melebihi dana yang tersedia";
+  if (jumlahWargaNol.value > 0) {
+    return `Masih ada ${jumlahWargaNol.value} warga dengan bagian Rp0. Beri bagian atau keluarkan dari daftar.`;
+  }
   return "";
 });
 
-/** Semua dana harus terbagi habis, persis, sebelum boleh dikonfirmasi. */
-const canConfirm = computed(() => warga.value.length > 0 && setoranStore.sisaDana === 0);
+/** Dana harus terbagi habis, persis, dan tiap warga mendapat bagian. */
+const canConfirm = computed(
+  () => warga.value.length > 0 && setoranStore.sisaDana === 0 && jumlahWargaNol.value === 0,
+);
 
 function openDetail(item: AlokasiWarga) {
   router.push({
@@ -154,14 +165,14 @@ async function distribute() {
     </section>
 
     <p
-      v-if="sisaWarning && warga.length > 0"
+      v-if="warning && warga.length > 0"
       class="-mt-2 flex items-center gap-1.5 text-body-tiny font-medium text-orange-600"
       role="status"
     >
       <svg class="size-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
         <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1 5h2v7h-2V7Zm0 9h2v2h-2v-2Z" />
       </svg>
-      {{ sisaWarning }}
+      {{ warning }}
     </p>
 
     <section class="flex flex-col gap-3">
