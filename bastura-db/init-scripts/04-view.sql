@@ -38,10 +38,12 @@ SELECT
     u.status_active, 
     u.balance_held,    
     COALESCE(b.total_balance, 0) AS total_balance,
-    COALESCE(SUM(d.weight_dp), 0) AS total_weight
+    COALESCE(SUM(d.weight_dp), 0) AS total_weight,
+    r.roles AS role
 FROM users u
 LEFT JOIN balance b ON u.id_users = b.id_user
 LEFT JOIN deposit d ON u.id_users = d.id_user AND d.dp_status = 'processed'
+LEFT JOIN roles r ON u.role_id = r.id_roles
 WHERE u.role_id = 1
 GROUP BY 
     u.id_users, 
@@ -51,7 +53,8 @@ GROUP BY
     u.created_at,
     u.status_active,
     u.balance_held,
-    b.total_balance;
+    b.total_balance,
+    r.roles;
 
 CREATE OR REPLACE VIEW view_penarikan_warga  AS
 SELECT 
