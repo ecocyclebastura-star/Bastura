@@ -2,6 +2,11 @@ import { Context } from "hono";
 import { unblockUser } from "../../model/admin/unblock-users";
 import { sendAuthResponse } from "../../logs/auth/auth-logs";
 
+const validateUUID = (uuid: string) => {
+    const regexExp = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/gi;
+    return regexExp.test(uuid);
+}
+
 export const unblockUserController = async (c : Context) => {
     try {
         const payload = c.get('jwtPayload') as any;
@@ -12,8 +17,8 @@ export const unblockUserController = async (c : Context) => {
             return sendAuthResponse(c, 401, 'error', 'unblock_user', 'Unauthorized: Token tidak valid', 'Unauthorized: Token tidak valid', null, 'ERR_UNAUTHORIZED');
         }
 
-        if (!id_user) {
-            return sendAuthResponse(c, 400, 'error', 'unblock_user', 'User ID is required', 'User ID is required', null, 'ERR_MISSING_USER_ID');
+        if (!id_user || !validateUUID(id_user)) {
+            return sendAuthResponse(c, 400, 'error', 'unblock_user', 'Format User ID tidak valid', 'Format User ID tidak valid', null, 'ERR_INVALID_USER_ID');
         }
 
         const result = await unblockUser(id_user, id_admin);

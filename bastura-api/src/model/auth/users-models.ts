@@ -19,7 +19,7 @@ export const getUserByEmail = async (identifier: string) => {
 export const createUser = async (user: any) => {
   const result = await sql`
     INSERT INTO users (id_users, name, email, phone, password,role_id, created_at)
-    VALUES (gen_random_uuid(), ${user.name}, ${user.email}, ${user.phone}, ${user.password},1, NOW())
+    VALUES (gen_random_uuid(), ${user.name}, ${user.email}, ${user.phone ?? null}, ${user.password},1, NOW())
     RETURNING id_users as id, name, email, phone, role_id as role
   `
   return result[0]

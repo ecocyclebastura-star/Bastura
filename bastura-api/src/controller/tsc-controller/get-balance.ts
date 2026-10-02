@@ -22,7 +22,7 @@ export const getbalanceController = async (c: Context) => {
         } 
 
         return sendtscResponse(c, 200, 'SALDO_REALTIME', 'success', action, 'Saldo berhasil diambil', 'Saldo berhasil diambil', {
-            total_balance: user_balance.total_balance
+            total_balance: Number(user_balance.total_balance)
         },'GET_BALANCE_SUCCESS')
     } catch (error) {
         console.error("Error di get-balance:", error);

@@ -10,15 +10,16 @@ export const verifty_wd = async(c : Context) => {
     const token = c.get('jwtPayload') as any ;
     const id_admin = token.sub;
 
-    const id_tsc = payload.id_tsc;
-    const proccess_type = payload.proccess_type;
+    // Menggunakan nama variabel sesuai dengan dokumentasi (id_wd dan status)
+    const id_tsc = payload.id_wd || payload.id_tsc;
+    const proccess_type = payload.status || payload.proccess_type;
 
     if (!id_admin || id_admin === undefined) {
         return sendtscResponse(c, 401, 'VERIFY_WD', 'error', 'from', 'Unauthorized', 'Unauthorized', null, 'TOKEN_INVALID');
     }
 
     if ( !id_tsc || !proccess_type || id_tsc === undefined || proccess_type === undefined) {
-        return sendtscResponse(c, 400, 'VERIFY_WD', 'error', 'from', 'Bad Request', 'Bad Request', null, 'BAD_REQUEST');
+        return sendtscResponse(c, 400, 'VERIFY_WD', 'error', 'from', 'Bad Request', 'Pastikan menyertakan id_wd dan status', null, 'BAD_REQUEST');
     }   
     
     const result = await veriftyWD(id_admin, id_tsc , proccess_type);

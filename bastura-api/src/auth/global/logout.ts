@@ -24,11 +24,11 @@ export const logout = async (c: Context) => {
       await deleteRefreshToken(reqToken).catch(console.error)
     }
 
-    await sendAuthResponse(c, 200 , 'success' , 'Logout Success ' , `User ${userId} berhasil logout` , `User ${userId} berhasil logout` , {})
+    return await sendAuthResponse(c, 200 , 'success' , 'Logout Success ' , `User ${userId} berhasil logout` , `User ${userId} berhasil logout` , {})
 
   } catch (error) {
 
-    await sendAuthResponse(c, 500 , 'error' , 'Logout Error ' , 'Internal Server Error' , 'Internal Server Error' , 'INTERNAL_SERVER_ERROR'   )
+    return await sendAuthResponse(c, 500 , 'error' , 'Logout Error ' , 'Internal Server Error' , 'Internal Server Error' , 'INTERNAL_SERVER_ERROR'   )
     
   }
 }

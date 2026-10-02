@@ -8,6 +8,7 @@ import updateApp from './routes/update-routes'
 import profileApp from './routes/profile-routes'
 import catalogApp from './routes/catalog-route'
 import splitbillsApp from './routes/splitbills-routes'
+import adminApp from './routes/admin-routes'
 
 const app = new Hono()
 
@@ -31,6 +32,7 @@ app.get('/hello', async (c) => {
   }
 })
 
+app.route('/api/v1/admin', adminApp)
 app.route('/api/v1/auth', authApp)
 app.route('/api/v1/transaction', tscApp)
 app.route('/api/v1/announcements', ancApp)

@@ -3,7 +3,7 @@ import { verify } from 'hono/jwt'
 import { checkadmin } from '../../model/auth/users-models'
 
 
-const JWT_SECRET = process.env.JWT_SECRET
+const JWT_SECRET = process.env.JWT_SECRET as string
 
 
 export const adminOnly = async(c: Context , next : Next) => {
@@ -33,7 +33,7 @@ export const userOnly = async(c: Context , next : Next) => {
 export const superAdminOnly = async(c: Context , next : Next) => {
     const jwtPayload = c.get('jwtPayload') as any;
 
-    if (!jwtPayload || jwtPayload.role !== 'superadmin') {
+    if (!jwtPayload || jwtPayload.role !== 3) {
         return c.json({ status: 'error', message: 'Unauthorized: Sesi tidak valid' }, 401);
     }
     await next();   

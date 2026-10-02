@@ -25,6 +25,6 @@ tscApp.post('/withdrawal/cancel', userOnly, cancelWithdrawalsController)
 tscApp.get('/transaction-logs/admin', adminOnly, getLogsAdminTscController)
 tscApp.post('/transaction-logs/admin/user', adminOnly, getTransactionLogsUserController)
 tscApp.get('/verify-withdrawal/admin', adminOnly, getVerifyWithdrawalController)
-tscApp.post('/verify-withdrawal/admin',verifty_wd)
+tscApp.post('/verify-withdrawal/admin', adminOnly, verifty_wd)
 
 export default tscApp

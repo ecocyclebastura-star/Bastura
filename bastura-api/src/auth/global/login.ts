@@ -73,6 +73,7 @@ export const login = async (c: Context) => {
       ,'LOGIN_SUCCESS'  )
 
   } catch (error) {
+    console.error("Login exception:", error);
     return await sendAuthResponse(c, 500 , 'error' , 'Login Error ' , 'Internal Server Error' , 'Internal Server Error' , 'INTERNAL_SERVER_ERROR'   )
   }
 }

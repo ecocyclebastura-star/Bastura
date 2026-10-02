@@ -12,3 +12,8 @@ export const getAnc = async (id: string , email: string) => {
 
     return result.length > 0 ? result : null
 }
+
+export const getAncById = async (id: string) => {
+    const result = await sql`SELECT * FROM announcements WHERE id_announcements = ${id}`;
+    return result.length > 0 ? result[0] : null;
+}
