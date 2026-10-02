@@ -1,0 +1,468 @@
+
+--- FILE: bastura-api\src\controller\admin\block-users-controller.ts ---
+2: import { sendprofileResponse } from "../../logs/profile/profile-logs"
+5: export const blockUserController = async (c: Context) => {
+10: const id_user = c.req.param('id_user');
+13: return sendprofileResponse(c, 400, 'GET_CATALOG', 'error', action, 'ID tidak ditemukan', 'ID tidak ditemukan', null, 'ID_NOT_FOUND')
+19: return sendprofileResponse(c, 403, 'GET_CATALOG', 'error', action, 'Akses ditolak', 'Akses ditolak', null, 'ACCESS_DENIED_UR_NOT_ADMIN')
+23: return sendprofileResponse(c, 404, 'GET_CATALOG', 'error', action, 'User tidak ditemukan', 'User tidak ditemukan', null, 'USER_NOT_FOUND')
+26: return sendprofileResponse(c, 200, 'GET_CATALOG', 'success', action, 'User berhasil diblokir', 'User berhasil diblokir', { data: result }, 'GET_CATALOG_SUCCESS')
+29: return sendprofileResponse(c, 500, 'GET_CATALOG', 'error', action, 'Internal Server Error', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR')
+
+--- FILE: bastura-api\src\controller\admin\demote-admin-controller.ts ---
+2: import { sendprofileResponse } from "../../logs/profile/profile-logs";
+10: export const demoteAdminController = async (c: Context) => {
+15: const id_user = c.req.param('id_user');
+18: return sendprofileResponse(c, 400, action, 'error', action, 'ID tidak valid', 'ID pengguna tidak valid atau tidak ditemukan.', null, 'VALIDATION_ERROR');
+23: return sendprofileResponse(c, 403, action, 'error', action, 'Tidak dapat demote diri sendiri', 'Anda tidak dapat mencabut akses admin dari diri sendiri.', null, 'FORBIDDEN_SELF_DEMOTE');
+29: return sendprofileResponse(c, 404, action, 'error', action, 'User tidak ditemukan', 'User tidak ditemukan', null, 'USER_NOT_FOUND');
+33: return sendprofileResponse(c, 409, action, 'error', action, 'Role target bukan admin', 'Pengguna sudah berstatus warga atau bukan admin.', null, 'CONFLICT_ROLE');
+36: return sendprofileResponse(c, 200, action, 'success', action, 'Akses admin berhasil dicabut', 'Pengguna sekarang memiliki akses sebagai warga.', { data: result }, 'DEMOTE_ADMIN_SUCCESS');
+41: return sendprofileResponse(c, 500, action, 'error', action, 'Role tidak ditemukan di database', 'Terjadi kesalahan sistem: Role tidak valid.', null, 'INTERNAL_ERROR');
+44: return sendprofileResponse(c, 500, action, 'error', action, 'Internal Server Error', 'Gagal memproses permintaan.', null, 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\admin\get-tsc-logsUser-admin-controller.ts ---
+2: import { sendtscResponse } from "../../logs/tsc/tsc-logs";
+6: export const getTransactionLogsUserController = async (c : Context) => {
+9: const user_id = (await c.req.json()).user_id;
+13: return sendtscResponse(c, 401, 'TRANSACTION_LOGS', 'error', 'getTransactionLogsUserController', 'Unauthorized', 'Unauthorized', null, 'TOKEN_INVALID');
+19: return sendtscResponse(c, 404, 'TRANSACTION_LOGS', 'error', 'getTransactionLogsUserController', 'User not found', 'User not found', null, 'USER_NOT_FOUND');
+22: return sendtscResponse(c, 200, 'TRANSACTION_LOGS', 'success', 'getTransactionLogsUserController', 'Logs retrieved successfully', 'Logs retrieved successfully',{data : result}, 'GET_LOGS_SUCCESS');
+24: return sendtscResponse(c, 500, 'TRANSACTION_LOGS', 'error', 'getTransactionLogsUserController', 'Internal Server Error', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\admin\get-tsclogs-admin-controller.ts ---
+3: import { sendtscResponse } from '../../logs/tsc/tsc-logs'
+5: export const getLogsAdminTscController = async (c : Context) => {
+11: return sendtscResponse(c, 401, 'TRANSACTION_LOGS', 'error', 'getLogsAdminTscController', 'Unauthorized', 'Unauthorized', null, 'TOKEN_INVALID');
+17: return sendtscResponse(c, 403, 'TRANSACTION_LOGS', 'error', 'getLogsAdminTscController', 'Unauthorized', 'Unauthorized', null, 'TOKEN_INVALID');
+20: return sendtscResponse(c, 200, 'TRANSACTION_LOGS', 'success', 'getLogsAdminTscController', 'Logs retrieved successfully', 'Logs retrieved successfully',{data : result}, 'GET_LOGS_SUCCESS');
+22: return sendtscResponse(c, 500, 'TRANSACTION_LOGS', 'error', 'getLogsAdminTscController', 'Internal Server Error', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\admin\get-verifty-wd-controller.ts ---
+2: import { sendtscResponse } from "../../logs/tsc/tsc-logs";
+5: export const getVerifyWithdrawalController = async (c : Context) => {
+11: return sendtscResponse(c, 401, 'WITHDRAWAL', 'error', 'getVerifyWithdrawalController', 'Unauthorized', 'Unauthorized', null, 'TOKEN_INVALID');
+16: return sendtscResponse(c, 404, 'WITHDRAWAL', 'error', 'getVerifyWithdrawalController', 'Admin not found', 'Admin not found', null, 'ADMIN_NOT_FOUND');
+20: return sendtscResponse(c, 403, 'WITHDRAWAL', 'error', 'getVerifyWithdrawalController', 'Unauthorized', 'Unauthorized', null, 'TOKEN_INVALID');
+24: return sendtscResponse(c, 404, 'WITHDRAWAL', 'error', 'getVerifyWithdrawalController', 'Withdrawal not found', 'Withdrawal not found', null, 'WITHDRAWAL_NOT_FOUND');
+27: return sendtscResponse(c, 200, 'WITHDRAWAL', 'success', 'getVerifyWithdrawalController', 'Withdrawal retrieved successfully', 'Withdrawal retrieved successfully',{data : result}, 'GET_WD_SUCCESS');
+29: return sendtscResponse(c, 500, 'WITHDRAWAL', 'error', 'getVerifyWithdrawalController', 'Internal Server Error', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\admin\promote-admin-controller.ts ---
+2: import { sendprofileResponse } from "../../logs/profile/profile-logs";
+10: export const promoteAdminController = async (c: Context) => {
+15: const id_user = c.req.param('id_user');
+18: return sendprofileResponse(c, 400, action, 'error', action, 'ID tidak valid', 'ID pengguna tidak valid atau tidak ditemukan.', null, 'VALIDATION_ERROR');
+24: return sendprofileResponse(c, 404, action, 'error', action, 'User tidak ditemukan', 'User tidak ditemukan', null, 'USER_NOT_FOUND');
+28: return sendprofileResponse(c, 409, action, 'error', action, 'Role target bukan user', 'Pengguna sudah menjadi admin atau tidak memiliki role warga.', null, 'CONFLICT_ROLE');
+32: return sendprofileResponse(c, 409, action, 'error', action, 'User sedang diblokir', 'Pengguna yang sedang diblokir tidak dapat dijadikan admin.', null, 'USER_BLOCKED');
+35: return sendprofileResponse(c, 200, action, 'success', action, 'User berhasil dijadikan admin', 'Pengguna sekarang memiliki akses sebagai admin.', { data: result }, 'PROMOTE_ADMIN_SUCCESS');
+40: return sendprofileResponse(c, 500, action, 'error', action, 'Role tidak ditemukan di database', 'Terjadi kesalahan sistem: Role tidak valid.', null, 'INTERNAL_ERROR');
+43: return sendprofileResponse(c, 500, action, 'error', action, 'Internal Server Error', 'Gagal memproses permintaan.', null, 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\admin\unblock-users-controller.ts ---
+3: import { sendAuthResponse } from "../../logs/auth/auth-logs";
+5: export const unblockUserController = async (c : Context) => {
+9: const id_user = c.req.param('id_user');
+12: return sendAuthResponse(c, 401, 'error', 'unblock_user', 'Unauthorized: Token tidak valid', 'Unauthorized: Token tidak valid', null, 'ERR_UNAUTHORIZED');
+16: return sendAuthResponse(c, 400, 'error', 'unblock_user', 'User ID is required', 'User ID is required', null, 'ERR_MISSING_USER_ID');
+22: return sendAuthResponse(c, 403, 'error', 'unblock_user', 'Access denied: You are not an admin', 'Access denied: You are not an admin', null, 'ERR_ACCESS_DENIED');
+26: return sendAuthResponse(c, 404, 'error', 'unblock_user', 'User not found', 'User not found', null, 'ERR_USER_NOT_FOUND');
+29: return sendAuthResponse(c, 200, 'success', 'unblock_user', 'User unblocked successfully', 'User unblocked successfully', {data : result}, 'SUCC_USER_UNBLOCKED');
+31: return sendAuthResponse(c, 500, 'error', 'unblock_user', 'Failed to unblock user', 'Failed to unblock user', error, 'ERR_UNBLOCK_USER');
+
+--- FILE: bastura-api\src\controller\admin\verifty-wd-controller.ts ---
+3: import { sendtscResponse } from '../../logs/tsc/tsc-logs';
+5: export const verifty_wd = async(c : Context) => {
+9: const payload = (await c.req.json()) as any;
+17: return sendtscResponse(c, 401, 'VERIFY_WD', 'error', 'from', 'Unauthorized', 'Unauthorized', null, 'TOKEN_INVALID');
+21: return sendtscResponse(c, 400, 'VERIFY_WD', 'error', 'from', 'Bad Request', 'Bad Request', null, 'BAD_REQUEST');
+26: return sendtscResponse(c, 401, 'VERIFY_WD', 'error', 'from', 'Unauthorized', 'Unauthorized', null, 'TOKEN_INVALID');
+29: return sendtscResponse(c, 404, 'VERIFY_WD', 'error', 'from', 'Not Found', 'Not Found', null, 'NOT_FOUND');
+32: return sendtscResponse(c, 400, 'VERIFY_WD', 'error', 'from', 'Bad Request', 'Bad Request', null, 'BAD_REQUEST');
+34: return sendtscResponse(c, 200, 'VERIFY_WD', 'success', 'from', 'Success', 'Success', result, 'SUCCESS');
+37: return sendtscResponse(c, 500, 'VERIFY_WD', 'error', 'from', 'Internal Server Error', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\anc-controller\add-anc-controller.ts ---
+2: import { sendAncResponse } from "../../logs/anc/anc-logs"
+24: export const addAncController = async (c: Context) => {
+31: return sendAncResponse(c, 401, action, 'error', action, 'Unauthorized', 'Gagal memverifikasi user.', undefined, 'UNAUTHORIZED');
+56: return sendAncResponse(c, 400, action, 'error', action, 'Validasi gagal', errors.join(' '), undefined, 'VALIDATION_ERROR');
+66: return sendAncResponse(c, 400, action, 'error', action, 'Kategori tidak valid', 'Kategori pengumuman tidak ditemukan di database.', undefined, 'VALIDATION_ERROR');
+74: return sendAncResponse(c, 400, action, 'error', action, 'Format file tidak valid', 'Field image harus berupa file.', undefined, 'VALIDATION_ERROR');
+79: return sendAncResponse(c, 415, action, 'error', action, 'Tipe file tidak valid (MIME)', 'Hanya file JPG dan PNG yang diperbolehkan.', undefined, 'INVALID_FILE_TYPE');
+83: return sendAncResponse(c, 413, action, 'error', action, 'Ukuran file melebihi 2MB', 'Ukuran foto maksimal 2 MB.', undefined, 'FILE_TOO_LARGE');
+88: return sendAncResponse(c, 415, action, 'error', action, 'Magic bytes tidak valid', 'Hanya file JPG dan PNG yang diperbolehkan.', undefined, 'INVALID_FILE_TYPE');
+123: return sendAncResponse(c, 201, action, 'success', action, 'Berhasil menambahkan pengumuman.', 'Pengumuman berhasil ditambahkan.', { id_announcements: resultId }, 'ADD_ANC_SUCCESS');
+131: return sendAncResponse(c, 500, action, 'error', action, 'Internal Server Error', 'Gagal menambahkan pengumuman', undefined, 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\anc-controller\delete-anc-controller.ts ---
+2: import { sendAncResponse } from "../../logs/anc/anc-logs"
+13: export const deleteAncController = async (c: Context) => {
+20: return sendAncResponse(c, 401, action, 'error', action, 'Unauthorized', 'Gagal memverifikasi user.', undefined, 'UNAUTHORIZED');
+23: const id = c.req.param('id');
+25: return sendAncResponse(c, 400, action, 'error', action, 'ID tidak valid', 'ID pengumuman tidak valid atau tidak ditemukan.', undefined, 'VALIDATION_ERROR');
+30: return sendAncResponse(c, 404, action, 'error', action, 'Pengumuman tidak ditemukan', 'Pengumuman tidak ditemukan.', undefined, 'NOT_FOUND');
+58: return sendAncResponse(c, 200, action, 'success', action, 'Berhasil menghapus pengumuman.', 'Berhasil menghapus pengumuman.', undefined, 'DELETE_ANC_SUCCESS');
+66: return sendAncResponse(c, 500, action, 'error', action, 'Internal Server Error', 'Gagal menghapus pengumuman', undefined, 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\anc-controller\edit-anc-controller.ts ---
+2: import { sendAncResponse } from "../../logs/anc/anc-logs"
+25: export const editAncController = async (c: Context) => {
+32: return sendAncResponse(c, 401, action, 'error', action, 'Unauthorized', 'Gagal memverifikasi user.', undefined, 'UNAUTHORIZED');
+35: const id = c.req.param('id');
+37: return sendAncResponse(c, 400, action, 'error', action, 'ID tidak valid', 'ID pengumuman tidak valid.', undefined, 'VALIDATION_ERROR');
+42: return sendAncResponse(c, 404, action, 'error', action, 'Pengumuman tidak ditemukan', 'Pengumuman tidak ditemukan.', undefined, 'NOT_FOUND');
+86: return sendAncResponse(c, 400, action, 'error', action, 'Validasi gagal', errors.join(' '), undefined, 'VALIDATION_ERROR');
+93: return sendAncResponse(c, 400, action, 'error', action, 'Format file tidak valid', 'Field image harus berupa file.', undefined, 'VALIDATION_ERROR');
+97: return sendAncResponse(c, 415, action, 'error', action, 'Tipe file tidak valid (MIME)', 'Hanya file JPG dan PNG yang diperbolehkan.', undefined, 'INVALID_FILE_TYPE');
+100: return sendAncResponse(c, 413, action, 'error', action, 'Ukuran file melebihi 2MB', 'Ukuran foto maksimal 2 MB.', undefined, 'FILE_TOO_LARGE');
+104: return sendAncResponse(c, 415, action, 'error', action, 'Magic bytes tidak valid', 'Hanya file JPG dan PNG yang diperbolehkan.', undefined, 'INVALID_FILE_TYPE');
+137: return sendAncResponse(c, 200, action, 'success', action, 'Berhasil mengedit pengumuman.', 'Berhasil mengedit pengumuman.', undefined, 'EDIT_ANC_SUCCESS');
+145: return sendAncResponse(c, 500, action, 'error', action, 'Internal Server Error', 'Gagal mengedit pengumuman', undefined, 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\anc-controller\get-anc-photo.ts ---
+3: import { anclog, sendAncResponse } from "../../logs/anc/anc-logs";
+6: export const getAncPhotoController = async (c: Context) => {
+11: const filename = basename(c.req.param('filename') || '') ;
+14: return sendAncResponse(c, 400, action, 'error', action, 'Filename tidak diberikan', 'Filename tidak valid', 'INVALID_FILENAME');
+22: return sendAncResponse(c, 403, action, 'error', action, 'Akses file ditolak', 'Path tidak valid', 'FORBIDDEN_PATH');
+30: return sendAncResponse(c, 404, action, 'error', action, `File tidak ditemukan: ${filename}`, 'Foto tidak ditemukan', 'FILE_NOT_FOUND');
+47: return sendAncResponse(c, 500, action, 'error', action, 'Internal server error', 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\anc-controller\get-anc.ts ---
+2: import { sendAncResponse } from "../../logs/anc/anc-logs"
+10: export const getAncCategoriesController = async (c: Context) => {
+14: return sendAncResponse(c, 200, action, 'success', action, 'Kategori ditemukan', 'Kategori pengumuman ditemukan', categories, 'CATEGORIES_FOUND');
+17: return sendAncResponse(c, 500, action, 'error', action, 'Internal server error', 'INTERNAL_SERVER_ERROR', undefined, 'INTERNAL_SERVER_ERROR');
+21: export const getAncByIdController = async (c: Context) => {
+24: const id = c.req.param('id');
+26: return sendAncResponse(c, 400, action, 'error', action, 'ID tidak valid', 'ID pengumuman tidak valid', undefined, 'VALIDATION_ERROR');
+31: return sendAncResponse(c, 404, action, 'error', action, 'Pengumuman tidak ditemukan', 'Pengumuman tidak ditemukan', undefined, 'NOT_FOUND');
+34: return sendAncResponse(c, 200, action, 'success', action, 'Pengumuman ditemukan', 'Pengumuman ditemukan', announcement, 'ANC_FOUND');
+37: return sendAncResponse(c, 500, action, 'error', action, 'Internal server error', 'INTERNAL_SERVER_ERROR', undefined, 'INTERNAL_SERVER_ERROR');
+41: export const getAncController = async (c: Context) => {
+44: const search = c.req.query('search');
+45: const category_id = c.req.query('category_id');
+46: const page = parseInt(c.req.query('page') || '1');
+47: const limit = parseInt(c.req.query('limit') || '10');
+50: return sendAncResponse(c, 400, action, 'error', action, 'Category ID tidak valid', 'Parameter kategori tidak valid', undefined, 'VALIDATION_ERROR');
+69: return sendAncResponse(c, 200, action, 'success', action, 'Data ditemukan', 'Data ditemukan', responseData, 'DATA_FOUND');
+72: return sendAncResponse(c, 500, action, 'error', action, 'Internal server error', 'INTERNAL_SERVER_ERROR', undefined, 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\catalog\add-catalog-controller.ts ---
+2: import { sendcatalogResponse } from "../../logs/w_catalog/catalog-logs";
+6: export const addCatalogController = async (c: Context) => {
+9: const body = await c.req.json();
+16: return sendcatalogResponse(c, 400, action, 'error', action, 'Nama tidak valid', 'Nama sampah wajib diisi dan maksimal 100 karakter.', 'INVALID_NAME');
+20: return sendcatalogResponse(c, 400, action, 'error', action, 'Category ID tidak valid', 'ID kategori wajib berupa angka.', 'INVALID_CATEGORY');
+24: return sendcatalogResponse(c, 400, action, 'error', action, 'Harga tidak valid', 'Estimasi harga wajib berupa angka non-negatif.', 'INVALID_PRICE');
+30: return sendcatalogResponse(c, 400, action, 'error', action, 'Kategori tidak ditemukan', 'Kategori sampah tidak ditemukan di sistem.', 'CATEGORY_NOT_FOUND');
+40: return sendcatalogResponse(c, 400, action, 'error', action, 'Nama jenis sampah sudah ada', 'Nama jenis sampah sudah digunakan dan masih aktif.', 'NAME_ALREADY_EXISTS');
+60: return sendcatalogResponse(c, 201, action, 'success', action, 'Jenis sampah berhasil ditambahkan ke daftar.', 'Jenis sampah berhasil ditambahkan ke daftar.', { id_waste: resultId }, 'ADD_CATALOG_SUCCESS');
+68: return sendcatalogResponse(c, 500, action, 'error', action, 'Internal Server Error', 'Gagal menambahkan jenis sampah', null, 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\catalog\delete-catalog-controller.ts ---
+2: import { sendcatalogResponse } from "../../logs/w_catalog/catalog-logs";
+7: export const deleteCatalogController = async (c: Context) => {
+10: const id = c.req.param('id');
+13: return sendcatalogResponse(c, 400, action, 'error', action, 'ID tidak ditemukan', 'Parameter ID diperlukan.', 'INVALID_PARAM');
+18: return sendcatalogResponse(c, 404, action, 'error', action, 'Katalog tidak ditemukan', 'Data jenis sampah tidak ditemukan.', 'CATALOG_NOT_FOUND');
+23: return sendcatalogResponse(c, 200, action, 'success', action, 'Berhasil menghapus jenis sampah.', 'Berhasil menghapus jenis sampah.', null, 'DELETE_CATALOG_SUCCESS');
+31: return sendcatalogResponse(c, 500, action, 'error', action, 'Internal Server Error', 'Gagal menghapus jenis sampah', null, 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\catalog\edit-catalog-controller.ts ---
+2: import { sendcatalogResponse } from "../../logs/w_catalog/catalog-logs";
+7: export const editCatalogController = async (c: Context) => {
+10: const id = c.req.param('id') as string;
+11: const body = await c.req.json();
+15: return sendcatalogResponse(c, 404, action, 'error', action, 'Katalog tidak ditemukan', 'Data jenis sampah tidak ditemukan.', 'CATALOG_NOT_FOUND');
+23: return sendcatalogResponse(c, 400, action, 'error', action, 'Nama tidak valid', 'Nama sampah tidak boleh kosong dan maksimal 100 karakter.', 'INVALID_NAME');
+27: return sendcatalogResponse(c, 400, action, 'error', action, 'Nama jenis sampah sudah ada', 'Nama jenis sampah sudah digunakan.', 'NAME_ALREADY_EXISTS');
+35: return sendcatalogResponse(c, 400, action, 'error', action, 'Category ID tidak valid', 'ID kategori wajib berupa angka.', 'INVALID_CATEGORY');
+39: return sendcatalogResponse(c, 400, action, 'error', action, 'Kategori tidak ditemukan', 'Kategori sampah tidak ditemukan.', 'CATEGORY_NOT_FOUND');
+47: return sendcatalogResponse(c, 400, action, 'error', action, 'Harga tidak valid', 'Estimasi harga wajib berupa angka non-negatif.', 'INVALID_PRICE');
+60: return sendcatalogResponse(c, 200, action, 'success', action, 'Berhasil mengedit jenis sampah.', 'Berhasil mengedit jenis sampah.', null, 'EDIT_CATALOG_SUCCESS');
+68: return sendcatalogResponse(c, 500, action, 'error', action, 'Internal Server Error', 'Gagal mengedit jenis sampah', null, 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\catalog\get-catalog-controller.ts ---
+3: import { sendprofileResponse } from "../../logs/profile/profile-logs";
+5: export const getCatalogController = async (c : Context) => {
+12: return sendprofileResponse(c, 400, 'GET_CATALOG', 'error', action, 'ID tidak ditemukan', 'ID tidak ditemukan', null, 'ID_NOT_FOUND')
+18: return sendprofileResponse(c, 404, 'GET_CATALOG', 'error', action, 'User tidak ditemukan', 'User tidak ditemukan', null, 'USER_NOT_FOUND')
+21: return sendprofileResponse(c, 200, 'GET_CATALOG', 'success', action, 'Catalog berhasil ditemukan', 'Catalog berhasil ditemukan', { data: result }, 'GET_CATALOG_SUCCESS')
+24: return sendprofileResponse(c, 500, 'GET_CATALOG', 'error', action, 'Internal Server Error', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR')
+
+--- FILE: bastura-api\src\controller\catalog\get-catalog-photo.ts ---
+3: import { cataloglog, sendcatalogResponse } from "../../logs/w_catalog/catalog-logs";
+6: export const getCatalogPhotoController = async (c: Context) => {
+11: const filename = basename(c.req.param('filename') || '') ;
+14: return sendcatalogResponse(c, 400, action, 'error', action, 'Filename tidak diberikan', 'Filename tidak valid', 'INVALID_FILENAME');
+22: return sendcatalogResponse(c, 403, action, 'error', action, 'Akses file ditolak', 'Path tidak valid', 'FORBIDDEN_PATH');
+30: return sendcatalogResponse(c, 404, action, 'error', action, `File tidak ditemukan: ${filename}`, 'Foto tidak ditemukan', 'FILE_NOT_FOUND');
+47: return sendcatalogResponse(c, 500, action, 'error', action, 'Internal server error', 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\catalog\get-categories-controller.ts ---
+2: import { sendcatalogResponse } from "../../logs/w_catalog/catalog-logs";
+5: export const getCategoriesController = async (c: Context) => {
+9: return sendcatalogResponse(c, 200, action, 'success', action, 'Berhasil mengambil daftar kategori', 'Berhasil mengambil daftar kategori', { data: result }, 'GET_CATEGORIES_SUCCESS');
+12: return sendcatalogResponse(c, 500, action, 'error', action, 'Internal Server Error', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\catalog\upload-catalog-img-controller.ts ---
+2: import { sendcatalogResponse } from "../../logs/w_catalog/catalog-logs";
+18: export const uploadCatalogImgController = async (c: Context) => {
+21: const id = c.req.param('id') as string;
+27: return sendcatalogResponse(c, 404, action, 'error', action, 'Katalog tidak ditemukan', 'Data jenis sampah tidak ditemukan.', 'CATALOG_NOT_FOUND');
+31: return sendcatalogResponse(c, 400, action, 'error', action, 'Gambar wajib dikirim', 'Foto lampiran wajib dikirim.', 'IMAGE_REQUIRED');
+36: return sendcatalogResponse(c, 415, action, 'error', action, 'Tipe file tidak valid (MIME)', 'Hanya file JPG dan PNG yang diperbolehkan.', 'INVALID_FILE_TYPE');
+40: return sendcatalogResponse(c, 413, action, 'error', action, 'Ukuran file melebihi 5MB', 'Ukuran foto maksimal 5 MB.', 'FILE_TOO_LARGE');
+45: return sendcatalogResponse(c, 415, action, 'error', action, 'Magic bytes tidak valid', 'Hanya file JPG dan PNG yang diperbolehkan.', 'INVALID_FILE_TYPE');
+73: return sendcatalogResponse(c, 200, action, 'success', action, 'Foto berhasil diunggah.', 'Foto jenis sampah berhasil diperbarui.', null, 'UPLOAD_PHOTO_SUCCESS');
+81: return sendcatalogResponse(c, 500, action, 'error', action, 'Internal Server Error', 'Gagal mengunggah foto', null, 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\edu-controller\add-edu-controller.ts ---
+2: import { sendEduResponse } from "../../logs/edu/edu-logs";
+6: export const addEduController = async (c: Context) => {
+13: return sendEduResponse(c, 401, action, 'error', action, 'Unauthorized', 'Gagal memverifikasi user.', 'UNAUTHORIZED');
+16: const body = await c.req.json();
+21: return sendEduResponse(c, 400, action, 'error', action, 'Judul tidak valid', 'Judul edukasi wajib diisi dan maksimal 200 karakter.', 'INVALID_TITLE');
+25: return sendEduResponse(c, 400, action, 'error', action, 'Isi edukasi kosong', 'Isi konten edukasi wajib diisi.', 'INVALID_CONTENT');
+46: return sendEduResponse(c, 201, action, 'success', action, 'Edukasi berhasil ditambahkan.', 'Artikel edukasi berhasil ditambahkan.', { id_content: result.id_content }, 'ADD_EDU_SUCCESS');
+54: return sendEduResponse(c, 500, action, 'error', action, 'Internal Server Error', 'Gagal menambahkan artikel edukasi', null, 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\edu-controller\delete-edu-controller.ts ---
+2: import { sendEduResponse } from "../../logs/edu/edu-logs";
+7: export const deleteEduController = async (c: Context) => {
+10: const id = c.req.param('id');
+13: return sendEduResponse(c, 400, action, 'error', action, 'ID tidak ditemukan', 'Parameter ID diperlukan.', 'INVALID_PARAM');
+18: return sendEduResponse(c, 404, action, 'error', action, 'Edukasi tidak ditemukan', 'Data edukasi tidak ditemukan.', 'EDU_NOT_FOUND');
+23: return sendEduResponse(c, 200, action, 'success', action, 'Berhasil menghapus edukasi.', 'Berhasil menghapus edukasi.', null, 'DELETE_EDU_SUCCESS');
+31: return sendEduResponse(c, 500, action, 'error', action, 'Internal Server Error', 'Gagal menghapus edukasi', null, 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\edu-controller\edit-edu-controller.ts ---
+2: import { sendEduResponse } from "../../logs/edu/edu-logs";
+6: export const editEduController = async (c: Context) => {
+9: const id = c.req.param('id') as string;
+10: const body = await c.req.json();
+14: return sendEduResponse(c, 404, action, 'error', action, 'Edukasi tidak ditemukan', 'Data edukasi tidak ditemukan.', 'EDU_NOT_FOUND');
+22: return sendEduResponse(c, 400, action, 'error', action, 'Judul tidak valid', 'Judul edukasi tidak boleh kosong dan maksimal 200 karakter.', 'INVALID_TITLE');
+52: return sendEduResponse(c, 200, action, 'success', action, 'Berhasil mengedit edukasi.', 'Berhasil mengedit edukasi.', null, 'EDIT_EDU_SUCCESS');
+60: return sendEduResponse(c, 500, action, 'error', action, 'Internal Server Error', 'Gagal mengedit edukasi', null, 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\edu-controller\get-admin-edu-controller.ts ---
+2: import { sendEduResponse } from "../../logs/edu/edu-logs";
+5: export const getAdminEduController = async (c: Context) => {
+8: const id = c.req.query('id');
+13: return sendEduResponse(c, 404, action, 'error', action, 'Edukasi tidak ditemukan', 'Data edukasi tidak ditemukan.', 'EDU_NOT_FOUND');
+15: return sendEduResponse(c, 200, action, 'success', action, 'Edukasi berhasil ditemukan', 'Edukasi berhasil ditemukan', { data: result }, 'GET_EDU_SUCCESS');
+19: return sendEduResponse(c, 200, action, 'success', action, 'Daftar edukasi berhasil ditemukan', 'Daftar edukasi berhasil ditemukan', { data: result }, 'GET_EDU_LIST_SUCCESS');
+22: return sendEduResponse(c, 500, action, 'error', action, 'Internal Server Error', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\edu-controller\get-edu-photo.ts ---
+3: import { edulog, sendEduResponse } from "../../logs/edu/edu-logs";
+5: export const getEduPhotoController = async (c: Context) => {
+9: const rawFilename = c.req.param('filename');
+12: return sendEduResponse(c, 400, action, 'error', action, 'Filename tidak diberikan', 'Filename tidak valid', undefined, 'INVALID_FILENAME');
+20: return sendEduResponse(c, 403, action, 'error', action, 'Akses file ditolak', 'Path tidak valid', undefined, 'FORBIDDEN_PATH');
+27: return sendEduResponse(c, 404, action, 'error', action, `File tidak ditemukan: ${safeFilename}`, 'Foto tidak ditemukan', undefined, 'FILE_NOT_FOUND');
+42: return sendEduResponse(c, 500, action, 'error', action, 'Internal server error', 'Internal server error', undefined, 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\edu-controller\get-edu.ts ---
+4: import { sendEduResponse } from "../../logs/edu/edu-logs";
+6: export const getEduController = async (c : Context) => {
+15: return sendEduResponse(c, 401, action , 'error', 'GET_EDU_ERROR', 'Token tidak valid', 'TOKEN_INVALID', 'TOKEN_INVALID')
+23: return sendEduResponse(c, 404, action , 'error', 'GET_EDU_ERROR', 'User tidak ditemukan', 'User tidak ditemukan' , 'USER_NOT_FOUND')
+27: return sendEduResponse(c, 404, action , 'error', 'GET_EDU_ERROR', 'Data tidak ditemukan', 'Data tidak ditemukan' , 'DATA_NOT_FOUND')
+41: return sendEduResponse(c, 200, action, 'success', 'GET_EDU_SUCCESS', 'Data ditemukan', 'Data ditemukan', education, 'DATA_FOUND')
+44: return sendEduResponse(c, 500, action, 'error', 'GET_EDU_ERROR', 'Internal server error', 'INTERNAL_SERVER_ERROR')
+
+--- FILE: bastura-api\src\controller\edu-controller\upload-edu-img-controller.ts ---
+2: import { sendEduResponse } from "../../logs/edu/edu-logs";
+18: export const uploadEduImgController = async (c: Context) => {
+21: const id = c.req.param('id') as string;
+27: return sendEduResponse(c, 404, action, 'error', action, 'Edukasi tidak ditemukan', 'Data edukasi tidak ditemukan.', 'EDU_NOT_FOUND');
+31: return sendEduResponse(c, 400, action, 'error', action, 'Gambar wajib dikirim', 'Foto lampiran wajib dikirim.', 'IMAGE_REQUIRED');
+36: return sendEduResponse(c, 415, action, 'error', action, 'Tipe file tidak valid (MIME)', 'Hanya file JPG dan PNG yang diperbolehkan.', 'INVALID_FILE_TYPE');
+40: return sendEduResponse(c, 413, action, 'error', action, 'Ukuran file melebihi 2MB', 'Ukuran foto maksimal 2 MB.', 'FILE_TOO_LARGE');
+45: return sendEduResponse(c, 415, action, 'error', action, 'Magic bytes tidak valid', 'Hanya file JPG dan PNG yang diperbolehkan.', 'INVALID_FILE_TYPE');
+73: return sendEduResponse(c, 200, action, 'success', action, 'Foto berhasil diunggah.', 'Foto lampiran berhasil diperbarui.', null, 'UPLOAD_PHOTO_SUCCESS');
+81: return sendEduResponse(c, 500, action, 'error', action, 'Internal Server Error', 'Gagal mengunggah foto', null, 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\profile-controller\changepass.ts ---
+3: import { sendprofileResponse } from "../../logs/profile/profile-logs";
+6: export const changepassController = async (c: Context) => {
+12: return sendprofileResponse(c, 401, 'CHANGE_PASSWORD', 'error', action, 'Token tidak valid', 'Token tidak valid', null, 'TOKEN_INVALID')
+17: const body = await c.req.json()
+21: return sendprofileResponse(c, 400, 'CHANGE_PASSWORD', 'error', action, 'Password lama, password baru, dan konfirmasi password wajib diisi', 'old_password, new_password, dan conf_password wajib diisi', null, 'MISSING_FIELDS')
+25: return sendprofileResponse(c, 400, 'CHANGE_PASSWORD', 'error', action, 'Password baru dan konfirmasi password tidak cocok', 'Password baru dan konfirmasi password harus sama', null, 'PASSWORD_MISMATCH')
+29: return sendprofileResponse(c, 400, 'CHANGE_PASSWORD', 'error', action, 'Password baru tidak boleh sama dengan password lama', 'Password baru tidak boleh sama dengan password lama', null, 'SAME_PASSWORD')
+36: return sendprofileResponse(c, 404, 'CHANGE_PASSWORD', 'error', action, 'User tidak ditemukan', 'User tidak ditemukan atau tidak aktif', null, 'USER_NOT_FOUND')
+39: return sendprofileResponse(c, 401, 'CHANGE_PASSWORD', 'error', action, 'Password lama tidak cocok', 'Password lama yang dimasukkan tidak sesuai', null, 'INVALID_OLD_PASSWORD')
+43: return sendprofileResponse(c, 200, 'CHANGE_PASSWORD', 'success', action, 'Password berhasil diubah', 'Password berhasil diubah', { data: result }, 'CHANGE_PASSWORD_SUCCESS')
+47: return sendprofileResponse(c, 500, 'CHANGE_PASSWORD', 'error', action, 'Internal Server Error', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR')
+
+--- FILE: bastura-api\src\controller\profile-controller\delete-user.ts ---
+3: import { sendprofileResponse } from "../../logs/profile/profile-logs";
+6: export const deleteUserController = async (c : Context) => {
+12: return sendprofileResponse(c, 401, 'DELETE_USER', 'error', action, 'Token tidak valid', 'Token tidak valid', null, 'TOKEN_INVALID')
+20: return sendprofileResponse(c, 404, 'DELETE_USER', 'error', action, 'User tidak ditemukan', 'User tidak ditemukan', null, 'USER_NOT_FOUND')
+23: return sendprofileResponse(c, 200, 'DELETE_USER', 'success', action, 'User berhasil dihapus', 'User berhasil dihapus', {data : user}, 'DELETE_USER_SUCCESS')
+26: return sendprofileResponse(c, 500, 'DELETE_USER', 'error', action, 'Internal Server Error', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR')
+
+--- FILE: bastura-api\src\controller\profile-controller\get-admin-contact.ts ---
+2: import { sendprofileResponse } from "../../logs/profile/profile-logs";
+5: export const getAdminContactController = async (c : Context) => {
+11: return sendprofileResponse(c, 404, 'GET_ADMIN_CONTACT', 'error', action, 'Admin contact tidak ditemukan', 'Admin contact tidak ditemukan', null, 'ADMIN_CONTACT_NOT_FOUND')
+13: return sendprofileResponse(c, 200, 'GET_ADMIN_CONTACT', 'success', action, 'Admin contact berhasil ditemukan', 'Admin contact berhasil ditemukan', {data : result}, 'GET_ADMIN_CONTACT_SUCCESS')
+16: return sendprofileResponse(c, 500, 'GET_ADMIN_CONTACT', 'error', action, 'Internal Server Error', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR')
+
+--- FILE: bastura-api\src\controller\profile-controller\get-user-photo.ts ---
+3: import { profilelog, sendprofileResponse } from "../../logs/profile/profile-logs";
+5: export const getProfilePhotoController = async (c: Context) => {
+9: const rawFilename = c.req.param('filename');
+12: return sendprofileResponse(c, 400, action, 'error', action, 'Filename tidak diberikan', 'Filename tidak valid', undefined, 'INVALID_FILENAME');
+20: return sendprofileResponse(c, 403, action, 'error', action, 'Akses file ditolak', 'Path tidak valid', undefined, 'FORBIDDEN_PATH');
+27: return sendprofileResponse(c, 404, action, 'error', action, `File tidak ditemukan: ${safeFilename}`, 'Foto tidak ditemukan', undefined, 'FILE_NOT_FOUND');
+42: return sendprofileResponse(c, 500, action, 'error', action, 'Internal server error', 'Internal server error', undefined, 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\profile-controller\get-user.ts ---
+4: import { sendprofileResponse } from "../../logs/profile/profile-logs";
+6: export const getuserController = async (c : Context) => {
+12: return sendprofileResponse(c, 401, 'GET_USER', 'error', action, 'Token tidak valid', 'Token tidak valid', null, 'TOKEN_INVALID')
+20: return sendprofileResponse(c, 404, 'GET_USER', 'error', action, 'User not found', 'User tidak ditemukan', null, 'USER_NOT_FOUND')
+23: return sendprofileResponse(c, 200, 'GET_USER', 'success', action, 'User berhasil diambil', 'User berhasil diambil', {data : user}, 'GET_USER_SUCCESS')
+27: return sendprofileResponse(c, 500, 'GET_USER', 'error', action, 'Internal Server Error', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR')
+
+--- FILE: bastura-api\src\controller\profile-controller\update-user.ts ---
+4: import { sendprofileResponse } from "../../logs/profile/profile-logs";
+6: export const updateuserController = async (c : Context) => {
+12: return sendprofileResponse(c, 401, 'UPDATE_USER', 'error', action, 'Token tidak valid', 'Token tidak valid', null, 'TOKEN_INVALID')
+16: const body = await c.req.json() as updateUser
+20: return sendprofileResponse(c, 400, 'UPDATE_USER', 'error', action, 'Request body tidak valid', 'Request body tidak valid', null, 'REQUEST_INVALID')
+29: return sendprofileResponse(c, 404, 'UPDATE_USER', 'error', action, 'User tidak ditemukan', 'User tidak ditemukan', null, 'USER_NOT_FOUND')
+32: return sendprofileResponse(c, 200, 'UPDATE_USER', 'success', action, 'User berhasil diupdate', 'User berhasil diupdate', {data : user}, 'UPDATE_USER_SUCCESS')
+35: return sendprofileResponse(c, 500, 'UPDATE_USER', 'error', action, 'Internal Server Error', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR')
+
+--- FILE: bastura-api\src\controller\profile-controller\upload-add-profile-img.ts ---
+3: import { sendprofileResponse , profilelog } from "../../logs/profile/profile-logs";
+9: export const updateAddProfileImgController = async (c : Context) => {
+18: return sendprofileResponse(c, 401, 'UPLOAD_ADD_PROFILE_IMG', 'error', action, 'Token tidak valid', 'Token tidak valid', null, 'TOKEN_INVALID')
+24: return sendprofileResponse(c, 400, 'UPLOAD_ADD_PROFILE_IMG', 'error', action, 'Request body tidak valid', 'Request body tidak valid', null, 'REQUEST_INVALID')
+30: return sendprofileResponse(c, 400, 'UPLOAD_ADD_PROFILE_IMG', 'error', action, 'Tipe file tidak valid', 'Tipe file tidak valid', null, 'INVALID_FILE_TYPE')
+37: return sendprofileResponse(c, 400, 'UPLOAD_ADD_PROFILE_IMG', 'error', action, 'Ukuran file terlalu besar (maks 500KB)', 'Ukuran file tidak valid', null, 'INVALID_FILE_SIZE')
+73: return sendprofileResponse(c, 500, 'UPLOAD_ADD_PROFILE_IMG', 'error', action, 'Gagal menyimpan gambar ke server', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR');
+78: return sendprofileResponse(c, 404, 'UPLOAD_ADD_PROFILE_IMG', 'error', action, 'User tidak ditemukan', 'User tidak ditemukan', null, 'USER_NOT_FOUND')
+83: return sendprofileResponse(c, 404, 'UPLOAD_ADD_PROFILE_IMG', 'error', action, 'User tidak ditemukan', 'User tidak ditemukan', null, 'USER_NOT_FOUND')
+85: return sendprofileResponse(c, 200, 'UPLOAD_ADD_PROFILE_IMG', 'success', action, 'User berhasil diupdate', 'User berhasil diupdate', {data : getuser}, 'UPDATE_USER_SUCCESS')
+88: return sendprofileResponse(c, 500, 'UPDATE_USER', 'error', action, 'Internal Server Error', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR')
+
+--- FILE: bastura-api\src\controller\splitbills\confirm-splitbills-controller.ts ---
+3: import { sendtscResponse } from '../../logs/tsc/tsc-logs';
+18: export const confirmSplitbillsController = async (c: Context) => {
+24: return sendtscResponse(c, 401, action, 'error', 'SPLITBILLS', 'Token tidak valid', 'Token tidak valid', null, 'TOKEN_INVALID');
+28: const body = await c.req.json();
+32: return sendtscResponse(c, 400, action, 'error', 'SPLITBILLS',
+38: return sendtscResponse(c, 400, action, 'error', 'SPLITBILLS',
+44: return sendtscResponse(c, 400, action, 'error', 'SPLITBILLS',
+53: return sendtscResponse(c, 500, action, 'error', 'SPLITBILLS',
+59: return sendtscResponse(c, 400, action, 'error', 'SPLITBILLS',
+65: return sendtscResponse(c, 400, action, 'error', 'SPLITBILLS',
+72: return sendtscResponse(c, 400, action, 'error', 'SPLITBILLS',
+79: return sendtscResponse(c, 400, action, 'error', 'SPLITBILLS',
+85: return sendtscResponse(c, 400, action, 'error', 'SPLITBILLS',
+92: return sendtscResponse(c, 200, action, 'success', 'SPLITBILLS',
+100: return sendtscResponse(c, 500, action, 'error', 'SPLITBILLS',
+
+--- FILE: bastura-api\src\controller\splitbills\get-history-splitbills-controller.ts ---
+2: import { sendtscResponse } from '../../logs/tsc/tsc-logs';
+11: export const getHistorySplitbillsController = async (c: Context) => {
+18: return sendtscResponse(c, 200, action, 'success', 'SPLITBILLS',
+24: return sendtscResponse(c, 200, action, 'success', 'SPLITBILLS',
+31: return sendtscResponse(c, 500, action, 'error', 'SPLITBILLS',
+
+--- FILE: bastura-api\src\controller\splitbills\init-splitbills-controller.ts ---
+3: import { sendtscResponse } from '../../logs/tsc/tsc-logs';
+17: export const initSplitbillsController = async (c: Context) => {
+23: return sendtscResponse(c, 401, action, 'error', 'SPLITBILLS', 'Token tidak valid', 'Token tidak valid', null, 'TOKEN_INVALID');
+27: const body = await c.req.json();
+31: return sendtscResponse(c, 400, action, 'error', 'SPLITBILLS',
+37: return sendtscResponse(c, 400, action, 'error', 'SPLITBILLS',
+46: return sendtscResponse(c, 500, action, 'error', 'SPLITBILLS',
+52: return sendtscResponse(c, 404, action, 'error', 'SPLITBILLS',
+59: return sendtscResponse(c, 200, action, 'success', 'SPLITBILLS',
+66: return sendtscResponse(c, 500, action, 'error', 'SPLITBILLS',
+
+--- FILE: bastura-api\src\controller\tsc-controller\cancel-withdrawals.ts ---
+2: import {sendtscResponse} from "../../logs/tsc/tsc-logs";
+5: export const cancelWithdrawalsController = async (c : Context) => {
+14: return sendtscResponse(c, 401, action, 'error', action, 'Token tidak valid', 'Token tidak valid', null, 'TOKEN_INVALID')
+19: const body = await c.req.json()
+25: return sendtscResponse(c, 404, action, 'error', action, 'Penarikan tidak ditemukan', 'Penarikan tidak ditemukan', undefined, 'WITHDRAWAL_NOT_FOUND');
+34: return sendtscResponse(c, 200, action, 'success', action, 'Penarikan saldo berhasil dibatalkan', 'Penarikan saldo berhasil dibatalkan', res_payload, 'WITHDRAWAL_CANCELLED');
+37: return sendtscResponse(c, 500, action, 'error', action, 'Internal Server Error', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\tsc-controller\get-balance.ts ---
+3: import { sendtscResponse } from "../../logs/tsc/tsc-logs";
+6: export const getbalanceController = async (c: Context) => {
+13: return sendtscResponse(c, 401,'SALDO_REALTIME', 'error', action, 'Token tidak valid', 'Token tidak valid', null, 'TOKEN_INVALID')
+21: return sendtscResponse(c, 404, 'SALDO_REALTIME', 'error', action, 'User not found', 'User tidak ditemukan', null, 'USER_NOT_FOUND')
+24: return sendtscResponse(c, 200, 'SALDO_REALTIME', 'success', action, 'Saldo berhasil diambil', 'Saldo berhasil diambil', {
+29: return sendtscResponse(c, 500, 'SALDO_REALTIME', 'error', action, 'Internal Server Error', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR')
+
+--- FILE: bastura-api\src\controller\tsc-controller\transaction-log-controller.ts ---
+4: import { sendtscResponse } from "../../logs/tsc/tsc-logs";
+6: export const getTransactionLogController = async (c: Context) => {
+13: return sendtscResponse(c, 401, action, 'error', 'GET_TRANSACTION_LOG', 'Token tidak valid', 'Token tidak valid', undefined, 'TOKEN_INVALID');
+21: return sendtscResponse(c, 404, action, 'error', 'GET_TRANSACTION_LOG', 'Riwayat transaksi tidak ditemukan', 'Riwayat transaksi tidak ditemukan', undefined, 'DATA_NOT_FOUND');
+33: return sendtscResponse(c, 200, action, 'success', 'GET_TRANSACTION_LOG', 'Riwayat transaksi berhasil diambil', 'Riwayat transaksi berhasil diambil', { data: transactionLogs }, 'GET_TRANSACTION_LOG_SUCCESS');
+37: return sendtscResponse(c, 500, action, 'error', 'GET_TRANSACTION_LOG', 'Internal Server Error', 'Internal Server Error', undefined, 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\tsc-controller\wthdrawals-controller.ts ---
+4: import { sendtscResponse } from "../../logs/tsc/tsc-logs";
+6: export const takeWithdrawalsController = async (c: Context) => {
+13: return sendtscResponse(c, 401, action, 'error', 'TAKE_WITHDRAWALS', 'Token tidak valid', 'Token tidak valid', undefined, 'TOKEN_INVALID');
+18: const body = await c.req.json();
+22: return sendtscResponse(c, 400, action, 'error', 'TAKE_WITHDRAWALS', 'Nominal tidak valid', 'Nominal penarikan harus berupa angka positif', undefined, 'INVALID_AMOUNT');
+28: return sendtscResponse(c, 404, action, 'error', 'TAKE_WITHDRAWALS', 'User tidak ditemukan', 'User tidak ditemukan', undefined, 'USER_NOT_FOUND');
+32: return sendtscResponse(c, 400, action, 'error', 'TAKE_WITHDRAWALS', 'Saldo tidak mencukupi', 'Saldo tidak mencukupi untuk melakukan penarikan', undefined, 'INSUFFICIENT_BALANCE');
+35: return sendtscResponse(c, 200, action, 'success', 'TAKE_WITHDRAWALS', 'Penarikan saldo berhasil diajukan', 'Penarikan saldo berhasil diajukan', undefined, 'WITHDRAWAL_SUCCESS');
+39: return sendtscResponse(c, 500, action, 'error', 'TAKE_WITHDRAWALS', 'Internal Server Error', 'Internal Server Error', undefined, 'INTERNAL_SERVER_ERROR');
+
+--- FILE: bastura-api\src\controller\type\announcements-type.ts ---
+
+--- FILE: bastura-api\src\controller\type\education-type.ts ---
+
+--- FILE: bastura-api\src\controller\type\profile-type.ts ---
+
+--- FILE: bastura-api\src\controller\type\transaction-type.ts ---
+
+--- FILE: bastura-api\src\controller\update-controller\get-jadwal.ts ---
+3: import { sendAuthResponse } from "../../logs/auth/auth-logs";
+5: export const getOpeningSchController = async (c: Context) => {
+11: return sendAuthResponse(c, 401, 'error', 'get_opening_sch', 'Unauthorized: Token tidak valid', 'Unauthorized: Token tidak valid', null, 'ERR_UNAUTHORIZED');
+17: return sendAuthResponse(c, 404, 'success', 'get_opening_sch', 'Jadwal setoran belum tersedia atau belum diatur.', 'Jadwal setoran belum tersedia atau belum diatur.', {data : result}, 'SUCC_OPENING_SCH_NOT_FOUND')
+20: return sendAuthResponse(c, 200, 'success', 'get_opening_sch', 'Opening schedule fetched successfully', 'Opening schedule fetched successfully', {data : result}, 'SUCC_OPENING_SCH_FETCHED')
+22: return sendAuthResponse(c, 500, 'error', 'get_opening_sch', 'Failed to get opening schedule', 'Failed to get opening schedule', error, 'ERR_OPENING_SCH_FETCHED')
+
+--- FILE: bastura-api\src\controller\update-controller\get-update.ts ---
+4: export const getUpdateController = async (c: Context) => {
+9: return c.json({
+16: return c.json({
+25: return c.json({
+
+--- FILE: bastura-api\src\controller\update-controller\insert-jadwal.ts ---
+3: import { sendAuthResponse } from "../../logs/auth/auth-logs";
+6: export const insert_setoran_controller = async (c : Context) => {
+9: const body = await c.req.json();
+15: return sendAuthResponse(c, 401, 'error', 'insert_setoran', 'Unauthorized: Token tidak valid', 'Unauthorized: Token tidak valid', null, 'ERR_UNAUTHORIZED');
+19: return sendAuthResponse(c, 400, 'error', 'insert_setoran', 'Time is required', 'Time is required', null, 'ERR_MISSING_TIME');
+25: return sendAuthResponse(c, 400, 'error', 'insert_setoran', 'Failed to insert schedule', 'Failed to insert schedule', result, 'ERR_JADWAL_INSERTION');
+28: return sendAuthResponse(c, 200, 'success', 'insert_setoran', 'Schedule inserted successfully', 'Schedule inserted successfully', {data : result}, 'SUCC_JADWAL_INSERTED');
+30: return sendAuthResponse(c, 500, 'error', 'insert_setoran', 'Failed to insert schedule', 'Failed to insert schedule', error, 'ERR_JADWAL_INSERTION');
+
+--- FILE: bastura-api\src\controller\users_data\get-warga-controller.ts ---
+3: import { sendwargaResponse } from "../../logs/users_data/warga-logs";
+5: export const get_warga_controller = async (c: Context) => {
+10: return sendwargaResponse(c, 404, 'get_warga', 'error', 'Warga tidak ditemukan', 'Warga tidak ditemukan', null as any, 'ERR_WARGA_NOT_FOUND');
+13: return sendwargaResponse(c, 200, 'get_warga', 'success', 'Get warga successfully', 'Get warga successfully', { data: result } as any, 'SUCC_GET_WARGA');
+15: return sendwargaResponse(c, 500, 'get_warga', 'error', 'Failed to get warga', 'Failed to get warga', {data : error} as any, 'ERR_GET_WARGA');

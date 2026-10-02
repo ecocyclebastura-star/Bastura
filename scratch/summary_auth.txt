@@ -1,0 +1,68 @@
+
+--- FILE: bastura-api\src\auth\global\forgotpass.ts ---
+3: import { Resend } from 'resend'
+6: import {sendAuthResponse } from "../../logs/auth/auth-logs";
+9: const resend = new Resend(getEnvOTP.RESEND_API_KEY)
+12: export const forgotpassword = async (c: Context ) => {
+17: const body: ForgotPasswordPayload = await c.req.json()
+20: return await sendAuthResponse(
+26: return await sendAuthResponse(
+37: return await sendAuthResponse(
+52: const { error } = await resend.emails.send({
+53: from: 'System <onboarding@resend.dev>', // Ubah jika sudah production T_T
+70: return await sendAuthResponse(
+80: return await sendAuthResponse(
+
+--- FILE: bastura-api\src\auth\global\login.ts ---
+7: import { sendAuthResponse } from '../../logs/auth/auth-logs'
+13: export const login = async (c: Context) => {
+16: const body: LoginPayload = await c.req.json()
+21: return await sendAuthResponse(c, 400 , 'error' , 'Login Error ' , 'Email dan Password harus diisi ' , 'Email dan Password harus diisi ' , 'EMAIL_PASSWORD_REQUIRED'  )
+27: return await sendAuthResponse(c, 401 , 'error' , 'Login Error ' , 'Email belum terdaftar' , 'Email belum terdaftar' , 'EMAIL_NOT_FOUND'  )
+33: return await sendAuthResponse(c, 401 , 'error' , 'Login Error ' , 'Email atau password salah' , 'Email atau password salah' , 'EMAIL_PASSWORD_WRONG'  )
+38: return await sendAuthResponse(c, 401 , 'error' , 'Login Error ' , 'Akun sudah tidak aktif/dihapus' , 'Akun sudah tidak aktif/dihapus' , 'USER_NOT_ACTIVE'  )
+59: return await sendAuthResponse(c, 200 , 'success' , 'Login Success ' , `User ${user.email} berhasil login` , `User ${user.email} berhasil login` ,
+76: return await sendAuthResponse(c, 500 , 'error' , 'Login Error ' , 'Internal Server Error' , 'Internal Server Error' , 'INTERNAL_SERVER_ERROR'   )
+
+--- FILE: bastura-api\src\auth\global\logout.ts ---
+6: import { sendAuthResponse } from '../../logs/auth/auth-logs'
+10: export const logout = async (c: Context) => {
+12: const body: LogoutPayload = await c.req.json()
+16: return await sendAuthResponse(c, 400 , 'error' , 'Logout Error ' , 'Refresh token tidak ditemukan' , 'Refresh token tidak ditemukan' , 'REFRESH_TOKEN_NOT_FOUND'  )
+27: await sendAuthResponse(c, 200 , 'success' , 'Logout Success ' , `User ${userId} berhasil logout` , `User ${userId} berhasil logout` , {})
+31: await sendAuthResponse(c, 500 , 'error' , 'Logout Error ' , 'Internal Server Error' , 'Internal Server Error' , 'INTERNAL_SERVER_ERROR'   )
+
+--- FILE: bastura-api\src\auth\global\resetpass.ts ---
+7: import {  sendAuthResponse } from "../../logs/auth/auth-logs";
+12: export const resetPassword = async (c: Context) => {
+14: const body: ResetPasswordPayload = await c.req.json()
+18: return await sendAuthResponse(c, 400, 'error', 'Reset Password Error' , 'Data tidak lengkap' , 'Data tidak lengkap' , 'DATA_INCOMPLETE'  )
+22: return await sendAuthResponse(c ,400 , 'error', 'Kode OTP Kadaluarsa' , 'Kode OTP sudah kadaluarsa' , 'Kode OTP sudah kadaluarsa' , 'OTP_EXPIRED' )
+27: return await sendAuthResponse(c, 400 , 'error', 'Reset Password Error' , 'password minimal 8 karakter dan mengandung angka' , 'password minimal 8 karakter dan mengandung angka' , 'PASSWORD_MIN_8_CHARACTER_AND_NUMBER' )
+31: return await sendAuthResponse(c, 400 , 'error', 'Reset Password Error' , 'password minimal 8 karakter' , 'password minimal 8 karakter' , 'PASSWORD_MIN_8_CHARACTER' )
+38: return await sendAuthResponse(c, 400 , 'error', 'Kode OTP salah' , 'Kode OTP salah' , 'KODE_OTP_INCORRECT' )
+43: return await sendAuthResponse(c, 200 , 'success', 'Password berhasil diubah' , 'Password berhasil diubah , Silahkan login kembali', 'PASSWORD_RESET_SUCCESS' )
+47: return await sendAuthResponse(c, 500 , 'error', 'Internal Server Error' , 'Terjadi kesalahan pada server' , 'INTERNAL_SERVER_ERROR' )
+
+--- FILE: bastura-api\src\auth\global\signup.ts ---
+7: import { sendAuthResponse } from '../../logs/auth/auth-logs';
+12: export const signup = async (c: Context) => {
+14: const body: SignupPayload = await c.req.json()
+19: return await sendAuthResponse(c, 400 , 'error', 'Signup error' ,'format tipe data invalid' , 'format tipe data invalid' , 'DATA_TYPE_INVALID' )
+25: return await sendAuthResponse(c, 400 , 'error', 'Signup error' ,'password minimal 8 karakter dan mengandung angka' , 'password minimal 8 karakter dan mengandung angka' , 'PASSWORD_MIN_8_CHARACTER_AND_NUMBER' )
+29: return await sendAuthResponse(c, 400 , 'error', 'Signup error' ,'password minimal 8 karakter ' , 'password minimal 8 karakter' , 'PASSWORD_MIN_8_CHARACTER' )
+33: return await sendAuthResponse(c, 400 , 'error', 'Signup error' ,'Kata sandi tidak cocok dengan field konfirmasi kata sandi.' , 'Kata sandi tidak cocok dengan field konfirmasi kata sandi.' , 'PASSWORD_MISMATCH'  )
+38: return await sendAuthResponse(c, 409 , 'error', 'Signup error' ,'Email telah terdaftar' , 'Email telah terdaftar' , 'EMAIL_ALREADY_REGISTERED'  )
+70: return await sendAuthResponse(c, 200 , 'success', 'Signup success' , 'User berhasil mendaftar' , 'User berhasil mendaftar' ,
+90: return await sendAuthResponse(c, 500 , 'error', 'Signup error' , 'Internal Server Error' , 'Internal Server Error' , 'INTERNAL_SERVER_ERROR'   )
+
+--- FILE: bastura-api\src\auth\global\tk-refresh.ts ---
+5: import { sendAuthResponse } from '../../logs/auth/auth-logs';
+11: export const refreshToken = async (c: Context) => {
+14: const body = await c.req.json()
+18: return await sendAuthResponse(c, 400 , 'error', 'Token refresh error' , 'Refresh token tidak ditemukan' , 'Refresh token tidak ditemukan' , 'REFRESH_TOKEN_NOT_FOUND'   )
+25: return await sendAuthResponse(c, 403 , 'error', 'Token refresh error' , 'Terdeteksi aktivitas mencurigakan pada sesi Anda. Sesi telah diakhiri demi keamanan, silakan login ulang.' , 'Terdeteksi aktivitas mencurigakan pada sesi Anda. Sesi telah diakhiri demi keamanan, silakan login ulang.' , 'TOKEN_REVOKED_SECURITY_ALERT' )
+34: return await sendAuthResponse(c, 403 , 'error', 'Token refresh error' , 'Refresh token invalid atau expired' , 'Refresh token invalid atau expired' , 'REFRESH_TOKEN_INVALID_OR_EXPIRED' )
+41: return await sendAuthResponse(c, 404 , 'error', 'Token refresh error' , 'User tidak ditemukan' , 'User tidak ditemukan' , 'USER_NOT_FOUND' )
+52: return await sendAuthResponse(c, 200 , 'success', 'Token refresh success' , 'Token berhasil diperbarui' , 'Token berhasil diperbarui' , {
+60: return await sendAuthResponse(c, 500 , 'error', 'Token refresh error' , 'Internal Server Error' , 'Internal Server Error' , 'INTERNAL_SERVER_ERROR' )
