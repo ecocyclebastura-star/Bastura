@@ -112,6 +112,7 @@ CREATE TABLE IF NOT EXISTS waste_catalog(
     catalog_img TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ,
+    deleted_at TIMESTAMPTZ,
 
     CONSTRAINT fk_category_id FOREIGN KEY (category_id) REFERENCES waste_category(id_waste_category) ON DELETE CASCADE ON UPDATE CASCADE
 );
