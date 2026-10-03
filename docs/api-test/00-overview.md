@@ -1,5 +1,13 @@
 # Overview API Test: Proyek Bastura
 
+## Perubahan Terbaru
+- **Tanggal**: 3 Oktober 2026
+- **Acuan Commit**: `01fa57dd` sampai dengan branch aktif (`docs/update-api-deposits`)
+- **Terdampak**:
+  - **BARU**: 5 Endpoint (GET `/deposits`, GET `/deposits/:id`, POST `/deposits`, PATCH `/deposits/:id`, DELETE `/deposits/:id`).
+  - **Dokumen yang diperbarui**: `00-overview.md`, `POSTMAN-PROMPT.md`, `99-catatan-dan-pertanyaan.md`
+  - **Dokumen baru**: `09-deposits.md`
+
 Tujuan dari dokumen ini adalah untuk menyediakan referensi yang lengkap bagi pembuatan koleksi Postman, skrip pengujian (test scripts), dan alur pengujian otomatis (automated testing) pada API backend Bastura. Dokumen ini harus digunakan oleh Postman AI untuk membuat struktur folder, environment variables, dan skenario pengujian secara otomatis tanpa menulis *hardcode* token atau data rahasia.
 
 ## Tabel Variabel Environment
@@ -20,6 +28,7 @@ Tujuan dari dokumen ini adalah untuk menyediakan referensi yang lengkap bagi pem
 | `announcement_id` | ID Pengumuman untuk testing | `UUID-DUMMY` | Tidak | Otomatis (Postman Script) |
 | `education_id` | ID Konten Edukasi untuk testing | `UUID-DUMMY` | Tidak | Otomatis (Postman Script) |
 | `waste_catalog_id`| ID Katalog Sampah untuk testing | `10000000-0000-0000-0000-000000000001` | Tidak | Manual/Otomatis |
+| `deposit_id` | ID Setoran untuk testing (Modul 09) | `UUID-DUMMY` | Tidak | Otomatis (Postman Script) |
 
 ## Alur Autentikasi
 1. Eksekusi endpoint `POST /api/v1/auth/login` menggunakan kredensial (email dan password) dari masing-masing role (Warga, Admin, Super Admin).
@@ -71,7 +80,8 @@ Tujuan dari dokumen ini adalah untuk menyediakan referensi yang lengkap bagi pem
 7. **Announcements**: Pengumuman (Ketergantungan: Setup).
 8. **Education**: Edukasi (Ketergantungan: Setup).
 9. **Updates**: Jadwal operasional (Ketergantungan: Setup).
-10. **Cleanup**: Menghapus atau membersihkan data yang dibuat selama fase pengujian (Hapus user dummy, hapus katalog dummy).
+10. **Deposits**: Manajemen setoran sampah oleh admin (Ketergantungan: Setup, Waste Catalog).
+11. **Cleanup**: Menghapus atau membersihkan data yang dibuat selama fase pengujian (Hapus user dummy, hapus katalog dummy, hapus deposit).
 
 ## Matriks Akses Semua Endpoint
 *(Tanda `v` berarti dapat diakses/sukses (2xx), Tanda `x` berarti ditolak (401/403))*
@@ -95,6 +105,7 @@ Tujuan dari dokumen ini adalah untuk menyediakan referensi yang lengkap bagi pem
 | `/splitbills/*` | x | x | v | v |
 | `/updates` (GET) | x | v | v | v |
 | `/updates/insert-jadwal`, `get-jadwal` | x | x | v | v |
+| `/deposits` (GET, POST, PATCH, DELETE) | x | x | v | v |
 
 ## Snippet Bersama Postman
 Gunakan skrip di tab **Tests** untuk mengotomatisasi pengecekan struktur umum (ditambahkan pada level folder atau root collection):
@@ -124,3 +135,4 @@ if (pm.response.code === 200 || pm.response.code === 201) {
 - `06-transactions.md`: Tarik tunai, saldo, riwayat transaksi.
 - `07-splitbills.md`: Proses alokasi splitbills.
 - `08-updates.md`: Jadwal setoran.
+- `09-deposits.md`: Endpoint terkait pencatatan Setoran Sampah oleh Admin.

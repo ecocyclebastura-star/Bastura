@@ -15,4 +15,7 @@ File ini **TIDAK** untuk diberikan ke Postman AI. File ini adalah laporan untuk 
 ### 3. Matriks Keputusan Tes Otomatis
 1. Apakah tes harus dijalankan di environment terisolasi? **Ya**. Karena beberapa skenario berlabel `[DESTRUKTIF]` akan mendelete data atau mengganti role.
 2. Endpoint Logout tidak boleh dites di tengah jalan, wajib di `Cleanup`.
-3. Skenario Lockout (bruteforce) harus dijaga ketat agar akun Admin/Super Admin tidak terblokir sungguhan saat testing berjalan.
+### 4. Controller Tanpa Route & Perubahan Refactor
+- Saat mengembangkan `deposit` module, terdeteksi bahwa modul lain yang lama memiliki duplikasi kode fungsi `validateUUID` yang tinggi (di-copy paste lebih dari 10 kali). Kode telah di-refactor menggunakan global helper di `src/utils/validation.ts`. Tidak ada perubahan interface/respons, sehingga tidak memengaruhi dokumentasi API test lama, tapi merapikan codebase.
+- **Controller Tanpa Route**: Tidak ada controller baru yang tidak disambungkan ke route (semua controller deposit sukses di-mount ke `/api/v1/deposits`).
+- **Prasyarat Database**: Fitur `deposits` mengubah skema table (menambahkan `details JSONB` di `audit_logs` dan `created_by UUID` di `deposit`). Karena perubahan ini dilakukan di `01-schema.sql` (bukan file migrasi terpisah), pengguna perlu menghapus Docker volume database dan build ulang agar skema ini aktif, jika tidak, endpoint POST dan DELETE deposit akan gagal dengan pesan error DB di console server.

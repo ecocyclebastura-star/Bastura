@@ -10,13 +10,13 @@ Salin prompt di bawah ini dan berikan ke Postman AI (Postbot) milikmu. Anda haru
 ```text
 Saya punya dokumen 00-overview.md yang mendefinisikan aturan global API Bastura. Tolong buatkan sebuah Collection Postman baru bernama "Bastura API Test".
 1. Buat Environment Variables sesuai dengan "Tabel Variabel Environment" di dokumen. Jangan isi value kredensial nyata, kosongkan saja "current value"-nya, isi "initial value" dengan dummy.
-2. Buat Collection-level script di tab Tests berisi Javascript `pm.test` standar yang ada di bagian "Snippet Bersama Postman".
-3. Buat folder berurutan di dalam Collection: "Setup", "Auth", "Users", "Waste Catalog", "Transactions", "Splitbills", "Announcements", "Education", "Updates", dan "Cleanup".
+3. Buat Collection-level script di tab Tests berisi Javascript `pm.test` standar yang ada di bagian "Snippet Bersama Postman".
+4. Buat folder berurutan di dalam Collection: "Setup", "Auth", "Users", "Waste Catalog", "Transactions", "Splitbills", "Announcements", "Education", "Updates", "Deposits", dan "Cleanup".
 ```
 
 ---
 
-### Tahap 2: Input Endpoint Tiap Modul (Ulangi untuk tiap file 01 sampai 08)
+### Tahap 2: Input Endpoint Tiap Modul (Ulangi untuk tiap file 01 sampai 09)
 
 **Pilih salah satu file markdown modul (mis. `01-auth.md`), berikan ke Postbot, lalu berikan prompt ini:**
 
@@ -34,5 +34,21 @@ Berdasarkan dokumen modul ini, tolong buatkan request untuk semua endpoint yang 
 ### Tahap 3: Pembersihan (Cleanup)
 
 ```text
-Untuk folder "Cleanup", buatkan script yang me-loop endpoint delete (seperti DELETE pengumuman, edukasi, katalog sampah) memanggil {{announcement_id}}, {{education_id}} dan {{waste_catalog_id}} yang sebelumnya disimpan, serta menjalankan endpoint POST /api/v1/auth/logout.
+Untuk folder "Cleanup", buatkan script yang me-loop endpoint delete (seperti DELETE pengumuman, edukasi, katalog sampah, deposit) memanggil {{announcement_id}}, {{education_id}}, {{waste_catalog_id}}, dan {{deposit_id}} yang sebelumnya disimpan, serta menjalankan endpoint POST /api/v1/auth/logout.
+```
+
+---
+
+### Mode Update
+
+Jika Collection sudah ada dan hanya ada pembaruan dokumen:
+**Berikan file `00-overview.md` dan file modul yang berubah (misalnya `09-deposits.md`) ke Postbot:**
+
+```text
+Tolong perbarui collection "Bastura API Test" yang sudah ada.
+1. Baca bagian "Perubahan Terbaru" di 00-overview.md.
+2. Tambahkan environment variable baru (jika ada yang ditambahkan).
+3. Untuk modul yang saya berikan ini (mis. 09-deposits.md), tambahkan request baru ke dalam foldernya sesuai dengan urutan, perbarui request yang parameternya berubah, dan tandai [USANG] pada nama request untuk yang dihapus/dipindahkan.
+4. Jangan menduplikasi request yang sudah ada jika tidak ada perubahan.
+5. Pastikan semua Skenario Uji baru di dokumen modul ini memiliki test assertions (pm.test).
 ```
