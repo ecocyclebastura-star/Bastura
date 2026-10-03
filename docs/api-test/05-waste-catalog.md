@@ -37,8 +37,8 @@
 
 ## 2. [CAT-GET-CATEGORIES] Lihat Kategori Sampah
 - **Method**: `GET`
-- **Endpoint**: `/api/v1/waste/admin/waste-categories`
-- **Akses**: Khusus **Admin** & **Super Admin**
+- **Endpoint**: `/api/v1/waste/catalog-categories`
+- **Akses**: Semua Pengguna Login
 
 **Contoh Response Sukses (200 OK):**
 ```json
@@ -61,17 +61,12 @@
 }
 ```
 
-**Tabel Response Error:**
-| HTTP Status | Error Code | Kondisi / Penjelasan |
-|---|---|---|
-| 403 | `FORBIDDEN` | Endpoint ini diakses oleh Warga. |
-
 ---
 
 ## 3. [CAT-POST-CREATE] Buat Jenis Sampah Baru
 - **Method**: `POST`
-- **Endpoint**: `/api/v1/waste/admin/waste-types`
-- **Akses**: Khusus **Admin** & **Super Admin**
+- **Endpoint**: `/api/v1/waste/catalog`
+- **Akses**: Semua Pengguna Login
 
 **Panduan Postman (tab Body -> raw -> JSON):**
 ```json
@@ -110,8 +105,8 @@
 
 ## 4. [CAT-PATCH-EDIT] Edit Jenis Sampah
 - **Method**: `PATCH`
-- **Endpoint**: `/api/v1/waste/admin/waste-types/:id` (Ganti `:id` dengan `id_waste`)
-- **Akses**: Khusus **Admin** & **Super Admin**
+- **Endpoint**: `/api/v1/waste/catalog/:id` (Ganti `:id` dengan `id_waste`)
+- **Akses**: Semua Pengguna Login
 
 **Panduan Postman (tab Body -> raw -> JSON):**
 ```json
@@ -139,9 +134,9 @@
 ---
 
 ## 5. [CAT-PATCH-PHOTO] Upload Foto Katalog Sampah
-- **Method**: `PATCH`
-- **Endpoint**: `/api/v1/waste/admin/waste-types/:id/photo` (Ganti `:id` dengan `id_waste`)
-- **Akses**: Khusus **Admin** & **Super Admin**
+- **Method**: `POST`
+- **Endpoint**: `/api/v1/waste/catalog/photo/:id` (Ganti `:id` dengan `id_waste`)
+- **Akses**: Semua Pengguna Login
 - **Content-Type**: `multipart/form-data`
 
 **Panduan Postman (tab Body -> form-data):**
@@ -168,8 +163,8 @@
 
 ## 6. [CAT-DELETE-DEL] Hapus Jenis Sampah
 - **Method**: `DELETE`
-- **Endpoint**: `/api/v1/waste/admin/waste-types/:id`
-- **Akses**: Khusus **Admin** & **Super Admin**
+- **Endpoint**: `/api/v1/waste/catalog/:id`
+- **Akses**: Semua Pengguna Login
 
 **Contoh Response Sukses (200 OK):**
 ```json
