@@ -5,6 +5,8 @@ node_modules/
 *.env
 *.env.*
 .ENV
+.server_env
+ssh_run.py
 
 # Bun (jika pakai bun)
 .bun

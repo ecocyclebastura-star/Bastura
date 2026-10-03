@@ -20,13 +20,21 @@ CREATE TABLE IF NOT EXISTS waste_category(
     ct_description TEXT
 );
 
+CREATE TABLE IF NOT EXISTS announcement_categories(
+    id_category UUID DEFAULT gen_random_uuid() PRIMARY KEY NOT NULL,
+    name VARCHAR(100) NOT NULL UNIQUE
+);
+
 CREATE TABLE IF NOT EXISTS announcements(
     id_announcements UUID DEFAULT gen_random_uuid() PRIMARY KEY NOT NULL,
     title VARCHAR(200) NOT NULL,
     content jsonb,
     announcements_img TEXT,
+    category_id UUID NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ
+    updated_at TIMESTAMPTZ,
+
+    CONSTRAINT fk_announcement_category FOREIGN KEY (category_id) REFERENCES announcement_categories(id_category) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS education_content(
@@ -53,7 +61,8 @@ CREATE TABLE IF NOT EXISTS update_logs (
     transaction_up TIMESTAMPTZ NOT NULL,
     announcements_up TIMESTAMPTZ NOT NULL,
     education_up TIMESTAMPTZ NOT NULL,
-    simba_up TIMESTAMPTZ NOT NULL
+    simba_up TIMESTAMPTZ NOT NULL,
+    catalog_up TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS profit (
@@ -171,7 +180,7 @@ CREATE TABLE IF NOT EXISTS deposit (
     id_user UUID NOT NULL,
     catalog_id UUID NOT NULL,
     amount_sb INT,
-    weight_dp BIGINT NOT NULL,
+    weight_dp DECIMAL(10,2) NOT NULL,
     dp_status status_tf DEFAULT 'processed',
     dp_notes TEXT,
     created_by UUID,

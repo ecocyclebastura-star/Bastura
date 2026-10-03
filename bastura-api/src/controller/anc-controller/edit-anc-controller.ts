@@ -40,9 +40,18 @@ export const editAncController = async (c: Context) => {
             return sendAncResponse(c, 404, action, 'error', action, 'Pengumuman tidak ditemukan', 'Pengumuman tidak ditemukan.', undefined, 'NOT_FOUND');
         }
 
-        const body = await c.req.parseBody();
+        let body: any = {};
+        const contentType = c.req.header('Content-Type') || '';
+        if (contentType.includes('application/json')) {
+            body = await c.req.json().catch(() => ({}));
+        } else {
+            body = await c.req.parseBody().catch(() => ({}));
+        }
         const titleRaw = body.title;
-        const contentRaw = body.content;
+        let contentRaw = body.content;
+        if (typeof contentRaw === 'object' && contentRaw !== null) {
+            contentRaw = JSON.stringify(contentRaw);
+        }
         const categoryIdRaw = body.category_id;
         const image = body.image;
 

@@ -29,9 +29,18 @@ export const addAncController = async (c: Context) => {
             return sendAncResponse(c, 401, action, 'error', action, 'Unauthorized', 'Gagal memverifikasi user.', undefined, 'UNAUTHORIZED');
         }
 
-        const body = await c.req.parseBody();
+        let body: any = {};
+        const contentType = c.req.header('Content-Type') || '';
+        if (contentType.includes('application/json')) {
+            body = await c.req.json().catch(() => ({}));
+        } else {
+            body = await c.req.parseBody().catch(() => ({}));
+        }
         const titleRaw = body.title;
-        const contentRaw = body.content;
+        let contentRaw = body.content;
+        if (typeof contentRaw === 'object' && contentRaw !== null) {
+            contentRaw = JSON.stringify(contentRaw);
+        }
         const categoryIdRaw = body.category_id;
         const image = body.image;
 
