@@ -133,10 +133,15 @@
   5. Insert ke tabel `deposit`, insert ke tabel `audit_logs` (tipe `ADD_DEPOSIT`).
 - **Headers, Path params, Query params, Body**:
   - Body: JSON
-    - `user_id` (wajib, UUID)
-    - `category_id` (wajib, UUID merujuk ke tabel waste_catalog)
-    - `description` (wajib, String max 150)
-    - `weight_kg` (wajib, Number > 0 dan <= 1000)
+    ```json
+    {
+      "user_id": "00000000-0000-0000-0000-000000000000",
+      "category_id": "10000000-0000-0000-0000-000000000001",
+      "description": "Setoran kardus bekas tebal",
+      "weight_kg": 5.5
+    }
+    ```
+    *(Aturan: `user_id` dan `category_id` wajib UUID, `description` max 150 char, `weight_kg` wajib Number 0-1000)*
 - **Respons sukses**: 201 Created
   ```json
   {
@@ -183,10 +188,14 @@
 - **Headers, Path params, Query params, Body**:
   - Path param: `id` (wajib, UUID deposit)
   - Body: JSON
-    - `category_id` (opsional, UUID)
-    - `description` (opsional, String)
-    - `weight_kg` (opsional, Number > 0 dan <= 1000)
-    - `user_id` (TIDAK BOLEH dikirim)
+    ```json
+    {
+      "category_id": "10000000-0000-0000-0000-000000000001",
+      "description": "Koreksi deskripsi setoran",
+      "weight_kg": 7.2
+    }
+    ```
+    *(Aturan: semua field opsional. `user_id` TIDAK BOLEH dikirim)*
 - **Respons sukses**: 200 OK
   ```json
   {
