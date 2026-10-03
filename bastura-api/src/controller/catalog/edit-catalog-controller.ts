@@ -3,11 +3,9 @@ import { sendcatalogResponse } from "../../logs/w_catalog/catalog-logs";
 import { getWasteCatalogById, editWasteCatalog } from "../../model/catalog/edit-catalog";
 import { checkWasteCatalogName, checkWasteCategoryExists } from "../../model/catalog/add-catalog";
 import { sql } from "../../model/connection";
+import { validateUUID } from "../../utils/validation";
 
-const validateUUID = (uuid: string) => {
-    const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    return regex.test(uuid);
-};
+
 
 export const editCatalogController = async (c: Context) => {
     const action = "edit_catalog";

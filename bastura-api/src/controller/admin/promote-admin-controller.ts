@@ -1,11 +1,9 @@
 import { Context } from "hono";
 import { sendprofileResponse } from "../../logs/profile/profile-logs";
 import { promoteUserToAdmin } from "../../model/admin/promote-demote-admin";
+import { validateUUID } from "../../utils/validation";
 
-const validateUUID = (uuid: string) => {
-    const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    return regex.test(uuid);
-};
+
 
 export const promoteAdminController = async (c: Context) => {
     const action = "promote_admin";

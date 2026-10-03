@@ -3,6 +3,7 @@ import { sendEduResponse } from "../../logs/edu/edu-logs";
 import { getEducationById, editEducation } from "../../model/edu/edit-edu";
 import path from "node:path";
 import { sql } from "../../model/connection";
+import { validateUUID } from "../../utils/validation";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB (standar yang sama)
 
@@ -15,10 +16,7 @@ const checkMagicBytes = async (file: File): Promise<boolean> => {
     return false;
 }
 
-const validateUUID = (uuid: string) => {
-    const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    return regex.test(uuid);
-};
+
 
 export const uploadEduImgController = async (c: Context) => {
     const action = "upload_edu_img";

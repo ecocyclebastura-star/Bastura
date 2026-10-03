@@ -4,11 +4,9 @@ import { getAncById } from "../../model/anc/get-announcements"
 import { deleteAnc } from "../../model/anc/edit-delete-anc"
 import { sql } from "../../model/connection"
 import path from "node:path"
+import { validateUUID } from "../../utils/validation";
 
-const validateUUID = (uuid: string) => {
-    const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    return regex.test(uuid);
-};
+
 
 export const deleteAncController = async (c: Context) => {
     const action = "delete_anc";

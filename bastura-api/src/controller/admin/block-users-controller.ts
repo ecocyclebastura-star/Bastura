@@ -2,10 +2,7 @@ import { Context } from "hono"
 import { sendprofileResponse } from "../../logs/profile/profile-logs"
 import { blockUser } from "../../model/admin/block-users"
 
-const validateUUID = (uuid: string) => {
-    const regexExp = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/gi;
-    return regexExp.test(uuid);
-}
+import { validateUUID } from "../../utils/validation";
 
 export const blockUserController = async (c: Context) => {
     const action = "block_user"

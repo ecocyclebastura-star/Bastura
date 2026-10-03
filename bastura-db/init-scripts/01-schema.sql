@@ -121,11 +121,12 @@ CREATE TABLE IF NOT EXISTS audit_logs(
     actor_id UUID NOT NULL,
     target_id UUID NOT NULL,
     action_type VARCHAR(20) NOT NULL,
+    details JSONB,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ,
 
-    CONSTRAINT fk_actor_id FOREIGN KEY (actor_id) REFERENCES users(id_users) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT fk_target_id FOREIGN KEY (target_id) REFERENCES users(id_users) ON DELETE CASCADE ON UPDATE CASCADE   
+    CONSTRAINT fk_actor_id FOREIGN KEY (actor_id) REFERENCES users(id_users) ON DELETE CASCADE ON UPDATE CASCADE
+    -- target_id sengaja TANPA FK: bisa menunjuk user ATAU deposit ATAU konten
 );
 
 CREATE TABLE IF NOT EXISTS error_logs(
@@ -172,11 +173,13 @@ CREATE TABLE IF NOT EXISTS deposit (
     weight_dp BIGINT NOT NULL,
     dp_status status_tf DEFAULT 'processed',
     dp_notes TEXT,
+    created_by UUID,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ,  
 
     CONSTRAINT fk_id_user_deposit FOREIGN KEY (id_user) REFERENCES users(id_users) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT fk_catalog_id FOREIGN KEY (catalog_id) REFERENCES waste_catalog(id_waste) ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT fk_catalog_id FOREIGN KEY (catalog_id) REFERENCES waste_catalog(id_waste) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_created_by FOREIGN KEY (created_by) REFERENCES users(id_users) ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS withdrawals (

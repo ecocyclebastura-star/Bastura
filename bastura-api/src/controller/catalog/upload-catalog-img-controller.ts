@@ -3,6 +3,7 @@ import { sendcatalogResponse } from "../../logs/w_catalog/catalog-logs";
 import { getWasteCatalogById, editWasteCatalog } from "../../model/catalog/edit-catalog";
 import path from "node:path";
 import { sql } from "../../model/connection";
+import { validateUUID } from "../../utils/validation";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
@@ -15,10 +16,7 @@ const checkMagicBytes = async (file: File): Promise<boolean> => {
     return false;
 }
 
-const validateUUID = (uuid: string) => {
-    const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    return regex.test(uuid);
-};
+
 
 export const uploadCatalogImgController = async (c: Context) => {
     const action = "upload_catalog_img";

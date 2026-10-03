@@ -3,6 +3,7 @@ import { sendAncResponse } from "../../logs/anc/anc-logs"
 import { addAnc, checkCategoryExists } from "../../model/anc/add-anc"
 import { sql } from "../../model/connection"
 import path from "node:path"
+import { validateUUID } from "../../utils/validation";
 
 const MAX_FILE_SIZE = 2097152; // 2MB + a little bit of overhead? No, just use 2MB since instruction says "batasnya sedikit di atas 2 MB agar overhead multipart tidak menolak file 2 MB yang valid". So 2 * 1024 * 1024 + 102400 (2.1 MB).
 const FILE_LIMIT = 2 * 1024 * 1024 + 102400;
@@ -16,10 +17,7 @@ const checkMagicBytes = async (file: File): Promise<boolean> => {
     return false;
 }
 
-const validateUUID = (uuid: string) => {
-    const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    return regex.test(uuid);
-};
+
 
 export const addAncController = async (c: Context) => {
     const action = "add_anc";

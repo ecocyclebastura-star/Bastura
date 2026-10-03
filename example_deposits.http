@@ -1,0 +1,102 @@
+@baseUrl = http://localhost:3000/api/v1
+@adminToken = {admin_token}
+@userToken = {user_token}
+
+### 1. Tanpa Token (Harus 401)
+POST {{baseUrl}}/deposits
+Content-Type: application/json
+
+{
+    "user_id": "20000000-0000-0000-0000-000000000001",
+    "category_id": "10000000-0000-0000-0000-000000000001",
+    "description": "Tanpa token",
+    "weight_kg": 2
+}
+
+### 2. Token User Biasa (Harus 403)
+POST {{baseUrl}}/deposits
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+    "user_id": "20000000-0000-0000-0000-000000000001",
+    "category_id": "10000000-0000-0000-0000-000000000001",
+    "description": "Token user",
+    "weight_kg": 2
+}
+
+### 3. Tambah Setoran Sukses (Admin)
+POST {{baseUrl}}/deposits
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+    "user_id": "20000000-0000-0000-0000-000000000001",
+    "category_id": "10000000-0000-0000-0000-000000000001",
+    "description": "Botol Plastik PET",
+    "weight_kg": 5.5
+}
+
+### 4. Tambah Setoran Error: UUID tidak valid
+POST {{baseUrl}}/deposits
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+    "user_id": "invalid-uuid",
+    "category_id": "10000000-0000-0000-0000-000000000001",
+    "description": "Botol",
+    "weight_kg": 5
+}
+
+### 5. Tambah Setoran Error: Berat Negatif, String, NaN
+POST {{baseUrl}}/deposits
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+    "user_id": "20000000-0000-0000-0000-000000000001",
+    "category_id": "10000000-0000-0000-0000-000000000001",
+    "description": "Botol",
+    "weight_kg": -5
+}
+
+### 6. List Setoran (Semua)
+GET {{baseUrl}}/deposits?page=1&limit=10
+Authorization: Bearer {{adminToken}}
+
+### 7. List Setoran (Filter & Search)
+GET {{baseUrl}}/deposits?search=Budi&status=processed&page=1&limit=5
+Authorization: Bearer {{adminToken}}
+
+### 8. List Setoran Error: Status Invalid
+GET {{baseUrl}}/deposits?status=invalid_status
+Authorization: Bearer {{adminToken}}
+
+### 9. Detail Setoran (Ganti :id_deposit)
+@id_deposit = id-dari-response-tambah
+GET {{baseUrl}}/deposits/{{id_deposit}}
+Authorization: Bearer {{adminToken}}
+
+### 10. Edit Setoran
+PATCH {{baseUrl}}/deposits/{{id_deposit}}
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+    "description": "Botol PET Kotor",
+    "weight_kg": 6.0
+}
+
+### 11. Edit Setoran Error: Mengganti user_id (400)
+PATCH {{baseUrl}}/deposits/{{id_deposit}}
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+    "user_id": "20000000-0000-0000-0000-000000000002"
+}
+
+### 12. Hapus Setoran
+DELETE {{baseUrl}}/deposits/{{id_deposit}}
+Authorization: Bearer {{adminToken}}

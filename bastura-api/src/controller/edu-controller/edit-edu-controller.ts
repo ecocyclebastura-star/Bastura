@@ -2,11 +2,9 @@ import { Context } from "hono";
 import { sendEduResponse } from "../../logs/edu/edu-logs";
 import { getEducationById, editEducation } from "../../model/edu/edit-edu";
 import { sql } from "../../model/connection";
+import { validateUUID } from "../../utils/validation";
 
-const validateUUID = (uuid: string) => {
-    const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    return regex.test(uuid);
-};
+
 
 export const editEduController = async (c: Context) => {
     const action = "edit_edu";

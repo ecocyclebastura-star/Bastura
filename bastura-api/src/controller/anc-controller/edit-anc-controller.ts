@@ -5,6 +5,7 @@ import { editAnc } from "../../model/anc/edit-delete-anc"
 import { checkCategoryExists } from "../../model/anc/add-anc"
 import { sql } from "../../model/connection"
 import path from "node:path"
+import { validateUUID } from "../../utils/validation";
 
 const FILE_LIMIT = 2 * 1024 * 1024 + 102400;
 
@@ -17,10 +18,7 @@ const checkMagicBytes = async (file: File): Promise<boolean> => {
     return false;
 }
 
-const validateUUID = (uuid: string) => {
-    const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    return regex.test(uuid);
-};
+
 
 export const editAncController = async (c: Context) => {
     const action = "edit_anc";
@@ -32,8 +30,8 @@ export const editAncController = async (c: Context) => {
             return sendAncResponse(c, 401, action, 'error', action, 'Unauthorized', 'Gagal memverifikasi user.', undefined, 'UNAUTHORIZED');
         }
 
-        const id = c.req.param('id');
-        if (!validateUUID(id)) {
+        const id = c.req.param('id') || '';
+        if (!id || !validateUUID(id)) {
             return sendAncResponse(c, 400, action, 'error', action, 'ID tidak valid', 'ID pengumuman tidak valid.', undefined, 'VALIDATION_ERROR');
         }
 
