@@ -4,7 +4,10 @@ import { sendwargaResponse } from "../../logs/users_data/warga-logs";
 
 export const get_warga_controller = async (c: Context) => {
     try {
-        const result = await get_warga()
+        const jwtPayload = c.get('jwtPayload') as any;
+        const requesterRole = jwtPayload?.role;
+
+        const result = await get_warga(requesterRole);
 
         if (result.length === 0) {
             return sendwargaResponse(c, 404, 'get_warga', 'error', 'Warga tidak ditemukan', 'Warga tidak ditemukan', null as any, 'ERR_WARGA_NOT_FOUND');

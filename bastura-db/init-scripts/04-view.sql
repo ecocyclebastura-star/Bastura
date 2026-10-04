@@ -56,6 +56,35 @@ GROUP BY
     b.total_balance,
     r.roles;
 
+CREATE OR REPLACE VIEW view_data_users AS
+SELECT 
+    u.id_users,
+    u.name,
+    u.email,
+    u.phone,
+    u.created_at,             
+    u.status_active, 
+    u.balance_held,    
+    COALESCE(b.total_balance, 0) AS total_balance,
+    COALESCE(SUM(d.weight_dp), 0) AS total_weight,
+    r.roles AS role,
+    u.role_id
+FROM users u
+LEFT JOIN balance b ON u.id_users = b.id_user
+LEFT JOIN deposit d ON u.id_users = d.id_user AND d.dp_status = 'processed'
+LEFT JOIN roles r ON u.role_id = r.id_roles
+GROUP BY 
+    u.id_users, 
+    u.name, 
+    u.email, 
+    u.phone, 
+    u.created_at,
+    u.status_active,
+    u.balance_held,
+    b.total_balance,
+    r.roles,
+    u.role_id;
+
 CREATE OR REPLACE VIEW view_penarikan_warga  AS
 SELECT 
     w.id_wd AS id_transaksi,

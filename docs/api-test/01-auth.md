@@ -24,18 +24,19 @@
 ```json
 {
   "status": "success",
-  "message": "Login berhasil",
+  "message": "Login Success ",
   "code": "LOGIN_SUCCESS",
   "data": {
+    "user": {
+      "id": "20000000-0000-0000-0000-000000000001",
+      "name": "Budi Warga",
+      "email": "warga1@example.com"
+    },
     "tokens": {
       "access_token": "eyJhbG...",
-      "refresh_token": "eyJhbG..."
-    },
-    "user": {
-      "id_users": "20000000-0000-0000-0000-000000000001",
-      "name": "Budi Warga",
-      "email": "warga1@example.com",
-      "role": 1
+      "refresh_token": "eyJhbG...",
+      "token_type": "Bearer",
+      "expires_in": 900
     }
   }
 }
@@ -71,15 +72,32 @@
 ```json
 {
   "status": "success",
-  "message": "Pendaftaran berhasil",
-  "code": "REGISTER_SUCCESS"
+  "message": "User berhasil mendaftar",
+  "code": "SIGNUP_SUCCESS",
+  "data": {
+    "data": {
+      "user": {
+        "id": "20000000-0000-0000-0000-000000000002",
+        "name": "Warga Baru",
+        "email": "wargabaru@example.com"
+      },
+      "tokens": {
+        "access_token": "eyJhbG...",
+        "refresh_token": "eyJhbG...",
+        "token_type": "Bearer",
+        "expires_in": 900
+      }
+    }
+  }
 }
 ```
 
 **Tabel Response Error:**
 | HTTP Status | Error Code | Kondisi / Penjelasan |
 |---|---|---|
-| 400 | `PASSWORD_MIN_8_CHARACTER_AND_NUMBER` | Password tidak mengandung angka atau terlalu pendek. |
+| 400 | `DATA_TYPE_INVALID` | Field email, password, atau confirm_password kosong. |
+| 400 | `PASSWORD_MIN_8_CHARACTER_AND_NUMBER` | Password tidak mengandung angka. |
+| 400 | `PASSWORD_MIN_8_CHARACTER` | Password terlalu pendek. |
 | 400 | `PASSWORD_MISMATCH` | `password` dan `confirm_password` berbeda. |
 | 409 | `EMAIL_ALREADY_REGISTERED` | Email yang diinput sudah digunakan akun lain. |
 
@@ -105,7 +123,7 @@
   "code": "REFRESH_SUCCESS",
   "data": {
     "access_token": "eyJhbG_baru...",
-    "refresh_token": "eyJhbG_baru..."
+    "expires_in": 3600
   }
 }
 ```
@@ -145,7 +163,7 @@
 **Tabel Response Error:**
 | HTTP Status | Error Code | Kondisi / Penjelasan |
 |---|---|---|
-| 400 | `REFRESH_TOKEN_REQUIRED` | Body request tidak mengandung `refresh_token`. |
+| 400 | `REFRESH_TOKEN_NOT_FOUND` | Body request tidak mengandung `refresh_token`. |
 | 401 | `UNAUTHORIZED` | Header Bearer access token tidak valid. |
 
 ---
@@ -167,9 +185,18 @@
 {
   "status": "success",
   "message": "Kode OTP berhasil dikirim ke email",
-  "code": "OTP_SENT"
+  "code": "OTP_SENT",
+  "data": {
+    "hash": "...",
+    "expiresAt": 1718000000000
+  }
 }
 ```
+
+**Tabel Response Error:**
+| HTTP Status | Error Code | Kondisi / Penjelasan |
+|---|---|---|
+| 400 | `EMAIL_FORMAT_INVALID` | Format email salah. |
 
 ---
 
@@ -184,7 +211,8 @@
   "email": "warga1@example.com",
   "otp": "123456",
   "new_password": "PasswordBaru123",
-  "confirm_password": "PasswordBaru123"
+  "hash": "...",
+  "expiresAt": 1718000000000
 }
 ```
 

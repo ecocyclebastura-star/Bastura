@@ -93,7 +93,7 @@ Tujuan dari dokumen ini adalah untuk menyediakan referensi yang lengkap bagi pem
 | `/users/account/profile` (Semua) | x | v | v | v |
 | `/users/account/warga` (GET) | x | x | v | v |
 | `/users/account/warga/block`, `unblock` | x | x | v | v |
-| `/users/account/warga/promote`, `demote` | x | x | x | v |
+| `/admin/promote`, `demote` | x | x | x | v |
 | `/announcements` (GET) | x | v | v | v |
 | `/announcements` (POST, PATCH, DELETE) | x | x | v | v |
 | `/education` (GET) | x | v | v | v |

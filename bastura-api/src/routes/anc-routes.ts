@@ -5,7 +5,7 @@ import { getAncCategoriesController } from "../controller/anc-controller/get-anc
 import { addAncController } from "../controller/anc-controller/add-anc-controller"
 import { editAncController } from "../controller/anc-controller/edit-anc-controller"
 import { deleteAncController } from "../controller/anc-controller/delete-anc-controller"
-import { checkAccessToken } from "../auth/middleware/auth-middleware"
+import { checkAccessToken, adminOnly } from "../auth/middleware/auth-middleware"
 
 const ancApp = new Hono()
 
@@ -13,8 +13,8 @@ ancApp.use('/*', checkAccessToken)
 ancApp.get('/', getAncController)
 ancApp.get('/announcement-categories', getAncCategoriesController)
 ancApp.get('/photo/:filename', getAncPhotoController)
-ancApp.post('/', addAncController)
-ancApp.patch('/:id', editAncController)
-ancApp.delete('/:id', deleteAncController)
+ancApp.post('/', adminOnly, addAncController)
+ancApp.patch('/:id', adminOnly, editAncController)
+ancApp.delete('/:id', adminOnly, deleteAncController)
 
 export default ancApp
