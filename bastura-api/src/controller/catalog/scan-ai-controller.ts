@@ -6,6 +6,7 @@ import { sendcatalogResponse } from "../../logs/w_catalog/catalog-logs";
 
 export const scanAiController = async (c: Context) => {
     const action = "scan_ai_catalog";
+    const requestId = crypto.randomUUID();
     try {
         const payload = c.get('jwtPayload') as { sub: string };
         const sub = payload.sub;
@@ -52,7 +53,7 @@ export const scanAiController = async (c: Context) => {
         const catalogItems = await getCatalogForAIModel() as any[];
 
         // 4. Panggil AI
-        const aiResult = await analyzeWasteImage(base64Image, catalogItems);
+        const aiResult = await analyzeWasteImage(base64Image, catalogItems, { requestId, userId: sub });
 
         // 5. Kalkulasi dan Strukturisasi Response
         // 5. Kalkulasi dan Strukturisasi Response
@@ -128,7 +129,18 @@ export const scanAiController = async (c: Context) => {
         }, 200);
 
     } catch (error: any) {
-        console.error("Error di scan-ai-controller:", error);
-        return sendcatalogResponse(c, 500, 'SCAN_AI', 'error', action, 'Gagal memproses gambar: ' + (error.message || 'Error internal'), 'Gagal memproses gambar', null, 'INTERNAL_SERVER_ERROR');
+        let errorCode = 'INTERNAL_SERVER_ERROR';
+        let clientMsg = 'Gagal memproses gambar';
+        
+        if (error.name === 'AIError') {
+            errorCode = error.code;
+            if (errorCode === 'AI_TIMEOUT') clientMsg = 'Waktu tunggu analisa habis, coba lagi.';
+            else if (errorCode === 'AI_HTTP' || errorCode === 'AI_PARSE') clientMsg = 'Layanan AI sedang gangguan, coba lagi nanti.';
+            else if (errorCode === 'AI_CONFIG') clientMsg = 'Konfigurasi sistem belum lengkap.';
+        } else {
+            console.error("Error di scan-ai-controller:", error);
+        }
+
+        return sendcatalogResponse(c, 500, 'SCAN_AI', 'error', action, `Gagal memproses gambar: ${clientMsg}`, clientMsg, { requestId }, errorCode);
     }
 }
