@@ -7,6 +7,7 @@ node_modules/
 .ENV
 .server_env
 ssh_run.py
+ssh_upload.py
 
 # Bun (jika pakai bun)
 .bun
