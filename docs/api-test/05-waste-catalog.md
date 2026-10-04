@@ -194,3 +194,51 @@
 | HTTP Status | Error Code | Kondisi / Penjelasan |
 |---|---|---|
 | 404 | `NOT_FOUND` | Gambar tidak ditemukan di server. |
+
+---
+
+## 8. [CAT-POST-SCAN-AI] Scan Sampah Menggunakan AI
+- **Method**: `POST`
+- **Endpoint**: `/api/v1/waste/catalog/scan-ai`
+- **Akses**: Semua Pengguna Login
+- **Content-Type**: `multipart/form-data`
+
+**Panduan Postman (tab Body -> form-data):**
+| Key | Type | Value |
+|---|---|---|
+| `image` | File | *(Pilih file gambar sampah JPG/PNG/WEBP maksimal 5MB)* |
+
+**Contoh Response Sukses (200 OK) - Item Dikenali:**
+```json
+{
+  "status": "ok",
+  "message": null,
+  "items": [
+    {
+      "catalog_id": "10000000-0000-0000-0000-000000000001",
+      "name": "Kardus",
+      "condition": "Kondisi kardus terlihat sedikit basah di bagian sudut",
+      "price_per_kg": 500,
+      "accepted": true,
+      "confidence": 0.95
+    }
+  ],
+  "disclaimer": "Harga bersifat perkiraan dan dapat berubah. Harga akhir ditentukan admin saat penimbangan."
+}
+```
+
+**Tabel Status Response AI (Selalu 200 OK):**
+| Status Field | Kondisi / Penjelasan |
+|---|---|
+| `ok` | AI berhasil mendeteksi minimal satu item bernilai (> Rp 0). |
+| `not_accepted` | Semua item yang dikenali berharga Rp 0. |
+| `not_in_catalog` | Gambar jelas tapi AI tidak mengenali sampah yang ada di katalog. |
+| `unclear_image` | Gambar terlalu blur atau tidak terlihat seperti sampah. |
+
+**Tabel Response Error System:**
+| HTTP Status | Error Code | Kondisi / Penjelasan |
+|---|---|---|
+| 400 | `IMAGE_REQUIRED` | Form-data `image` kosong. |
+| 400 | `INVALID_FILE_TYPE` | File bukan JPG/PNG/WEBP. |
+| 400 | `FILE_TOO_LARGE` | Ukuran gambar melebihi 5MB. |
+| 500 | `INTERNAL_SERVER_ERROR` | Gagal memanggil AI SumoPod atau kegagalan internal lainnya. |

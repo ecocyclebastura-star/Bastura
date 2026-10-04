@@ -1,9 +1,9 @@
 # Laporan Audit Dokumentasi API
 
 ## 1. Ringkasan
-- Total endpoint di kode: 57
-- Total endpoint di dokumentasi: 57
-- Sesuai (Match/Terdokumentasi & Ada di Kode): 57
+- Total endpoint di kode: 58
+- Total endpoint di dokumentasi: 58
+- Sesuai (Match/Terdokumentasi & Ada di Kode): 58
 - Kurang Dokumentasi (Hanya di Kode): 0
 - Dokumentasi Yatim (Tidak ada di Kode): 0
 
@@ -67,6 +67,7 @@
 | POST | /api/v1/users/account/profile/avatar | Sesuai | Belum di-audit detail |
 | POST | /api/v1/waste/catalog | Sesuai | Belum di-audit detail |
 | POST | /api/v1/waste/catalog/photo/:id | Sesuai | Belum di-audit detail |
+| POST | /api/v1/waste/catalog/scan-ai | Sesuai | Sesuai 100% (Fitur Baru AI) |
 
 ## 3. Detail Temuan Fase 1 (Masalah Struktur Rute)
 
@@ -195,5 +196,12 @@
 ### G. Hasil Audit Fase 2: Modul Waste Catalog, Deposits, Splitbills, Transactions, & Updates
 
 - **Status**: **Hampir Sempurna**
-- **Detail**: Mayoritas API bekerja sesuai dengan dokumentasinya secara akurat (method, rute, params, dan response code cocok). Beberapa perbedaan minor pada penamaan error string (misal NOT_FOUND di kode menjadi DATA_NOT_FOUND di dokumen) tetap dianggap lolos karena struktur utamanya sudah mapan. Tidak ada security hole (Celah keamanan) ditemukan pada modul admin karena sudah terlindungi middleware dminOnly dan userOnly.
+- **Detail**: Mayoritas API bekerja sesuai dengan dokumentasinya secara akurat (method, rute, params, dan response code cocok). Beberapa perbedaan minor pada penamaan error string (misal NOT_FOUND di kode menjadi DATA_NOT_FOUND di dokumen) tetap dianggap lolos karena struktur utamanya sudah mapan. Tidak ada security hole (Celah keamanan) ditemukan pada modul admin karena sudah terlindungi middleware adminOnly dan userOnly.
 
+### H. Hasil Audit Tambahan (Fitur Baru)
+#### 1. POST /api/v1/waste/catalog/scan-ai
+- **Lokasi**: `docs/api-test/05-waste-catalog.md` | `src/controller/catalog/scan-ai-controller.ts`
+- **Temuan Body & Params (Form-Data)**: Sesuai (mendukung validasi format file JPG/PNG/WEBP dan batas maksimal 5MB, sesuai dengan dokumen). Parameter file key adalah `image`.
+- **Temuan Response Sukses**: Sesuai. Mengembalikan JSON terstruktur dengan `status`, `message`, dan `data` yang memuat perhitungan `estimate_min`, `estimate_max`, `total_text`, dll. Teks *disclaimer* juga cocok.
+- **Temuan Response Error / Edge Cases**: Sesuai. Status respons kustom AI seperti `not_accepted`, `not_in_catalog`, dan `unclear_image` (serta kode HTTP spesifik Hono seperti 400 untuk error form-data) sudah sepenuhnya sama persis.
+- **Keparahan**: **N/A (Sempurna / Match 100%)**
