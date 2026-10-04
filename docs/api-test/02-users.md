@@ -48,8 +48,8 @@
 **Panduan Postman (tab Body -> raw -> JSON):**
 ```json
 {
-  "name": "Budi Warga Baru",
-  "phone": "0899999999"
+  "new_name": "Budi Warga Baru",
+  "new_phone": "0899999999"
 }
 ```
 *(Catatan: Tidak bisa update `email` atau `password` lewat endpoint ini)*
@@ -175,7 +175,7 @@
 
 ## 7. [USER-PATCH-PROMOTE] Jadikan Admin (Promote)
 - **Method**: `PATCH`
-- **Endpoint**: `/api/v1/users/account/warga/promote/:id_user`
+- **Endpoint**: `/api/v1/admin/promote/:id_user`
 - **Akses**: Khusus **Super Admin**
 
 **Contoh Response Sukses (200 OK):**
@@ -199,7 +199,7 @@
 
 ## 8. [USER-PATCH-DEMOTE] Cabut Admin (Demote)
 - **Method**: `PATCH`
-- **Endpoint**: `/api/v1/users/account/warga/demote/:id_user`
+- **Endpoint**: `/api/v1/admin/demote/:id_user`
 - **Akses**: Khusus **Super Admin**
 
 **Contoh Response Sukses (200 OK):**
@@ -244,16 +244,27 @@
 **Panduan Postman (tab Body -> form-data):**
 | Key | Type | Value |
 |---|---|---|
-| `image` | File | *(Pilih file gambar, Max 500KB)* |
+| `avatar` | File | *(Pilih file gambar, Max 500KB)* |
 
 **Contoh Response Sukses (200 OK):**
 ```json
 {
   "status": "success",
-  "message": "Foto profil berhasil diupload",
+  "message": "User berhasil diupdate",
   "code": "UPDATE_USER_SUCCESS",
   "data": {
-    "filename": "photo_1690000000.png"
+    "data": [
+      {
+        "id_users": "20000000-0000-0000-0000-000000000001",
+        "name": "Budi Warga",
+        "email": "warga1@example.com",
+        "phone": "0811111111",
+        "role_id": 1,
+        "status_active": "active",
+        "profile_img": "profile-BudiWarga-1690000000.png",
+        "balance": 0
+      }
+    ]
   }
 }
 ```

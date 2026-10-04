@@ -4,7 +4,7 @@ export type LoginPayload = {
 }
 
 export type LogoutPayload = {
-    rf_token : string;
+    refresh_token : string;
 }
 
 export type ForgotPasswordPayload = {

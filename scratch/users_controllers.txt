@@ -1,0 +1,489 @@
+
+--- profile-controller/get-user.ts ---
+import { Context } from "hono";
+import { getUser } from "../type/profile-type";
+import { getUserData } from "../../model/profile/get-user-data";
+import { sendprofileResponse } from "../../logs/profile/profile-logs";
+
+export const getuserController = async (c : Context) => {
+    const action  = "getuser"
+
+    try {
+        const userpayload = c.get('jwtPayload') as getUser 
+        if (!userpayload) {
+            return sendprofileResponse(c, 401, 'GET_USER', 'error', action, 'Token tidak valid', 'Token tidak valid', null, 'TOKEN_INVALID')
+        } 
+
+        const { sub } = userpayload
+
+        const user = await getUserData(sub)
+
+        if (!user || user.length === 0) {
+            return sendprofileResponse(c, 404, 'GET_USER', 'error', action, 'User not found', 'User tidak ditemukan', null, 'USER_NOT_FOUND')
+        } 
+
+        return sendprofileResponse(c, 200, 'GET_USER', 'success', action, 'User berhasil diambil', 'User berhasil diambil', {data : user}, 'GET_USER_SUCCESS')
+        
+    } catch (error) {
+        console.error("Error di get-user:", error);
+        return sendprofileResponse(c, 500, 'GET_USER', 'error', action, 'Internal Server Error', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR')
+    }
+    
+}
+
+--- profile-controller/get-admin-contact.ts ---
+import { Context } from "hono";
+import { sendprofileResponse } from "../../logs/profile/profile-logs";
+import { getAdminContactModel } from "../../model/profile/get-admin-contact";
+
+export const getAdminContactController = async (c : Context) => {
+    const action = "get_admin_contact"
+
+    try {
+        const result = await getAdminContactModel()
+        if(!result || result.length === 0) {
+            return sendprofileResponse(c, 404, 'GET_ADMIN_CONTACT', 'error', action, 'Admin contact tidak ditemukan', 'Admin contact tidak ditemukan', null, 'ADMIN_CONTACT_NOT_FOUND')
+        }
+        return sendprofileResponse(c, 200, 'GET_ADMIN_CONTACT', 'success', action, 'Admin contact berhasil ditemukan', 'Admin contact berhasil ditemukan', {data : result}, 'GET_ADMIN_CONTACT_SUCCESS')
+    } catch (error) {
+        console.error("Error di get-admin-contact:", error);
+        return sendprofileResponse(c, 500, 'GET_ADMIN_CONTACT', 'error', action, 'Internal Server Error', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR')
+    }
+}
+
+--- profile-controller/update-user.ts ---
+import { Context } from "hono";
+import { updateUser } from "../type/profile-type";
+import { updateUserData } from "../../model/profile/update-user-data";
+import { sendprofileResponse } from "../../logs/profile/profile-logs";
+
+export const updateuserController = async (c : Context) => {
+    const action = "updateuser"
+
+    try {
+        const userpayload = c.get('jwtPayload') as updateUser
+        if(!userpayload) {
+            return sendprofileResponse(c, 401, 'UPDATE_USER', 'error', action, 'Token tidak valid', 'Token tidak valid', null, 'TOKEN_INVALID')
+        } 
+
+        const { sub , name } = userpayload
+        const body = await c.req.json() as updateUser
+        const { new_name , new_phone } = body 
+
+        if (!new_name && !new_phone) {
+            return sendprofileResponse(c, 400, 'UPDATE_USER', 'error', action, 'Request body tidak valid', 'Request body tidak valid', null, 'REQUEST_INVALID')
+        }
+        
+        const user = await updateUserData(sub, name, new_name, new_phone)
+
+        console.log(user);
+        
+
+        if (!user || user.count === 0) {
+            return sendprofileResponse(c, 404, 'UPDATE_USER', 'error', action, 'User tidak ditemukan', 'User tidak ditemukan', null, 'USER_NOT_FOUND')
+        }
+
+        return sendprofileResponse(c, 200, 'UPDATE_USER', 'success', action, 'User berhasil diupdate', 'User berhasil diupdate', {data : user}, 'UPDATE_USER_SUCCESS')
+    } catch (error) {
+        console.error("Error di update-user:", error);
+        return sendprofileResponse(c, 500, 'UPDATE_USER', 'error', action, 'Internal Server Error', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR')
+    }
+}   
+--- profile-controller/delete-user.ts ---
+import { Context } from "hono";
+import { deleteUserData } from "../../model/profile/delete-user-data";
+import { sendprofileResponse } from "../../logs/profile/profile-logs";
+import { deleteUser } from "../type/profile-type";
+
+export const deleteUserController = async (c : Context) => {
+    const action = "deleteuser"
+
+    try {
+        const userpayload = c.get('jwtPayload') as deleteUser 
+        if (!userpayload) {
+            return sendprofileResponse(c, 401, 'DELETE_USER', 'error', action, 'Token tidak valid', 'Token tidak valid', null, 'TOKEN_INVALID')
+        } 
+
+        const { sub } = userpayload
+
+        const user = await deleteUserData(sub)
+
+        if (!user || user.count === 0) {
+            return sendprofileResponse(c, 404, 'DELETE_USER', 'error', action, 'User tidak ditemukan', 'User tidak ditemukan', null, 'USER_NOT_FOUND')
+        }
+
+        return sendprofileResponse(c, 200, 'DELETE_USER', 'success', action, 'User berhasil dihapus', 'User berhasil dihapus', {data : user}, 'DELETE_USER_SUCCESS')
+    } catch (error) {
+        console.error("Error di delete-user:", error);
+        return sendprofileResponse(c, 500, 'DELETE_USER', 'error', action, 'Internal Server Error', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR')
+    }
+}   
+--- profile-controller/changepass.ts ---
+import { Context } from "hono";
+import { changepass } from "../../model/profile/changepass";
+import { sendprofileResponse } from "../../logs/profile/profile-logs";
+import { getUser } from "../type/profile-type";
+
+export const changepassController = async (c: Context) => {
+    const action = "changepass"
+
+    try {
+        const userpayload = c.get('jwtPayload') as getUser
+        if (!userpayload) {
+            return sendprofileResponse(c, 401, 'CHANGE_PASSWORD', 'error', action, 'Token tidak valid', 'Token tidak valid', null, 'TOKEN_INVALID')
+        }
+
+        const { sub } = userpayload
+
+        const body = await c.req.json()
+        const { old_password, new_password, conf_password } = body
+
+        if (!old_password || !new_password || !conf_password) {
+            return sendprofileResponse(c, 400, 'CHANGE_PASSWORD', 'error', action, 'Password lama, password baru, dan konfirmasi password wajib diisi', 'old_password, new_password, dan conf_password wajib diisi', null, 'MISSING_FIELDS')
+        }
+
+        if (new_password !== conf_password) {
+            return sendprofileResponse(c, 400, 'CHANGE_PASSWORD', 'error', action, 'Password baru dan konfirmasi password tidak cocok', 'Password baru dan konfirmasi password harus sama', null, 'PASSWORD_MISMATCH')
+        }
+
+        if (old_password === new_password) {
+            return sendprofileResponse(c, 400, 'CHANGE_PASSWORD', 'error', action, 'Password baru tidak boleh sama dengan password lama', 'Password baru tidak boleh sama dengan password lama', null, 'SAME_PASSWORD')
+        }
+
+        const result = await changepass(sub, old_password, new_password)
+
+        if (result && typeof result === 'object' && 'error' in result) {
+            if (result.error === 'USER_NOT_FOUND') {
+                return sendprofileResponse(c, 404, 'CHANGE_PASSWORD', 'error', action, 'User tidak ditemukan', 'User tidak ditemukan atau tidak aktif', null, 'USER_NOT_FOUND')
+            }
+            if (result.error === 'INVALID_OLD_PASSWORD') {
+                return sendprofileResponse(c, 401, 'CHANGE_PASSWORD', 'error', action, 'Password lama tidak cocok', 'Password lama yang dimasukkan tidak sesuai', null, 'INVALID_OLD_PASSWORD')
+            }
+        }
+
+        return sendprofileResponse(c, 200, 'CHANGE_PASSWORD', 'success', action, 'Password berhasil diubah', 'Password berhasil diubah', { data: result }, 'CHANGE_PASSWORD_SUCCESS')
+
+    } catch (error) {
+        console.error("Error di changepass:", error)
+        return sendprofileResponse(c, 500, 'CHANGE_PASSWORD', 'error', action, 'Internal Server Error', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR')
+    }
+}
+
+--- profile-controller/upload-add-profile-img.ts ---
+import { Context } from "hono";
+import { updateAddUserPhotoModel } from "../../model/profile/update-add-user-photo";
+import { sendprofileResponse , profilelog } from "../../logs/profile/profile-logs";
+import { updateProfileImg } from "../type/profile-type";
+import { getUserData } from "../../model/profile/get-user-data";
+import { selectphotoname } from "../../model/profile/update-add-user-photo";
+import path from 'node:path'
+
+export const updateAddProfileImgController = async (c : Context) => {
+    const action = "upload_or_add_profile_img"
+
+    try {
+        const userpayload = c.get('jwtPayload') as updateProfileImg
+        const body = await c.req.parseBody()
+        const avatar = body.avatar;
+
+        if(!userpayload) {
+            return sendprofileResponse(c, 401, 'UPLOAD_ADD_PROFILE_IMG', 'error', action, 'Token tidak valid', 'Token tidak valid', null, 'TOKEN_INVALID')
+        }
+
+        const { sub , name } = userpayload
+
+        if(!avatar || typeof avatar === 'string') {
+            return sendprofileResponse(c, 400, 'UPLOAD_ADD_PROFILE_IMG', 'error', action, 'Request body tidak valid', 'Request body tidak valid', null, 'REQUEST_INVALID')
+        }   
+
+        const avatartype = ['image/png', 'image/jpg', 'image/jpeg']
+
+        if(!avatartype.includes(avatar.type)) {
+            return sendprofileResponse(c, 400, 'UPLOAD_ADD_PROFILE_IMG', 'error', action, 'Tipe file tidak valid', 'Tipe file tidak valid', null, 'INVALID_FILE_TYPE')
+        }
+
+        const maxFileSize = 500 * 1024 // 500kb
+
+        if (avatar instanceof File) {
+            if (avatar.size > maxFileSize) {
+                return sendprofileResponse(c, 400, 'UPLOAD_ADD_PROFILE_IMG', 'error', action, 'Ukuran file terlalu besar (maks 500KB)', 'Ukuran file tidak valid', null, 'INVALID_FILE_SIZE')
+            }
+        }
+
+        const old_name = await selectphotoname(sub)
+        const fileExt = path.extname(avatar.name);
+        const safeName = name.replace(/[^a-zA-Z0-9]/g, '');
+        const createimagefilename = `profile-${safeName}-${Date.now()}${fileExt}`
+
+        const dirpath = path.join(import.meta.dir, '..', '..', 'img', 'profile')
+        const savepath = path.join(dirpath, createimagefilename)
+        
+        try {
+            const arrayBuffer = await (avatar as File).arrayBuffer() 
+            await Bun.write(savepath, arrayBuffer);
+
+            if (old_name?.avatar_url) {
+                const oldfilepath = path.join(dirpath, old_name.avatar_url);
+                const oldfile = Bun.file(oldfilepath)
+
+                if (await oldfile.exists()) {
+                    try{
+                        await oldfile.delete();
+                    }
+                    catch (err) {
+                        await profilelog({
+                            message: `Gagal menghapus file lama: ${old_name.avatar_url}`,
+                            status: 'error',
+                            procces: action,
+                            profile_type: action,
+                            timestamp: new Date()
+                        })
+                    }
+                }
+            }
+        } catch (err) {
+            return sendprofileResponse(c, 500, 'UPLOAD_ADD_PROFILE_IMG', 'error', action, 'Gagal menyimpan gambar ke server', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR');
+        }
+   
+        const result = await updateAddUserPhotoModel(sub, createimagefilename)
+        if(!result || result.count === 0) {
+            return sendprofileResponse(c, 404, 'UPLOAD_ADD_PROFILE_IMG', 'error', action, 'User tidak ditemukan', 'User tidak ditemukan', null, 'USER_NOT_FOUND')
+        }
+
+        const getuser = await getUserData(sub)
+        if(!getuser || getuser.length === 0) {
+            return sendprofileResponse(c, 404, 'UPLOAD_ADD_PROFILE_IMG', 'error', action, 'User tidak ditemukan', 'User tidak ditemukan', null, 'USER_NOT_FOUND')
+        }
+        return sendprofileResponse(c, 200, 'UPLOAD_ADD_PROFILE_IMG', 'success', action, 'User berhasil diupdate', 'User berhasil diupdate', {data : getuser}, 'UPDATE_USER_SUCCESS')
+    } catch (error) {
+        console.error("Error di update-user:", error);
+        return sendprofileResponse(c, 500, 'UPDATE_USER', 'error', action, 'Internal Server Error', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR')
+    }
+}
+--- profile-controller/get-user-photo.ts ---
+import { Context } from "hono";
+import { basename, resolve } from "path";
+import { profilelog, sendprofileResponse } from "../../logs/profile/profile-logs";
+
+export const getProfilePhotoController = async (c: Context) => {
+    const action = "get_profile_photo";
+    
+    try {
+        const rawFilename = c.req.param('filename');
+
+        if (!rawFilename) {
+            return sendprofileResponse(c, 400, action, 'error', action, 'Filename tidak diberikan', 'Filename tidak valid', undefined, 'INVALID_FILENAME');
+        }
+
+        const safeFilename = basename(rawFilename);
+        const baseDir = resolve(process.cwd(), 'src', 'img', 'profile');
+        const imagePath = resolve(baseDir, safeFilename);
+
+        if (!imagePath.startsWith(baseDir)) {
+            return sendprofileResponse(c, 403, action, 'error', action, 'Akses file ditolak', 'Path tidak valid', undefined, 'FORBIDDEN_PATH');
+        }
+
+        const file = Bun.file(imagePath);
+        const exists = await file.exists();
+
+        if (!exists) {
+            return sendprofileResponse(c, 404, action, 'error', action, `File tidak ditemukan: ${safeFilename}`, 'Foto tidak ditemukan', undefined, 'FILE_NOT_FOUND');
+        }
+
+        await profilelog({
+            message: `Berhasil mengambil foto: ${safeFilename}`,
+            status: 'success',
+            procces: action,
+            profile_type: action,
+            timestamp: new Date()
+        });
+
+        return new Response(file);
+
+    } catch (error) {
+        console.error(error);
+        return sendprofileResponse(c, 500, action, 'error', action, 'Internal server error', 'Internal server error', undefined, 'INTERNAL_SERVER_ERROR');
+    }
+}
+
+--- users_data/get-warga-controller.ts ---
+import { Context } from "hono";
+import { get_warga } from "../../model/users_data/get_warga";
+import { sendwargaResponse } from "../../logs/users_data/warga-logs";
+
+export const get_warga_controller = async (c: Context) => {
+    try {
+        const jwtPayload = c.get('jwtPayload') as any;
+        const requesterRole = jwtPayload?.role;
+
+        const result = await get_warga(requesterRole);
+
+        if (result.length === 0) {
+            return sendwargaResponse(c, 404, 'get_warga', 'error', 'Warga tidak ditemukan', 'Warga tidak ditemukan', null as any, 'ERR_WARGA_NOT_FOUND');
+        }
+
+        return sendwargaResponse(c, 200, 'get_warga', 'success', 'Get warga successfully', 'Get warga successfully', { data: result } as any, 'SUCC_GET_WARGA');
+    } catch (error) {
+        return sendwargaResponse(c, 500, 'get_warga', 'error', 'Failed to get warga', 'Failed to get warga', {data : error} as any, 'ERR_GET_WARGA');
+    }
+}
+--- admin/block-users-controller.ts ---
+import { Context } from "hono"
+import { sendprofileResponse } from "../../logs/profile/profile-logs"
+import { blockUser } from "../../model/admin/block-users"
+
+import { validateUUID } from "../../utils/validation";
+
+export const blockUserController = async (c: Context) => {
+    const action = "block_user"
+    try {
+        const payload = c.get('jwtPayload') as { sub: string };
+        const sub = payload.sub;
+        const id_user = c.req.param('id_user');
+
+        if (!sub || !id_user || !validateUUID(id_user)) {
+            return sendprofileResponse(c, 400, 'GET_CATALOG', 'error', action, 'Format ID tidak valid', 'Format ID tidak valid', null, 'INVALID_UUID')
+        }
+
+        const result = await blockUser(id_user, sub)
+
+        if (result === "ACCESS_DENIED_UR_NOT_ADMIN") {
+            return sendprofileResponse(c, 403, 'GET_CATALOG', 'error', action, 'Akses ditolak', 'Akses ditolak', null, 'ACCESS_DENIED_UR_NOT_ADMIN')
+        }
+
+        if (result === "USER_NOT_FOUND") {
+            return sendprofileResponse(c, 404, 'GET_CATALOG', 'error', action, 'User tidak ditemukan', 'User tidak ditemukan', null, 'USER_NOT_FOUND')
+        }
+        
+        return sendprofileResponse(c, 200, 'GET_CATALOG', 'success', action, 'User berhasil diblokir', 'User berhasil diblokir', { data: result }, 'GET_CATALOG_SUCCESS')
+    } catch (error) {
+        console.error("Error di get-catalog:", error);
+        return sendprofileResponse(c, 500, 'GET_CATALOG', 'error', action, 'Internal Server Error', 'Internal Server Error', null, 'INTERNAL_SERVER_ERROR')
+    }
+}
+--- admin/unblock-users-controller.ts ---
+import { Context } from "hono";
+import { unblockUser } from "../../model/admin/unblock-users";
+import { sendAuthResponse } from "../../logs/auth/auth-logs";
+
+import { validateUUID } from "../../utils/validation";
+
+export const unblockUserController = async (c : Context) => {
+    try {
+        const payload = c.get('jwtPayload') as any;
+        const id_admin = payload.sub;
+        const id_user = c.req.param('id_user');
+
+        if (!payload) {
+            return sendAuthResponse(c, 401, 'error', 'unblock_user', 'Unauthorized: Token tidak valid', 'Unauthorized: Token tidak valid', null, 'ERR_UNAUTHORIZED');
+        }
+
+        if (!id_user || !validateUUID(id_user)) {
+            return sendAuthResponse(c, 400, 'error', 'unblock_user', 'Format User ID tidak valid', 'Format User ID tidak valid', null, 'ERR_INVALID_USER_ID');
+        }
+
+        const result = await unblockUser(id_user, id_admin);
+
+        if (result === "ACCESS_DENIED_UR_NOT_ADMIN") {
+            return sendAuthResponse(c, 403, 'error', 'unblock_user', 'Access denied: You are not an admin', 'Access denied: You are not an admin', null, 'ERR_ACCESS_DENIED');
+        }
+
+        if (result === "USER_NOT_FOUND") {
+            return sendAuthResponse(c, 404, 'error', 'unblock_user', 'User not found', 'User not found', null, 'ERR_USER_NOT_FOUND');
+        }
+
+        return sendAuthResponse(c, 200, 'success', 'unblock_user', 'User unblocked successfully', 'User unblocked successfully', {data : result}, 'SUCC_USER_UNBLOCKED');
+    } catch (error) {
+        return sendAuthResponse(c, 500, 'error', 'unblock_user', 'Failed to unblock user', 'Failed to unblock user', error, 'ERR_UNBLOCK_USER');
+    }
+}
+--- admin/promote-admin-controller.ts ---
+import { Context } from "hono";
+import { sendprofileResponse } from "../../logs/profile/profile-logs";
+import { promoteUserToAdmin } from "../../model/admin/promote-demote-admin";
+import { validateUUID } from "../../utils/validation";
+
+
+
+export const promoteAdminController = async (c: Context) => {
+    const action = "promote_admin";
+    try {
+        const payload = c.get('jwtPayload') as { sub: string };
+        const sub = payload.sub;
+        const id_user = c.req.param('id_user');
+
+        if (!id_user || !validateUUID(id_user)) {
+            return sendprofileResponse(c, 400, action, 'error', action, 'ID tidak valid', 'ID pengguna tidak valid atau tidak ditemukan.', null, 'VALIDATION_ERROR');
+        }
+
+        const result = await promoteUserToAdmin(id_user, sub);
+
+        if (result === "USER_NOT_FOUND") {
+            return sendprofileResponse(c, 404, action, 'error', action, 'User tidak ditemukan', 'User tidak ditemukan', null, 'USER_NOT_FOUND');
+        }
+
+        if (result === "ALREADY_ADMIN" || result === "TARGET_IS_NOT_USER") {
+            return sendprofileResponse(c, 409, action, 'error', action, 'Role target bukan user', 'Pengguna sudah menjadi admin atau tidak memiliki role warga.', null, 'CONFLICT_ROLE');
+        }
+
+        if (result === "USER_BLOCKED") {
+            return sendprofileResponse(c, 409, action, 'error', action, 'User sedang diblokir', 'Pengguna yang sedang diblokir tidak dapat dijadikan admin.', null, 'USER_BLOCKED');
+        }
+
+        return sendprofileResponse(c, 200, action, 'success', action, 'User berhasil dijadikan admin', 'Pengguna sekarang memiliki akses sebagai admin.', { data: result }, 'PROMOTE_ADMIN_SUCCESS');
+    } catch (error: any) {
+        console.error("Error di promote-admin:", error);
+        
+        if (error.message === "ROLE_NOT_FOUND") {
+            return sendprofileResponse(c, 500, action, 'error', action, 'Role tidak ditemukan di database', 'Terjadi kesalahan sistem: Role tidak valid.', null, 'INTERNAL_ERROR');
+        }
+        
+        return sendprofileResponse(c, 500, action, 'error', action, 'Internal Server Error', 'Gagal memproses permintaan.', null, 'INTERNAL_SERVER_ERROR');
+    }
+}
+
+--- admin/demote-admin-controller.ts ---
+import { Context } from "hono";
+import { sendprofileResponse } from "../../logs/profile/profile-logs";
+import { demoteAdminToUser } from "../../model/admin/promote-demote-admin";
+import { validateUUID } from "../../utils/validation";
+
+
+
+export const demoteAdminController = async (c: Context) => {
+    const action = "demote_admin";
+    try {
+        const payload = c.get('jwtPayload') as { sub: string };
+        const sub = payload.sub;
+        const id_user = c.req.param('id_user');
+
+        if (!id_user || !validateUUID(id_user)) {
+            return sendprofileResponse(c, 400, action, 'error', action, 'ID tidak valid', 'ID pengguna tidak valid atau tidak ditemukan.', null, 'VALIDATION_ERROR');
+        }
+
+        // Prevent superadmin from demoting themselves (although id_user wouldn't be admin role, but just in case)
+        if (id_user === sub) {
+            return sendprofileResponse(c, 403, action, 'error', action, 'Tidak dapat demote diri sendiri', 'Anda tidak dapat mencabut akses admin dari diri sendiri.', null, 'FORBIDDEN_SELF_DEMOTE');
+        }
+
+        const result = await demoteAdminToUser(id_user, sub);
+
+        if (result === "USER_NOT_FOUND") {
+            return sendprofileResponse(c, 404, action, 'error', action, 'User tidak ditemukan', 'User tidak ditemukan', null, 'USER_NOT_FOUND');
+        }
+
+        if (result === "ALREADY_USER" || result === "TARGET_IS_NOT_ADMIN") {
+            return sendprofileResponse(c, 409, action, 'error', action, 'Role target bukan admin', 'Pengguna sudah berstatus warga atau bukan admin.', null, 'CONFLICT_ROLE');
+        }
+
+        return sendprofileResponse(c, 200, action, 'success', action, 'Akses admin berhasil dicabut', 'Pengguna sekarang memiliki akses sebagai warga.', { data: result }, 'DEMOTE_ADMIN_SUCCESS');
+    } catch (error: any) {
+        console.error("Error di demote-admin:", error);
+        
+        if (error.message === "ROLE_NOT_FOUND") {
+            return sendprofileResponse(c, 500, action, 'error', action, 'Role tidak ditemukan di database', 'Terjadi kesalahan sistem: Role tidak valid.', null, 'INTERNAL_ERROR');
+        }
+        
+        return sendprofileResponse(c, 500, action, 'error', action, 'Internal Server Error', 'Gagal memproses permintaan.', null, 'INTERNAL_SERVER_ERROR');
+    }
+}

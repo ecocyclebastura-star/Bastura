@@ -166,33 +166,7 @@ Atur field berikut persis seperti tabel ini:
 
 ---
 
-## 6. [ANC-GET-BY-ID] Lihat Detail Pengumuman Spesifik
-- **Method**: `GET`
-- **Endpoint**: `/api/v1/announcements/:id`
-- **Akses**: Semua Pengguna Login
-
-**Contoh Response Sukses (200 OK):**
-```json
-{
-  "status": "success",
-  "message": "Data ditemukan",
-  "code": "DATA_FOUND",
-  "data": {
-    "id_announcements": "e9f0a2b1-c3d4-5e6f-7a8b-9c0d1e2f3a4b",
-    "data": {
-      "title": "[TEST] Pengumuman API Baru",
-      "content": "{\"p\": \"Isi dari pengumuman ini dalam bentuk JSON string.\"}",
-      "image": "photo_1690000000.jpg",
-      "category_id": "f0e2b10a-b6de-4e31-8bc6-b258380e922e",
-      "created_at": "2026-10-03T02:00:00.000Z"
-    }
-  }
-}
-```
-
----
-
-## 7. [ANC-GET-PHOTO] Buka / Akses Foto Pengumuman
+## 6. [ANC-GET-PHOTO] Buka / Akses Foto Pengumuman
 - **Method**: `GET`
 - **Endpoint**: `/api/v1/announcements/photo/:filename` (Ganti `:filename` dengan nilai dari key `image` hasil get by id)
 - **Akses**: Semua Pengguna Login

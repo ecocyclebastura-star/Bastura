@@ -10,7 +10,7 @@ const JWT_REFRESH_SECRET = getEnvJWT.JWT_REFRESH_SECRET
 export const logout = async (c: Context) => {
   try {
     const body: LogoutPayload = await c.req.json()
-    const reqToken = body.rf_token
+    const reqToken = body.refresh_token
 
     if (!reqToken) {
       return await sendAuthResponse(c, 400 , 'error' , 'Logout Error ' , 'Refresh token tidak ditemukan' , 'Refresh token tidak ditemukan' , 'REFRESH_TOKEN_NOT_FOUND'  )
