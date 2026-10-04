@@ -36,4 +36,6 @@ postgres-data/
 .DS_Store
 Thumbs.db
 
+scratch/
+
 bastura-db/init-scripts/02-seed.sql
