@@ -34,7 +34,7 @@ export const superAdminOnly = async(c: Context , next : Next) => {
     const jwtPayload = c.get('jwtPayload') as any;
 
     if (!jwtPayload || jwtPayload.role !== 3) {
-        return c.json({ status: 'error', message: 'Unauthorized: Sesi tidak valid' }, 401);
+        return c.json({ status: 'error', message: 'Forbidden: Hanya Super Admin yang diizinkan' }, 403);
     }
     await next();   
 }   

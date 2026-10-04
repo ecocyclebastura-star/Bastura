@@ -10,6 +10,7 @@ import catalogApp from './routes/catalog-route'
 import splitbillsApp from './routes/splitbills-routes'
 import adminApp from './routes/admin-routes'
 import depositApp from './routes/deposit-routes'
+import komisiApp from './routes/komisi-routes'
 
 const app = new Hono()
 
@@ -43,5 +44,6 @@ app.route('/api/v1/users/account', profileApp)
 app.route('/api/v1/waste/', catalogApp)
 app.route('/api/v1/splitbills', splitbillsApp)
 app.route('/api/v1/deposits', depositApp)
+app.route('/api/v1/komisi', komisiApp)
 
 export default app

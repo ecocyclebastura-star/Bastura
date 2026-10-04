@@ -1,3 +1,4 @@
+import { hitungKomisi, getCurrentFee } from '../komisi/fee-helper';
 import { sql } from '../connection';
 
 export type AlokasiPreview = {
@@ -11,7 +12,7 @@ export type AlokasiPreview = {
 
 export type InitSplitbillsResult = {
     total_dana: number;
-    fee_persen: number;
+    fee_persen: string;
     dana_setelah_pajak: number;
     jumlah_warga: number;
     date_start: string;
@@ -33,18 +34,21 @@ export const initSplitbills = async (
     date_end: string
 ): Promise<InitSplitbillsResult | 'FEE_NOT_FOUND' | 'NO_WARGA_FOUND'> => {
     try {
+        // Validasi isSafeInteger sesuai permintaan
+        if (!Number.isSafeInteger(total_dana)) {
+            throw new Error("total_dana harus berupa integer yang aman");
+        }
+
         const result = await sql.begin(async (tx) => {
             await tx`SELECT set_config('app.current_user_id', ${admin_id}, true)`;
             await tx`SELECT set_config('app.current_user_role', 'admin', true)`;
 
             // Ambil fee terbaru
-            const feeRows = await tx`
-                SELECT amount_fee FROM fee ORDER BY created_at DESC LIMIT 1
-            `;
-            if (feeRows.length === 0) return 'FEE_NOT_FOUND';
+            const fee_persen = await getCurrentFee(tx);
+            if (!fee_persen) return 'FEE_NOT_FOUND';
 
-            const fee_persen = Number(feeRows[0].amount_fee);
-            const dana_setelah_pajak = total_dana - Math.floor(total_dana * fee_persen / 100);
+            const fee_amount = hitungKomisi(total_dana, fee_persen);
+            const dana_setelah_pajak = total_dana - fee_amount;
 
             // Hitung berat setoran & nilai kontribusi (berat * harga) per warga
             const wargaRows = await tx`

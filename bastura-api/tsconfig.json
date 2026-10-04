@@ -5,5 +5,7 @@
     "types": ["bun"],
     "module": "esnext",
     "moduleResolution": "bundler",
+    "skipLibCheck": true,
+    "target": "ES2022"
   }
 }

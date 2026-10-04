@@ -43,6 +43,7 @@
 **Panduan Postman (tab Body -> raw -> JSON):**
 ```json
 {
+  "total_dana": 100000,
   "date_start": "2026-07-01",
   "date_end": "2026-07-31"
 }
@@ -55,22 +56,28 @@
   "message": "Inisiasi splitbills berhasil",
   "code": "INIT_SPLITBILLS_SUCCESS",
   "data": {
-    "total_gross": 100000,
-    "fee_admin_percent": 10,
-    "fee_admin_amount": 10000,
-    "total_net": 90000,
-    "warga_allocations": [
+    "total_dana": 100000,
+    "fee_persen": "10.00",
+    "dana_setelah_pajak": 90000,
+    "jumlah_warga": 2,
+    "date_start": "2026-07-01",
+    "date_end": "2026-07-31",
+    "alokasi_preview": [
       {
-        "id_user": "20000000-0000-0000-0000-000000000001",
+        "id_user": "20000000-4000-a000-0000-000000000001",
         "name": "Budi Warga",
-        "total_setoran": 35000,
-        "final_amount": 31500
+        "email": "warga1@example.com",
+        "total_weight": 15,
+        "total_value": 35000,
+        "estimasi_alokasi": 31500
       },
       {
-        "id_user": "20000000-0000-0000-0000-000000000002",
+        "id_user": "20000000-4000-a000-0000-000000000002",
         "name": "Siti Warga",
-        "total_setoran": 65000,
-        "final_amount": 58500
+        "email": "warga2@example.com",
+        "total_weight": 20,
+        "total_value": 65000,
+        "estimasi_alokasi": 58500
       }
     ]
   }
@@ -80,8 +87,10 @@
 **Tabel Response Error:**
 | HTTP Status | Error Code | Kondisi / Penjelasan |
 |---|---|---|
-| 400 | `BAD_REQUEST` | Date start / Date end kosong atau Date start lebih besar dari Date end. |
-| 404 | `NOT_FOUND` | Tidak ada setoran (deposit) dalam rentang tanggal tersebut. |
+| 400 | `MISSING_PARAMS` | `total_dana`, `date_start`, atau `date_end` kosong. |
+| 400 | `INVALID_AMOUNT` | `total_dana` bukan angka positif. |
+| 404 | `NO_WARGA_FOUND` | Tidak ada warga yang melakukan setoran dalam rentang tanggal tersebut. |
+| 500 | `FEE_NOT_FOUND` | Konfigurasi pajak/fee belum tersedia di database (belum diset oleh superadmin). |
 
 ---
 
@@ -95,22 +104,17 @@
 Gunakan output dari endpoint `/init` lalu kirimkan:
 ```json
 {
+  "total_dana": 100000,
   "date_start": "2026-07-01",
   "date_end": "2026-07-31",
-  "total_gross": 100000,
-  "fee_admin_amount": 10000,
-  "total_net": 90000,
-  "warga_allocations": [
+  "fee_persen": "10.00",
+  "alokasi": [
     {
-      "id_user": "20000000-0000-0000-0000-000000000001",
-      "name": "Budi Warga",
-      "total_setoran": 35000,
+      "id_user": "20000000-4000-a000-0000-000000000001",
       "final_amount": 31500
     },
     {
-      "id_user": "20000000-0000-0000-0000-000000000002",
-      "name": "Siti Warga",
-      "total_setoran": 65000,
+      "id_user": "20000000-4000-a000-0000-000000000002",
       "final_amount": 58500
     }
   ]
@@ -121,12 +125,48 @@ Gunakan output dari endpoint `/init` lalu kirimkan:
 ```json
 {
   "status": "success",
-  "message": "Distribusi dana splitbills berhasil dikonfirmasi dan ditransfer ke saldo warga",
-  "code": "CONFIRM_SPLITBILLS_SUCCESS"
+  "message": "Dana berhasil dibagikan kepada seluruh warga",
+  "code": "CONFIRM_SUCCESS",
+  "data": {
+    "id_sb": "50000000-0000-4000-8000-000000000001",
+    "total_sb": 50000,
+    "fee_persen": "10.00",
+    "fee_amount": 5000,
+    "dana_setelah_pajak": 45000,
+    "date_start": "2026-07-01",
+    "date_end": "2026-07-31",
+    "jumlah_warga": 2,
+    "jumlah_deposit_dibagikan": 3,
+    "total_didistribusikan": 45000,
+    "processed_by": "40000000-0000-4000-8000-000000000001",
+    "processed_at": "2026-10-04T12:00:00.000Z"
+  }
 }
 ```
 
 **Tabel Response Error:**
 | HTTP Status | Error Code | Kondisi / Penjelasan |
 |---|---|---|
-| 400 | `BAD_REQUEST` | Array `warga_allocations` kosong atau payload tidak lengkap. |
+| 400 | `MISSING_PARAMS` | Payload tidak lengkap (`total_dana`, `date_start`, `date_end`, `alokasi` wajib ada). |
+| 400 | `INVALID_FORMAT` | Field `alokasi` bukan berupa array. |
+| 400 | `INVALID_AMOUNT` | `total_dana` atau `final_amount` pada alokasi bukan angka positif. |
+| 400 | `INVALID_FEE_PERCENT` | Field `fee_persen` (opsional) diisi tetapi formatnya tidak valid (harus desimal maksimal 2 angka). |
+| 400 | `NO_ALLOCATIONS` | Daftar `alokasi` kosong (wajib minimal 1 warga). |
+| 400 | `ADMIN_IN_ALLOCATION` | Terdapat ID admin di dalam daftar alokasi (admin tidak boleh menerima dana splitbills). |
+| 400 | `INVALID_USER_IN_ALLOCATION` | Terdapat ID warga yang tidak valid atau tidak terdaftar. |
+| 400 | `REMAINING_NOT_ZERO` | Total final alokasi warga tidak sama persis dengan sisa dana setelah pajak. (Harus pas). |
+| 400 | `NO_DEPOSIT_FOR_USER` | Terdapat warga di daftar alokasi yang tidak memiliki setoran pada periode tersebut. |
+| 400 | `BALANCE_NOT_FOUND` | Gagal menyalurkan ke saldo warga (akun tidak ada/terhapus saat diproses). |
+| 409 | `FEE_CHANGED` | Jika `fee_persen` dikirim dan berbeda dengan persentase tarif admin di database saat ini, server akan menolak. |
+| 409 | `DEPOSIT_NOT_FOUND` | Jika konfirmasi ditekan saat dana sudah dikonfirmasi (tidak ada lagi deposit yang berstatus processed untuk periode tersebut). |
+| 500 | `FEE_NOT_FOUND` | Konfigurasi pajak/fee belum diset. |
+
+---
+
+## Catatan Khusus Frontend (Alur Splitbills)
+1. **Kalkulasi**: Panggil endpoint `/init` untuk mendapatkan estimasi awal pembagian dana beserta nilai `fee_persen` yang berlaku saat ini.
+2. **Persetujuan**: Simpan nilai `fee_persen` dari respons `/init`. Saat admin menekan tombol "Konfirmasi", sertakan `fee_persen` tersebut di dalam *body* request ke `/confirm`. Field ini bersifat opsional secara API, tetapi direkomendasikan agar ada perlindungan *optimistic locking*.
+3. **Konflik Perubahan Tarif**: Jika sementara admin mereviu data, ternyata Super Admin mengubah tarif komisi, maka `/confirm` akan merespons dengan status `409` dan error code `FEE_CHANGED`. 
+4. **Penanganan Konflik**: Jika mendapat error `FEE_CHANGED`, tampilkan notifikasi kepada admin (contoh: "Tarif komisi telah diperbarui oleh sistem, kalkulasi sedang disesuaikan..."), lalu secara otomatis panggil ulang endpoint `/init` untuk mendapatkan estimasi dengan tarif yang baru, dan minta admin meninjau ulang sebelum mengonfirmasi lagi.
+5. **Format Fee**: Tipe `fee_persen` pada respons adalah `string` berformat desimal maksimal 2 angka di belakang koma (contoh: `"10.00"`, `"7.50"`, `"0.00"`). Rentangnya adalah 0 sampai 100.
+6. **Snapshot**: Saat /confirm berhasil, persentase fee dan nominal komisi akan dicatat secara permanen di database sebagai *snapshot*. Perubahan persentase komisi di masa depan tidak akan memengaruhi transaksi splitbills yang sudah berstatus *completed*.

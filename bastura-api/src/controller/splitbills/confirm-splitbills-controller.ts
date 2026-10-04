@@ -2,6 +2,7 @@ import { Context } from 'hono';
 import { TBBalance } from '../type/transaction-type';
 import { sendtscResponse } from '../../logs/tsc/tsc-logs';
 import { confirmSplitbills } from '../../model/splitbills/confirm-splitbills';
+import { parseFeePercent } from '../../model/komisi/fee-helper';
 
 /**
  * POST /api/v1/splitbills/confirm
@@ -26,7 +27,7 @@ export const confirmSplitbillsController = async (c: Context) => {
 
         const admin_id = jwtPayload.sub;
         const body = await c.req.json();
-        const { total_dana, date_start, date_end, alokasi } = body;
+        const { total_dana, date_start, date_end, alokasi, fee_persen } = body;
 
         if (!total_dana || !date_start || !date_end) {
             return sendtscResponse(c, 400, action, 'error', 'SPLITBILLS',
@@ -47,7 +48,18 @@ export const confirmSplitbillsController = async (c: Context) => {
             );
         }
 
-        const result = await confirmSplitbills(admin_id, total_dana, date_start, date_end, alokasi);
+        let parsedFeePersen: string | null = null;
+        if (fee_persen !== undefined) {
+            parsedFeePersen = parseFeePercent(fee_persen);
+            if (!parsedFeePersen) {
+                return sendtscResponse(c, 400, action, 'error', 'SPLITBILLS',
+                    'Format fee_persen tidak valid', 'fee_persen harus berupa angka atau string desimal maksimal 2 angka',
+                    null, 'INVALID_FEE_PERCENT'
+                );
+            }
+        }
+
+        const result = await confirmSplitbills(admin_id, total_dana, date_start, date_end, alokasi, parsedFeePersen);
 
         if (result === 'FEE_NOT_FOUND') {
             return sendtscResponse(c, 500, action, 'error', 'SPLITBILLS',
@@ -59,6 +71,30 @@ export const confirmSplitbillsController = async (c: Context) => {
             return sendtscResponse(c, 400, action, 'error', 'SPLITBILLS',
                 'Daftar warga kosong', 'Tambahkan minimal 1 warga ke daftar penerima dana',
                 null, 'NO_ALLOCATIONS'
+            );
+        }
+        if (result === 'FEE_CHANGED') {
+            return sendtscResponse(c, 409, action, 'warning', 'SPLITBILLS',
+                'Persentase komisi telah berubah', 'Persentase komisi berubah, silakan hitung ulang',
+                null, 'FEE_CHANGED'
+            );
+        }
+        if (result === 'DEPOSIT_NOT_FOUND') {
+            return sendtscResponse(c, 409, action, 'error', 'SPLITBILLS',
+                'Data setoran tidak ditemukan', 'Periode ini sudah kosong atau setoran telah diproses',
+                null, 'DEPOSIT_NOT_FOUND'
+            );
+        }
+        if (result === 'NO_DEPOSIT_FOR_USER') {
+            return sendtscResponse(c, 400, action, 'error', 'SPLITBILLS',
+                'Terdapat warga tanpa setoran', 'Warga dalam daftar alokasi wajib memiliki setoran di periode ini',
+                null, 'NO_DEPOSIT_FOR_USER'
+            );
+        }
+        if (result === 'BALANCE_NOT_FOUND') {
+            return sendtscResponse(c, 400, action, 'error', 'SPLITBILLS',
+                'Gagal menyalurkan ke saldo', 'Terdapat akun warga yang saldonya gagal diperbarui',
+                null, 'BALANCE_NOT_FOUND'
             );
         }
         if (result === 'ADMIN_IN_ALLOCATION') {

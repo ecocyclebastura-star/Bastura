@@ -22,7 +22,7 @@ export const sendtscResponse = async (
   logStatus: 'success' | 'error' | 'warning',
   processName: string,
   logMessage: string,
-  clientMessage: string,
+  clientMessage: string | null,
   data?: any, 
   errorCode?: string 
 

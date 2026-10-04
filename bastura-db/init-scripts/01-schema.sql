@@ -68,13 +68,15 @@ CREATE TABLE IF NOT EXISTS update_logs (
 CREATE TABLE IF NOT EXISTS profit (
     id_profit UUID DEFAULT gen_random_uuid() PRIMARY KEY NOT NULL,
     amount_profit BIGINT NOT NULL,
+    id_sb UUID NOT NULL UNIQUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS fee (
     id_fee UUID DEFAULT gen_random_uuid() PRIMARY KEY NOT NULL,
-    amount_fee BIGINT NOT NULL,
+    id_urutan SERIAL UNIQUE NOT NULL,
+    amount_fee NUMERIC(5,2) NOT NULL CHECK (amount_fee >= 0 AND amount_fee <= 100),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ
 );
@@ -179,7 +181,8 @@ CREATE TABLE IF NOT EXISTS deposit (
     id_deposit UUID DEFAULT gen_random_uuid() PRIMARY KEY NOT NULL,
     id_user UUID NOT NULL,
     catalog_id UUID NOT NULL,
-    amount_sb INT,
+    amount_sb BIGINT,
+    id_sb UUID,
     weight_dp DECIMAL(10,2) NOT NULL,
     dp_status status_tf DEFAULT 'processed',
     dp_notes TEXT,
@@ -189,7 +192,8 @@ CREATE TABLE IF NOT EXISTS deposit (
 
     CONSTRAINT fk_id_user_deposit FOREIGN KEY (id_user) REFERENCES users(id_users) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_catalog_id FOREIGN KEY (catalog_id) REFERENCES waste_catalog(id_waste) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT fk_created_by FOREIGN KEY (created_by) REFERENCES users(id_users) ON DELETE SET NULL ON UPDATE CASCADE
+    CONSTRAINT fk_created_by FOREIGN KEY (created_by) REFERENCES users(id_users) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT cek_amount_sb CHECK (amount_sb IS NULL OR amount_sb >= 0)
 );
 
 CREATE TABLE IF NOT EXISTS withdrawals (
@@ -211,6 +215,7 @@ CREATE TABLE IF NOT EXISTS split_bills (
     date_end TIMESTAMPTZ,
     remaining_sb BIGINT NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'completed', 'canceled')),
+    fee_percent NUMERIC(5,2) NOT NULL,
     processed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     processed_by UUID NOT NULL,
 
@@ -236,3 +241,6 @@ CREATE TABLE IF NOT EXISTS jadwal_setor (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ
 );
+
+ALTER TABLE profit ADD CONSTRAINT fk_profit_id_sb FOREIGN KEY (id_sb) REFERENCES split_bills(id_sb) ON DELETE RESTRICT;
+ALTER TABLE deposit ADD CONSTRAINT fk_deposit_id_sb FOREIGN KEY (id_sb) REFERENCES split_bills(id_sb) ON DELETE RESTRICT;
