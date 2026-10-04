@@ -21,7 +21,7 @@ SELECT
     u.name,
     'Setoran Sampah' AS jenis_transaksi,
     c.name || '/' || d.weight_dp || c.unit AS deskripsi, 
-    d.amount_sb AS nominal, 
+    COALESCE(d.amount_sb, 0)::BIGINT AS nominal, 
     d.dp_status AS status,
     d.created_at AS tanggal_transaksi
 FROM deposit d
@@ -118,8 +118,8 @@ SELECT
     sb.status,
     sb.processed_at,
     sb.processed_by,
-    f.amount_fee                                       AS fee_persen,
-    (sb.total_sb - (sb.total_sb * f.amount_fee / 100)) AS dana_setelah_pajak,
+    sb.fee_percent                                     AS fee_persen,
+    (sb.total_sb - p.amount_profit)                    AS dana_setelah_pajak,
     sba.id_sb_allocations,
     sba.id_user,
     u.name                                             AS nama_warga,
@@ -127,8 +127,6 @@ SELECT
     sba.final_amount,
     sba.allocated_at
 FROM split_bills sb
+LEFT JOIN profit p ON sb.id_sb = p.id_sb
 LEFT JOIN sb_allocations sba ON sb.id_sb = sba.id_sb
-LEFT JOIN users u ON sba.id_user = u.id_users
-CROSS JOIN LATERAL (
-    SELECT amount_fee FROM fee ORDER BY created_at DESC LIMIT 1
-) f;
+LEFT JOIN users u ON sba.id_user = u.id_users;
