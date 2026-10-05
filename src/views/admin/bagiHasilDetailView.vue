@@ -7,7 +7,7 @@ import PageHeader from "../../components/PageHeader.vue";
 import StatusBadge from "../../components/StatusBadge.vue";
 import TransactionKindIcon from "../../components/TransactionKindIcon.vue";
 import { resolveAuthError } from "../../constants/authErrors";
-import { formatBerat } from "../../constants/setoran";
+import { formatTotalUnit } from "../../constants/setoran";
 import { useSetoranStore } from "../../stores/setoranStore";
 import type { RincianSetoran } from "../../stores/setoranStore";
 import { formatPeriode, formatRibuan, formatRupiah, formatTanggal } from "../../utils/formatters";
@@ -75,7 +75,7 @@ onMounted(loadRiwayat);
     <dl class="grid grid-cols-2 gap-6 px-6">
       <div class="rounded-xl border border-secondary-700 bg-secondary-600 px-2.5 py-2 text-white">
         <dt class="text-body-tiny">Total sampah</dt>
-        <dd class="text-body-reg font-bold">{{ formatBerat(alokasi.total_berat, true) }}</dd>
+        <dd class="text-body-reg font-bold">{{ formatTotalUnit(alokasi.total_berat) }}</dd>
       </div>
       <div class="rounded-xl border border-primary-800 bg-primary-700 px-2.5 py-2 text-white">
         <!-- Bagian warga ini di pembagian periode ini, bukan saldo dompetnya. -->

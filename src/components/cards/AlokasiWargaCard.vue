@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import LihatDetailButton from "../LihatDetailButton.vue";
-import { ALOKASI_STEP, formatBerat } from "../../constants/setoran";
+import { ALOKASI_STEP, formatTotalUnit } from "../../constants/setoran";
 import type { AlokasiWarga } from "../../stores/setoranStore";
 import { formatRupiah } from "../../utils/formatters";
 
@@ -56,7 +56,7 @@ const stepperClass =
         </h3>
         <p class="text-body-tiny text-neutral-900">
           Total Setoran :
-          <span class="font-bold">{{ formatBerat(alokasi.total_berat) }}</span>
+          <span class="font-bold">{{ formatTotalUnit(alokasi.total_berat) }}</span>
         </p>
       </div>
 

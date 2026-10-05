@@ -3,6 +3,7 @@ import { computed } from "vue";
 import AccountBadge from "../AccountBadge.vue";
 import type { AccountBadgeVariant } from "../AccountBadge.vue";
 import AvatarPhoto from "../AvatarPhoto.vue";
+import { formatTotalUnit } from "../../constants/setoran";
 import { normalizeRole } from "../../constants/wargaAccess";
 import type { Warga } from "../../stores/wargaStore";
 import { formatRupiah, formatTanggal } from "../../utils/formatters";
@@ -42,13 +43,7 @@ const badges = computed(() => {
   return list;
 });
 
-const BERAT_FORMATTER = new Intl.NumberFormat("id-ID", {
-  maximumFractionDigits: 2,
-});
-
-const totalSampah = computed(
-  () => `${BERAT_FORMATTER.format(props.warga.total_sampah ?? 0)} kg`,
-);
+const totalSampah = computed(() => formatTotalUnit(props.warga.total_sampah));
 
 const actionClass =
   "cursor-pointer rounded-[13px] transition-transform duration-200 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60";

@@ -63,6 +63,15 @@ export function parseBerat(value: string): number {
 /* ================================ SATUAN ================================ */
 
 /**
+ * Total gabungan setoran, mis. "12 unit". Sampah per kg dan per buah (pc)
+ * ikut terjumlah jadi satu angka -- server pun menjumlahkannya begitu -- jadi
+ * total ditulis "unit". Rincian kg/pc-nya kelihatan di detail tiap setoran.
+ */
+export function formatTotalUnit(value: number | null | undefined, spaced = true): string {
+  return `${BERAT_FORMATTER.format(value ?? 0)}${spaced ? " " : ""}unit`;
+}
+
+/**
  * Satuan item katalog. Sebagian sampah dihitung per buah ("pc"), mis. jerigen;
  * sisanya per kg. Backend menandainya lewat `unit` di katalog maupun di detail
  * setoran; nilai kosong atau tak dikenal dianggap kg.

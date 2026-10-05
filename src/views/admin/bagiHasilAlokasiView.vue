@@ -13,7 +13,7 @@ import { resolveAuthError } from "../../constants/authErrors";
 import { useToast } from "../../composables/useToast";
 import { useSetoranStore } from "../../stores/setoranStore";
 import type { AlokasiWarga } from "../../stores/setoranStore";
-import { formatBerat } from "../../constants/setoran";
+import { formatTotalUnit } from "../../constants/setoran";
 import { formatRupiah } from "../../utils/formatters";
 
 const router = useRouter();
@@ -210,7 +210,7 @@ async function distribute() {
           </h3>
           <p class="text-body-tiny text-neutral-600">
             Total Setoran :
-            <span class="font-bold">{{ formatBerat(item.total_berat) }}</span>
+            <span class="font-bold">{{ formatTotalUnit(item.total_berat) }}</span>
           </p>
         </div>
 

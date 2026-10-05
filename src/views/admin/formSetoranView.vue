@@ -10,7 +10,7 @@ import SearchBar from "../../components/SearchBar.vue";
 import WargaListItem from "../../components/cards/WargaListItem.vue";
 import { resolveAuthError } from "../../constants/authErrors";
 import {
-  formatJumlah,
+  formatTotalUnit,
   normalizeUnit,
   parseBerat,
   resolveSetoranStage,
@@ -182,24 +182,13 @@ function isItemValid(item: ItemDraft): boolean {
   return Boolean(item.wasteId) && Boolean(item.berat.trim()) && !beratError(item);
 }
 
-/** Total per satuan; item per buah tidak bisa dijumlah dengan kilogram. */
-function totalOf(unit: SetoranUnit): number {
-  return items.value.reduce((acc, item) => {
-    if (unitOf(item) !== unit) return acc;
+/** Total gabungan semua baris (kg dan pc) dalam "unit"; rinciannya ada per baris. */
+const totalUnit = computed(() =>
+  items.value.reduce((acc, item) => {
     const value = parseBerat(item.berat);
     return Number.isNaN(value) || value <= 0 ? acc : acc + value;
-  }, 0);
-}
-
-const totalLabel = computed(() => {
-  const kg = totalOf("kg");
-  const pc = totalOf("pc");
-  if (pc === 0) return formatJumlah(kg, "kg", true);
-  if (kg === 0) return formatJumlah(pc, "pc", true);
-  return `${formatJumlah(kg, "kg", true)} + ${formatJumlah(pc, "pc", true)}`;
-});
-
-const hasPcItem = computed(() => items.value.some((item) => unitOf(item) === "pc"));
+  }, 0),
+);
 
 /* ================================= EDIT ================================= */
 
@@ -569,9 +558,9 @@ const labelClass = "text-body-reg font-medium text-neutral-900";
           class="mx-auto flex w-full max-w-sm items-center justify-between gap-4 rounded-t-3xl border border-b-0 border-neutral-200 bg-white px-6 pt-4 pb-4 shadow-[0_-8px_24px_-12px_rgba(28,28,26,0.2)]"
         >
           <div>
-            <p class="text-body-sm text-neutral-600">{{ hasPcItem ? "Total" : "Total Berat" }}</p>
+            <p class="text-body-sm text-neutral-600">Total</p>
             <p class="text-h5 font-extrabold text-neutral-900" aria-live="polite">
-              {{ totalLabel }}
+              {{ formatTotalUnit(totalUnit) }}
             </p>
           </div>
 
