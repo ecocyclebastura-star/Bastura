@@ -60,6 +60,42 @@ export function parseBerat(value: string): number {
   return Number(normalized);
 }
 
+/* ================================ SATUAN ================================ */
+
+/**
+ * Satuan item katalog. Sebagian sampah dihitung per buah ("pc"), mis. jerigen;
+ * sisanya per kg. Backend menandainya lewat `unit` di katalog maupun di detail
+ * setoran; nilai kosong atau tak dikenal dianggap kg.
+ */
+export type SetoranUnit = "kg" | "pc";
+
+export function normalizeUnit(unit: string | null | undefined): SetoranUnit {
+  const value = unit?.trim().toLowerCase();
+  return value === "pc" || value === "pcs" ? "pc" : "kg";
+}
+
+/**
+ * Baca bagian jumlah dari deskripsi transaksi setoran, mis. "4.00kg",
+ * "2,5 kg", "3 pc", atau "3pc". Backend menulis ulang deskripsi item per buah
+ * jadi berakhiran "pc" (apply_pc_formatting_to_transactions & split bill),
+ * jadi satuannya cukup dibaca dari akhiran itu. Nilai NaN kalau tidak terbaca.
+ */
+export function parseJumlahSetoran(text: string | null | undefined): {
+  value: number;
+  unit: SetoranUnit;
+} {
+  const raw = text?.trim() ?? "";
+  const match = raw.match(/^([\d.,]+)\s*(kg|pcs?)?$/i);
+  if (!match) return { value: Number.NaN, unit: "kg" };
+  return { value: parseBerat(match[1]), unit: normalizeUnit(match[2]) };
+}
+
+/** Jumlah per satuan siap tampil, mis. 1.5 kg -> "1,5kg", 3 pc -> "3pc". */
+export function formatJumlah(value: number, unit: SetoranUnit, spaced = false): string {
+  if (unit === "kg") return formatBerat(value, spaced);
+  return `${BERAT_FORMATTER.format(value)}${spaced ? " " : ""}pc`;
+}
+
 /* ============================== BAGI HASIL ============================== */
 
 /**

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { formatJumlah, parseJumlahSetoran } from "../constants/setoran";
 import {
   detailCopy,
   parseSetoranDeskripsi,
@@ -33,6 +34,18 @@ const copy = computed(() =>
 );
 
 const setoran = computed(() => parseSetoranDeskripsi(props.transaction.deskripsi));
+
+/** Item per buah ditulis backend dengan akhiran "pc"; labelnya ikut jadi "Jumlah". */
+const jumlah = computed(() => {
+  const parsed = parseJumlahSetoran(setoran.value.berat);
+  return {
+    label: parsed.unit === "pc" ? "Jumlah" : "Berat",
+    // Yang tidak terbaca ditampilkan apa adanya dari server.
+    text: Number.isNaN(parsed.value)
+      ? setoran.value.berat
+      : formatJumlah(parsed.value, parsed.unit, true),
+  };
+});
 
 /** Setoran yang masih diproses belum punya nominal untuk ditampilkan. */
 const isWaitingResult = computed(
@@ -98,9 +111,9 @@ const waktu = computed(() => formatJamWita(props.transaction.tanggal_transaksi))
         </div>
 
         <div v-if="setoran.berat" class="flex justify-between gap-4">
-          <dt class="text-neutral-700">Berat</dt>
+          <dt class="text-neutral-700">{{ jumlah.label }}</dt>
           <dd class="text-right font-medium text-neutral-900">
-            {{ setoran.berat }}
+            {{ jumlah.text }}
           </dd>
         </div>
 

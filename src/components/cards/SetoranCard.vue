@@ -3,7 +3,7 @@ import { computed } from "vue";
 import AppIcon from "../AppIcon.vue";
 import AvatarPhoto from "../AvatarPhoto.vue";
 import LihatDetailButton from "../LihatDetailButton.vue";
-import { SETORAN_BADGES, formatBerat, resolveSetoranStage } from "../../constants/setoran";
+import { SETORAN_BADGES, formatJumlah, resolveSetoranStage } from "../../constants/setoran";
 import type { Setoran } from "../../stores/setoranStore";
 import { formatRibuan } from "../../utils/formatters";
 
@@ -29,7 +29,7 @@ const badge = computed(() => SETORAN_BADGES[isProses.value ? "proses" : "selesai
 const jenisSampah = computed(
   () => props.setoran.deskripsi?.trim() || props.setoran.category_name || "-",
 );
-const berat = computed(() => formatBerat(props.setoran.berat));
+const berat = computed(() => formatJumlah(props.setoran.berat, props.setoran.unit ?? "kg"));
 </script>
 
 <template>

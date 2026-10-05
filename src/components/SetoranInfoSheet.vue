@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from "vue";
 import DarkSheet from "./DarkSheet.vue";
-import { formatBerat, resolveSetoranStage } from "../constants/setoran";
+import { formatJumlah, resolveSetoranStage } from "../constants/setoran";
 import type { Setoran } from "../stores/setoranStore";
 import { formatRupiah, formatTanggal } from "../utils/formatters";
 
@@ -43,8 +43,8 @@ const isProses = computed(
       </div>
 
       <div>
-        <dt class="text-body-reg font-light">Berat</dt>
-        <dd class="text-body-md font-bold">{{ formatBerat(shown.berat, true) }}</dd>
+        <dt class="text-body-reg font-light">{{ shown.unit === "pc" ? "Jumlah" : "Berat" }}</dt>
+        <dd class="text-body-md font-bold">{{ formatJumlah(shown.berat, shown.unit ?? "kg", true) }}</dd>
       </div>
 
       <div>

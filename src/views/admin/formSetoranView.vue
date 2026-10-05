@@ -9,15 +9,22 @@ import PageHeader from "../../components/PageHeader.vue";
 import SearchBar from "../../components/SearchBar.vue";
 import WargaListItem from "../../components/cards/WargaListItem.vue";
 import { resolveAuthError } from "../../constants/authErrors";
-import { formatBerat, parseBerat, resolveSetoranStage } from "../../constants/setoran";
-import { mergeWasteCategories } from "../../constants/wasteCatalog";
+import {
+  formatJumlah,
+  normalizeUnit,
+  parseBerat,
+  resolveSetoranStage,
+} from "../../constants/setoran";
+import type { SetoranUnit } from "../../constants/setoran";
+import { resolveWasteCategory } from "../../constants/wasteCatalog";
 import { useSearchableList } from "../../composables/useSearchableList";
 import { useToast } from "../../composables/useToast";
-import { useSetoranStore } from "../../stores/setoranStore";
+import { PartialSetoranError, useSetoranStore } from "../../stores/setoranStore";
 import type { SetoranItemInput } from "../../stores/setoranStore";
 import { useWargaStore } from "../../stores/wargaStore";
 import type { Warga } from "../../stores/wargaStore";
 import { useWasteStore } from "../../stores/wasteStore";
+import type { CatalogItem } from "../../stores/wasteStore";
 import { formatRupiah } from "../../utils/formatters";
 
 const route = useRoute();
@@ -72,25 +79,53 @@ function pickWarga(warga: Warga) {
   clearWargaSearch();
 }
 
-/* =============================== KATEGORI =============================== */
+/* ============================= JENIS SAMPAH ============================= */
 
-const categories = ref(new Map<number, string>());
-const categoriesLoading = ref(true);
+/**
+ * Pilihannya item katalog (`id_waste`), bukan kategori: server mencatat
+ * setoran per jenis sampah spesifik, mis. "Botol Bersih Biru". Dikelompokkan
+ * per kategori supaya daftarnya tetap mudah dicari.
+ */
+const catalog = ref<CatalogItem[]>([]);
+const catalogLoading = ref(true);
+/** Item setoran lama yang sudah tidak ada di katalog, supaya tetap terpilih. */
+const extraOption = ref<{ id: string; label: string } | null>(null);
 
-const categoryOptions = computed(() =>
-  [...categories.value].sort(([a], [b]) => a - b).map(([id, label]) => ({ id, label })),
-);
-
-async function loadCategories() {
-  categoriesLoading.value = true;
-  try {
-    const items = await wasteStore.listCatalog();
-    categories.value = mergeWasteCategories(categories.value, items);
-  } catch (error) {
-    showToast(resolveAuthError(error, "Gagal memuat kategori sampah."), "error");
-  } finally {
-    categoriesLoading.value = false;
+const catalogGroups = computed(() => {
+  const groups = new Map<string, { id: string; label: string }[]>();
+  for (const item of catalog.value) {
+    const group = resolveWasteCategory(item.category_name);
+    const list = groups.get(group) ?? [];
+    list.push({ id: item.id_waste, label: item.name?.trim() || "Tanpa nama" });
+    groups.set(group, list);
   }
+  return [...groups]
+    .sort(([a], [b]) => a.localeCompare(b, "id"))
+    .map(([label, options]) => ({
+      label,
+      options: options.sort((a, b) => a.label.localeCompare(b.label, "id")),
+    }));
+});
+
+async function loadCatalog() {
+  catalogLoading.value = true;
+  try {
+    catalog.value = await wasteStore.listCatalog();
+  } catch (error) {
+    showToast(resolveAuthError(error, "Gagal memuat jenis sampah."), "error");
+  } finally {
+    catalogLoading.value = false;
+  }
+}
+
+/** Form Edit menunggu katalog dulu supaya item setorannya bisa dicocokkan. */
+const catalogReady = loadCatalog();
+
+/** Cari id item katalog dari namanya; dipakai kalau detail setoran tidak tersedia. */
+function findWasteIdByName(name: string | null): string {
+  const target = name?.trim().toLowerCase();
+  if (!target) return "";
+  return catalog.value.find((item) => item.name?.trim().toLowerCase() === target)?.id_waste ?? "";
 }
 
 /* ================================ SAMPAH ================================ */
@@ -98,13 +133,27 @@ async function loadCategories() {
 /** Isian mentah satu baris sampah; berat masih string supaya koma bisa diketik. */
 interface ItemDraft {
   key: number;
-  categoryId: string;
+  wasteId: string;
   deskripsi: string;
   berat: string;
+  /** Satuan dari detail setoran; dipakai kalau item-nya tidak ada di katalog. */
+  unit: SetoranUnit;
 }
 
 let nextKey = 0;
-const emptyItem = (): ItemDraft => ({ key: nextKey++, categoryId: "", deskripsi: "", berat: "" });
+const emptyItem = (): ItemDraft => ({
+  key: nextKey++,
+  wasteId: "",
+  deskripsi: "",
+  berat: "",
+  unit: "kg",
+});
+
+/** Satuan baris ini mengikuti item katalog yang dipilih: kg atau per buah (pc). */
+function unitOf(item: ItemDraft): SetoranUnit {
+  const found = catalog.value.find((entry) => entry.id_waste === item.wasteId);
+  return found ? normalizeUnit(found.unit) : item.unit;
+}
 
 const items = ref<ItemDraft[]>([emptyItem()]);
 
@@ -120,21 +169,37 @@ function removeItem(key: number) {
 function beratError(item: ItemDraft): string {
   if (!item.berat.trim()) return "";
   const value = parseBerat(item.berat);
+  if (unitOf(item) === "pc") {
+    if (!Number.isInteger(value) || value <= 0) return "Isi jumlah dengan bilangan bulat, mis. 3.";
+    return "";
+  }
   if (Number.isNaN(value)) return "Isi berat dengan angka, mis. 1,5.";
   if (value <= 0) return "Berat sampah harus lebih dari 0 kg.";
   return "";
 }
 
 function isItemValid(item: ItemDraft): boolean {
-  return Boolean(item.categoryId) && Boolean(item.berat.trim()) && !beratError(item);
+  return Boolean(item.wasteId) && Boolean(item.berat.trim()) && !beratError(item);
 }
 
-const totalBerat = computed(() =>
-  items.value.reduce((acc, item) => {
+/** Total per satuan; item per buah tidak bisa dijumlah dengan kilogram. */
+function totalOf(unit: SetoranUnit): number {
+  return items.value.reduce((acc, item) => {
+    if (unitOf(item) !== unit) return acc;
     const value = parseBerat(item.berat);
     return Number.isNaN(value) || value <= 0 ? acc : acc + value;
-  }, 0),
-);
+  }, 0);
+}
+
+const totalLabel = computed(() => {
+  const kg = totalOf("kg");
+  const pc = totalOf("pc");
+  if (pc === 0) return formatJumlah(kg, "kg", true);
+  if (kg === 0) return formatJumlah(pc, "pc", true);
+  return `${formatJumlah(kg, "kg", true)} + ${formatJumlah(pc, "pc", true)}`;
+});
+
+const hasPcItem = computed(() => items.value.some((item) => unitOf(item) === "pc"));
 
 /* ================================= EDIT ================================= */
 
@@ -156,32 +221,48 @@ async function loadSetoran() {
 
     locked.value = resolveSetoranStage(setoran.status) === "selesai";
 
-    // Kategorinya tetap bisa dipilih walau katalog gagal dimuat.
-    if (setoran.category_id != null) {
-      categories.value = new Map(categories.value).set(
-        setoran.category_id,
-        setoran.category_name || "Lainnya",
-      );
+    // Daftar transaksi tidak membawa id warga & id item katalog; detail
+    // setoran yang melengkapinya. Kalau detailnya gagal dimuat, item katalog
+    // dicocokkan lewat nama yang tertulis di deskripsi transaksi.
+    const [detail] = await Promise.all([
+      setoranStore.fetchDetail(setoran.id_setoran).catch(() => null),
+      catalogReady,
+    ]);
+    const idUser = detail?.id_user || setoran.id_user;
+    const wasteId = detail?.id_waste || findWasteIdByName(setoran.category_name);
+
+    // Item lama yang sudah dihapus dari katalog tetap bisa tampil terpilih.
+    if (wasteId && !catalog.value.some((item) => item.id_waste === wasteId)) {
+      extraOption.value = {
+        id: wasteId,
+        label: detail?.nama_sampah || setoran.category_name || "Jenis sampah lama",
+      };
     }
 
     items.value = [
       {
         key: nextKey++,
-        categoryId: setoran.category_id != null ? String(setoran.category_id) : "",
-        deskripsi: setoran.deskripsi ?? "",
-        berat: String(setoran.berat).replace(".", ","),
+        wasteId,
+        deskripsi: detail?.deskripsi || setoran.deskripsi || "",
+        berat: String(detail?.berat ?? setoran.berat).replace(".", ","),
+        unit: detail?.unit ?? setoran.unit ?? "kg",
       },
     ];
 
-    const cached = wargaStore.findCached(setoran.id_user);
+    const cached = idUser ? wargaStore.findCached(idUser) : null;
     selectedWarga.value = cached
       ? { id: cached.id, name: cached.name, phone: cached.phone, total_saldo: cached.total_saldo }
-      : { id: setoran.id_user, name: setoran.nama_warga, phone: "", total_saldo: null };
+      : {
+          id: idUser,
+          name: detail?.nama_warga || setoran.nama_warga,
+          phone: detail?.phone ?? "",
+          total_saldo: null,
+        };
 
     // Nomor HP & saldo tidak ikut di data setoran, jadi dilengkapi belakangan.
-    if (!cached) {
+    if (!cached && idUser) {
       wargaStore
-        .fetchDetail(setoran.id_user)
+        .fetchDetail(idUser)
         .then((warga) => {
           if (selectedWarga.value?.id === warga.id) pickWarga(warga);
         })
@@ -208,7 +289,7 @@ const canSubmit = computed(
 
 function toInput(item: ItemDraft): SetoranItemInput {
   return {
-    category_id: Number(item.categoryId),
+    id_waste: item.wasteId,
     deskripsi: item.deskripsi.trim(),
     berat: parseBerat(item.berat),
   };
@@ -226,7 +307,7 @@ async function handleSubmit() {
   saving.value = true;
   try {
     if (isEdit.value) {
-      await setoranStore.update(idSetoran.value, warga.id, toInput(items.value[0]));
+      await setoranStore.update(idSetoran.value, toInput(items.value[0]));
       setoranStore.setFlash("Perubahan berhasil disimpan.");
     } else {
       await setoranStore.create(warga.id, items.value.map(toInput));
@@ -234,6 +315,13 @@ async function handleSubmit() {
     }
     goBack();
   } catch (error) {
+    if (error instanceof PartialSetoranError) {
+      // Baris yang sudah tersimpan dibuang dari form supaya tidak terkirim dua kali.
+      items.value = items.value.slice(error.saved);
+      const reason = resolveAuthError(error.cause, "Sisanya gagal disimpan, coba simpan lagi.");
+      showToast(`${error.saved} jenis sampah sudah tersimpan. ${reason}`, "error");
+      return;
+    }
     // Admin tetap di form supaya isiannya tidak perlu diketik ulang.
     showToast(resolveAuthError(error, "Perubahan gagal disimpan."), "error");
   } finally {
@@ -242,7 +330,6 @@ async function handleSubmit() {
 }
 
 onMounted(() => {
-  loadCategories();
   if (isEdit.value) loadSetoran();
 });
 
@@ -289,7 +376,10 @@ const labelClass = "text-body-reg font-medium text-neutral-900";
       </p>
 
       <!-- ============================ WARGA ============================ -->
+      <!-- Pemilik setoran tidak bisa dipindah lewat edit, jadi pencariannya
+           cuma ada di mode tambah. -->
       <SearchBar
+        v-if="!isEdit"
         v-model="searchTerm"
         placeholder="Cari nama warga"
         label="Cari nama warga pemilik setoran"
@@ -384,25 +474,30 @@ const labelClass = "text-body-reg font-medium text-neutral-900";
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <label :for="`${uid}-kategori-${item.key}`" :class="labelClass">Kategori</label>
+          <label :for="`${uid}-jenis-${item.key}`" :class="labelClass">Jenis Sampah</label>
           <div class="relative">
             <select
-              :id="`${uid}-kategori-${item.key}`"
-              v-model="item.categoryId"
-              :class="[fieldClass, 'cursor-pointer appearance-none pr-12', item.categoryId ? '' : 'text-neutral-400']"
+              :id="`${uid}-jenis-${item.key}`"
+              v-model="item.wasteId"
+              :class="[fieldClass, 'cursor-pointer appearance-none pr-12', item.wasteId ? '' : 'text-neutral-400']"
               required
             >
               <option value="" disabled>
-                {{ categoriesLoading ? "Memuat kategori..." : "Pilih Kategori" }}
+                {{ catalogLoading ? "Memuat jenis sampah..." : "Pilih Jenis Sampah" }}
               </option>
-              <option
-                v-for="option in categoryOptions"
-                :key="option.id"
-                :value="String(option.id)"
+              <option v-if="extraOption" :value="extraOption.id" class="text-neutral-900">
+                {{ extraOption.label }}
+              </option>
+              <optgroup
+                v-for="group in catalogGroups"
+                :key="group.label"
+                :label="group.label"
                 class="text-neutral-900"
               >
-                {{ option.label }}
-              </option>
+                <option v-for="option in group.options" :key="option.id" :value="option.id">
+                  {{ option.label }}
+                </option>
+              </optgroup>
             </select>
             <svg
               class="pointer-events-none absolute inset-y-0 right-4 my-auto size-6 text-neutral-900"
@@ -433,13 +528,15 @@ const labelClass = "text-body-reg font-medium text-neutral-900";
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <label :for="`${uid}-berat-${item.key}`" :class="labelClass">Berat Sampah(kg)</label>
+          <label :for="`${uid}-berat-${item.key}`" :class="labelClass">
+            {{ unitOf(item) === "pc" ? "Jumlah Sampah(pc)" : "Berat Sampah(kg)" }}
+          </label>
           <div class="relative">
             <input
               :id="`${uid}-berat-${item.key}`"
               v-model="item.berat"
               type="text"
-              inputmode="decimal"
+              :inputmode="unitOf(item) === 'pc' ? 'numeric' : 'decimal'"
               autocomplete="off"
               placeholder="0"
               required
@@ -451,7 +548,7 @@ const labelClass = "text-body-reg font-medium text-neutral-900";
               class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-body-sm font-bold text-neutral-900"
               aria-hidden="true"
             >
-              /Kg
+              {{ unitOf(item) === "pc" ? "/Pc" : "/Kg" }}
             </span>
           </div>
           <p
@@ -472,9 +569,9 @@ const labelClass = "text-body-reg font-medium text-neutral-900";
           class="mx-auto flex w-full max-w-sm items-center justify-between gap-4 rounded-t-3xl border border-b-0 border-neutral-200 bg-white px-6 pt-4 pb-4 shadow-[0_-8px_24px_-12px_rgba(28,28,26,0.2)]"
         >
           <div>
-            <p class="text-body-sm text-neutral-600">Total Berat</p>
+            <p class="text-body-sm text-neutral-600">{{ hasPcItem ? "Total" : "Total Berat" }}</p>
             <p class="text-h5 font-extrabold text-neutral-900" aria-live="polite">
-              {{ formatBerat(totalBerat, true) }}
+              {{ totalLabel }}
             </p>
           </div>
 

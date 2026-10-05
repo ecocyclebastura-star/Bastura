@@ -1,30 +1,33 @@
 import { defineStore } from "pinia";
 import type { ToastVariant } from "../composables/useToast";
 import { serverErrorCode } from "../constants/authErrors";
-import { parseBerat, splitProportional } from "../constants/setoran";
+import { normalizeUnit, parseJumlahSetoran, splitProportional } from "../constants/setoran";
+import type { SetoranUnit } from "../constants/setoran";
 import { byNewest, parseSetoranDeskripsi, resolveKind } from "../constants/transactions";
 import { invokeCommand } from "../utils/invokeCommand";
 
 /**
  * Satu setoran sampah warga, dicatat admin waktu sampahnya diterima.
  *
- * Daftar setoran dan alur bagi hasil sudah memakai command dari src-tauri.
- * Yang BELUM ADA cuma tambah/edit/hapus setoran (`create_deposit_command`,
- * `update_deposit_command`, `delete_deposit_command`); selama belum ada,
- * `invokeCommand` membalas COMMAND_UNAVAILABLE dan halamannya menampilkan
- * pesan "fitur belum tersedia".
+ * Semua bagiannya sudah memakai command dari src-tauri: daftar dari riwayat
+ * transaksi global, tambah/edit/hapus lewat `add/edit/delete_deposit_command`,
+ * dan alur bagi hasil lewat command split bill.
  */
 export interface Setoran {
+  /** Sama dengan `id_transaksi`; server memakai id yang sama untuk setorannya. */
   id_setoran: string;
   id_user: string;
   nama_warga: string;
-  category_id: number | null;
-  /** Nama kategori katalog, mis. "Plastik PET". */
+  /** Id item katalog (`id_waste`), mis. milik "Botol Bersih Biru". */
+  id_waste: string | null;
+  /** Nama item katalog, mis. "Botol Bersih Biru". */
   category_name: string | null;
   /** Keterangan bebas dari admin, mis. "Botol Bersih Biru". */
   deskripsi: string | null;
-  /** Berat dalam kg. */
+  /** Berat (kg) atau jumlah buah (pc), mengikuti `unit`. */
   berat: number;
+  /** Opsional karena daftar lama di sessionStorage belum punya field ini. */
+  unit?: SetoranUnit;
   /** Bagian hasil penjualan dalam rupiah; kosong selama masih diproses. */
   nominal: number | null;
   status: string;
@@ -33,9 +36,87 @@ export interface Setoran {
 
 /** Satu baris sampah di form Tambah/Edit Setoran. */
 export interface SetoranItemInput {
-  category_id: number;
+  /** Id item katalog, bukan id kategori. */
+  id_waste: string;
   deskripsi: string;
   berat: number;
+}
+
+/** Bentuk `DepositDetailItem` dari src-tauri/src/models/transaction_model.rs. */
+interface DepositDetailItem {
+  id: string;
+  /** Id item katalog (`id_waste`), walau namanya category_id. */
+  category_id: string | null;
+  category_name: string | null;
+  catalog_name: string | null;
+  description: string | null;
+  /** Angka dalam string, mis. "10.00"; berupa jumlah buah kalau unit-nya "pc". */
+  weight_kg: string | null;
+  /** "kg", "pc", atau null (dianggap kg). */
+  unit: string | null;
+}
+
+/** Bentuk `DepositDetailData`, balasan `get_deposit_detail_command`. */
+interface DepositDetailData {
+  id: string;
+  user: { id: string | null; name: string | null; phone: string | null };
+  items: DepositDetailItem[];
+  total_weight: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string | null;
+}
+
+/** Isi lengkap satu setoran untuk mengisi form Edit. */
+export interface SetoranDetail {
+  id_user: string;
+  nama_warga: string;
+  phone: string;
+  id_waste: string;
+  /** Nama item katalog, mis. "Jerigen Biru". */
+  nama_sampah: string;
+  deskripsi: string;
+  /** Berat (kg) atau jumlah (pc), mengikuti `unit`. */
+  berat: number | null;
+  unit: SetoranUnit;
+}
+
+function toDetail(data: DepositDetailData): SetoranDetail {
+  // Satu setoran yang diedit = satu jenis sampah, jadi cukup item pertama.
+  const item = data.items[0];
+  const berat = Number.parseFloat(item?.weight_kg ?? "");
+  return {
+    id_user: data.user.id ?? "",
+    nama_warga: data.user.name ?? "",
+    phone: data.user.phone ?? "",
+    id_waste: item?.category_id ?? "",
+    nama_sampah: item?.catalog_name ?? "",
+    deskripsi: item?.description ?? "",
+    berat: Number.isFinite(berat) ? berat : null,
+    unit: normalizeUnit(item?.unit),
+  };
+}
+
+/** Satu tambah setoran gagal di tengah jalan; yang sebelumnya sudah tersimpan. */
+export class PartialSetoranError extends Error {
+  constructor(
+    /** Jumlah baris yang sudah tersimpan sebelum gagal. */
+    readonly saved: number,
+    readonly cause: unknown,
+  ) {
+    super("Sebagian setoran gagal disimpan.");
+  }
+}
+
+/**
+ * Body `AddDepositRequest`/`EditDepositRequest`. Field item katalog di Rust
+ * masih bernama `category_id` dan rencananya diganti jadi `waste_id`; sampai
+ * itu beres, keduanya dikirim. serde mengabaikan field yang tidak dikenal,
+ * jadi aman untuk struct versi lama maupun baru -- hapus `category_id`
+ * setelah refaktornya masuk.
+ */
+function wasteField(idWaste: string) {
+  return { waste_id: idWaste, category_id: idWaste };
 }
 
 /** Bentuk `TransactionItem` dari daftar global `get_all_transactions_admin_command`. */
@@ -51,7 +132,8 @@ interface AdminTransactionItem {
 
 /**
  * Transaksi "Setoran Sampah" jadi kartu setoran. Rinciannya menyatu di
- * `deskripsi` ("<nama katalog>/<berat>kg"), sama seperti yang dibaca
+ * `deskripsi` ("<nama katalog>/<berat>kg", atau "... / 3 pc" untuk item per
+ * buah), sama seperti yang dibaca
  * splitbill_service.rs waktu menghitung bagian per setoran.
  *
  * Daftar global tidak membawa id warga maupun id kategori, jadi keduanya
@@ -59,16 +141,17 @@ interface AdminTransactionItem {
  */
 function toSetoran(item: AdminTransactionItem): Setoran {
   const detail = parseSetoranDeskripsi(item.deskripsi);
-  const berat = parseBerat(detail.berat.replace(/\s*kg$/i, ""));
+  const jumlah = parseJumlahSetoran(detail.berat);
 
   return {
     id_setoran: item.id_transaksi,
     id_user: "",
     nama_warga: item.name ?? "",
-    category_id: null,
+    id_waste: null,
     category_name: detail.jenisSampah || null,
     deskripsi: null,
-    berat: Number.isNaN(berat) ? 0 : berat,
+    berat: Number.isNaN(jumlah.value) ? 0 : jumlah.value,
+    unit: jumlah.unit,
     // Nominal 0 = hasil penjualannya belum dibagikan.
     nominal: item.nominal || null,
     status: item.status,
@@ -231,22 +314,53 @@ export const useSetoranStore = defineStore("setoran", {
       return all.find((item) => item.id_setoran === id) ?? null;
     },
 
-    /** Satu kali simpan bisa berisi beberapa jenis sampah milik satu warga. */
-    create(idUser: string, items: SetoranItemInput[]) {
-      return invokeCommand<unknown>("create_deposit_command", {
-        payload: { id_user: idUser, items },
-      });
+    /**
+     * Satu kali simpan bisa berisi beberapa jenis sampah milik satu warga,
+     * tapi command-nya menerima satu jenis per panggilan. Dikirim berurutan;
+     * kalau ada yang gagal di tengah, PartialSetoranError memberi tahu berapa
+     * yang sudah tersimpan supaya form tidak mengirim ulang baris itu.
+     */
+    async create(idUser: string, items: SetoranItemInput[]) {
+      for (const [index, item] of items.entries()) {
+        try {
+          await invokeCommand<null>("add_deposit_command", {
+            payload: {
+              user_id: idUser,
+              ...wasteField(item.id_waste),
+              weight_kg: item.berat,
+              description: item.deskripsi,
+            },
+          });
+        } catch (error) {
+          if (index === 0) throw error;
+          throw new PartialSetoranError(index, error);
+        }
+      }
     },
 
-    update(idSetoran: string, idUser: string, item: SetoranItemInput) {
-      return invokeCommand<unknown>("update_deposit_command", {
-        payload: { id_setoran: idSetoran, id_user: idUser, ...item },
+    /** Pemilik setoran tidak bisa dipindah lewat edit; cuma isi sampahnya. */
+    update(idSetoran: string, item: SetoranItemInput) {
+      return invokeCommand<null>("edit_deposit_command", {
+        payload: {
+          id_deposit: idSetoran,
+          ...wasteField(item.id_waste),
+          weight_kg: item.berat,
+          description: item.deskripsi,
+        },
       });
     },
 
     async remove(idSetoran: string) {
-      await invokeCommand<unknown>("delete_deposit_command", { idSetoran });
+      await invokeCommand<null>("delete_deposit_command", { idDeposit: idSetoran });
       this.items = this.items.filter((item) => item.id_setoran !== idSetoran);
+    },
+
+    /** Isi lengkap satu setoran (warga, item katalog, satuan) untuk form Edit. */
+    async fetchDetail(idSetoran: string): Promise<SetoranDetail> {
+      const data = await invokeCommand<DepositDetailData>("get_deposit_detail_command", {
+        idDeposit: idSetoran,
+      });
+      return toDetail(data);
     },
 
     /* ============================== BAGI HASIL ============================== */
