@@ -1,6 +1,6 @@
 import { onUnmounted, ref } from "vue";
 
-export type ToastVariant = "warning" | "error" | "success";
+export type ToastVariant = "warning" | "error" | "success" | "info";
 
 /**
  * Toast satu slot: pesan baru menimpa pesan lama sekaligus me-reset timer.

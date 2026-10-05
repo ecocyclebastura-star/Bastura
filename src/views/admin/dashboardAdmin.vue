@@ -73,11 +73,11 @@ const menuItems = computed(() =>
 /** Tujuan tiap menu. Yang belum punya halaman sengaja dikosongkan. */
 const MENU_ROUTES: Record<string, string | undefined> = {
   "verifikasi-penarikan": "admin-verifikasi-penarikan",
-  "jenis-sampah": undefined,
+  "jenis-sampah": "admin-jenis-sampah",
   pengumuman: "admin-pengumuman",
-  edukasi: undefined,
+  edukasi: "admin-edukasi",
   "template-simba": undefined,
-  "komisi-setoran": undefined,
+  "komisi-setoran": "admin-komisi",
 };
 
 const sheetOpen = ref(false);

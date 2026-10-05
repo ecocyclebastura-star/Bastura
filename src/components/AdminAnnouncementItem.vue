@@ -4,7 +4,8 @@ import { categoryBadgeClass } from "../constants/announcementCategories";
 
 /**
  * Baris pengumuman di halaman kelola admin: sama dengan AnnouncementListItem
- * versi warga, ditambah tombol Hapus & Edit.
+ * versi warga, ditambah tombol Hapus & Edit. Dipakai juga oleh kelola edukasi,
+ * yang tidak punya kategori -- badge-nya hilang kalau `category` kosong.
  *
  * Tombol tidak boleh bersarang di dalam tombol, jadi pola "stretched link"
  * yang dipakai: tombol buka detail membentangkan area klik-nya (::after)
@@ -13,7 +14,9 @@ import { categoryBadgeClass } from "../constants/announcementCategories";
 const props = withDefaults(
   defineProps<{
     title: string;
-    category: string;
+    category?: string;
+    /** Sebutan isi baris untuk label tombol, mis. "pengumuman" atau "edukasi". */
+    noun?: string;
     author?: string;
     /** Tanggal siap tampil, mis. "18 Juli 2026". */
     date?: string;
@@ -22,7 +25,7 @@ const props = withDefaults(
     /** Kunci tombol selama pengumuman ini sedang dihapus. */
     busy?: boolean;
   }>(),
-  { author: "", date: "", image: "", busy: false },
+  { category: "", noun: "pengumuman", author: "", date: "", image: "", busy: false },
 );
 
 defineEmits<{ open: []; edit: []; delete: [] }>();
@@ -41,13 +44,14 @@ const actionClass =
   >
     <div class="min-w-0 flex-1">
       <span
+        v-if="category"
         class="inline-block rounded-full px-2.5 py-0.5 text-body-tiny font-bold"
         :class="badgeClass"
       >
         {{ category }}
       </span>
 
-      <h3 class="mt-1.5 line-clamp-2 text-body-md leading-tight font-extrabold text-neutral-900">
+      <h3 :class="category ? 'mt-1.5' : ''" class="line-clamp-2 text-body-md leading-tight font-extrabold text-neutral-900">
         <button
           type="button"
           class="open-link cursor-pointer text-left after:absolute after:inset-0 after:content-[''] focus:outline-none focus-visible:after:rounded-xl focus-visible:after:ring-2 focus-visible:after:ring-primary-500"
@@ -66,7 +70,7 @@ const actionClass =
         <button
           type="button"
           :class="[actionClass, 'bg-orange-500 hover:bg-orange-600 focus-visible:ring-orange-500']"
-          :aria-label="`Hapus pengumuman ${title}`"
+          :aria-label="`Hapus ${noun} ${title}`"
           :disabled="busy"
           @click="$emit('delete')"
         >
@@ -75,7 +79,7 @@ const actionClass =
         <button
           type="button"
           :class="[actionClass, 'bg-sky-400 hover:bg-sky-500 focus-visible:ring-sky-500']"
-          :aria-label="`Edit pengumuman ${title}`"
+          :aria-label="`Edit ${noun} ${title}`"
           :disabled="busy"
           @click="$emit('edit')"
         >

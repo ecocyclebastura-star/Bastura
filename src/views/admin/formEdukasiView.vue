@@ -6,57 +6,49 @@ import BaseButton from "../../components/BaseButton.vue";
 import DraftBanner from "../../components/DraftBanner.vue";
 import ImageDropzone from "../../components/ImageDropzone.vue";
 import PageHeader from "../../components/PageHeader.vue";
-import { resolveCategory } from "../../constants/announcementCategories";
 import { resolveAuthError } from "../../constants/authErrors";
 import { useContentDraft } from "../../composables/useContentDraft";
 import { useToast } from "../../composables/useToast";
 import {
-  ANNOUNCEMENT_IMAGE_MAX_BYTES,
-  parseAnnouncementText,
-  useAnnouncementAdminStore,
-} from "../../stores/announcementAdminStore";
-import type { AnnouncementCategoryOption } from "../../stores/announcementAdminStore";
+  EDUCATION_IMAGE_MAX_BYTES,
+  parseEducationText,
+  useEducationAdminStore,
+} from "../../stores/educationAdminStore";
 import { dataUriToImage } from "../../utils/imageFile";
 import type { PreparedImage } from "../../utils/imageFile";
 
 const route = useRoute();
 const router = useRouter();
-const store = useAnnouncementAdminStore();
+const store = useEducationAdminStore();
 const { toastMessage, toastVariant, showToast } = useToast();
 
 const uid = useId();
 
 /** Form yang sama dipakai tambah & edit; edit selalu membawa :id. */
-const isEdit = computed(() => route.name === "admin-pengumuman-edit");
-const idPengumuman = computed(() => String(route.params.id ?? ""));
+const isEdit = computed(() => route.name === "admin-edukasi-edit");
+const idEdukasi = computed(() => String(route.params.id ?? ""));
 
 /* ================================ ISIAN ================================ */
 
+/** Batas judul dari `add_education_service`. */
+const TITLE_MAX = 200;
+
 const title = ref("");
-const categoryId = ref("");
 const text = ref("");
-const author = ref("");
+/** Tag lama dibawa saat edit; form-nya tidak punya kolom tag. */
+const tags = ref<string[]>([]);
 
 const titleError = ref("");
-const categoryError = ref("");
 const textError = ref("");
 
 // Pesan salah hilang begitu kolomnya mulai diisi lagi.
 watch(title, () => (titleError.value = ""));
-watch(categoryId, () => (categoryError.value = ""));
 watch(text, () => (textError.value = ""));
-
-const categories = ref<AnnouncementCategoryOption[]>([]);
-const categoryName = computed(
-  () => categories.value.find((item) => item.id_category === categoryId.value)?.name ?? "",
-);
 
 function validate(): boolean {
   titleError.value = title.value.trim() ? "" : "Judul tidak boleh kosong";
-  // Edit: kategori lama yang tidak dikenali boleh dibiarkan kosong (tidak diubah).
-  categoryError.value = categoryId.value || isEdit.value ? "" : "Pilih kategori pengumuman";
-  textError.value = text.value.trim() ? "" : "Isi pengumuman tidak boleh kosong";
-  return !titleError.value && !categoryError.value && !textError.value;
+  textError.value = text.value.trim() ? "" : "Isi edukasi tidak boleh kosong";
+  return !titleError.value && !textError.value;
 }
 
 /* ============================= FOTO LAMPIRAN ============================= */
@@ -70,39 +62,13 @@ const newImage = ref<PreparedImage | null>(null);
 
 const draft = useContentDraft({
   enabled: () => !isEdit.value,
-  source: () => [title.value, categoryId.value, text.value],
-  isEmpty: () => !title.value.trim() && !text.value.trim() && !categoryId.value && !newImage.value,
+  source: () => [title.value, text.value],
+  isEmpty: () => !title.value.trim() && !text.value.trim() && !newImage.value,
   image: newImage,
   save: (draftId, image, removeImage) =>
-    store.saveDraft(
-      draftId,
-      {
-        title: title.value,
-        text: text.value,
-        categoryId: categoryId.value,
-        categoryName: categoryName.value,
-      },
-      image,
-      removeImage,
-    ),
+    store.saveDraft(draftId, { title: title.value, text: text.value }, image, removeImage),
   remove: (draftId) => store.deleteDraft(draftId),
 });
-
-async function restoreDraft() {
-  try {
-    await draft.restore(
-      () => store.listDrafts(),
-      (saved) => {
-        title.value = saved.title ?? "";
-        text.value = parseAnnouncementText(saved.content);
-        categoryId.value = saved.category_id ?? "";
-        newImage.value = saved.image_base64 ? dataUriToImage(saved.image_base64) : null;
-      },
-    );
-  } catch {
-    // Draft cuma pelengkap; gagal membacanya tidak perlu menahan form.
-  }
-}
 
 async function discardDraft() {
   try {
@@ -111,7 +77,6 @@ async function discardDraft() {
     // Kalaupun gagal terhapus, form tetap dikosongkan sesuai permintaan admin.
   }
   title.value = "";
-  categoryId.value = "";
   text.value = "";
   newImage.value = null;
   showToast("Draf dibuang.", "success");
@@ -123,39 +88,42 @@ const loading = ref(false);
 const loadError = ref("");
 
 /** Nilai awal form, pembanding untuk penjaga perubahan yang belum disimpan. */
-const initial = ref({ title: "", categoryId: "", text: "" });
+const initial = ref({ title: "", text: "" });
 
 async function load() {
+  if (!isEdit.value) {
+    try {
+      await draft.restore(
+        () => store.listDrafts(),
+        (saved) => {
+          title.value = saved.title ?? "";
+          text.value = parseEducationText(saved.content);
+          newImage.value = saved.image_base64 ? dataUriToImage(saved.image_base64) : null;
+        },
+      );
+    } catch {
+      // Draft cuma pelengkap; gagal membacanya tidak perlu menahan form.
+    }
+    return;
+  }
+
   loading.value = true;
   loadError.value = "";
 
   try {
-    categories.value = await store.loadCategories();
-
-    if (!isEdit.value) {
-      await restoreDraft();
-      return;
-    }
-
-    const item = await store.find(idPengumuman.value);
+    const item = await store.find(idEdukasi.value);
     if (!item) {
-      loadError.value = "Pengumuman tidak ditemukan. Mungkin sudah dihapus.";
+      loadError.value = "Materi edukasi tidak ditemukan. Mungkin sudah dihapus.";
       return;
     }
 
-    // Daftar dari server belum membawa id kategori, jadi dicocokkan lewat
-    // namanya. Yang tidak cocok dibiarkan kosong = kategori lama tidak diubah.
-    const currentName = resolveCategory(item).toLowerCase();
     title.value = item.title;
-    categoryId.value =
-      categories.value.find((option) => option.name.toLowerCase() === currentName)?.id_category ??
-      "";
     text.value = item.content.text;
-    author.value = item.content.author;
+    tags.value = item.content.tags;
     existingImage.value = item.image_base64 ?? item.image_url ?? "";
-    initial.value = { title: title.value, categoryId: categoryId.value, text: text.value };
+    initial.value = { title: title.value, text: text.value };
   } catch (error) {
-    loadError.value = resolveAuthError(error, "Gagal memuat pengumuman.");
+    loadError.value = resolveAuthError(error, "Gagal memuat materi edukasi.");
   } finally {
     loading.value = false;
   }
@@ -170,12 +138,11 @@ const saving = ref(false);
 const isDirty = computed(
   () =>
     title.value !== initial.value.title ||
-    categoryId.value !== initial.value.categoryId ||
     text.value !== initial.value.text ||
     newImage.value !== null,
 );
 
-/** Batal & simpan berhasil = memang mau pergi, jadi penjaganya dilewati. */
+/** Simpan berhasil = memang mau pergi, jadi penjaganya dilewati. */
 let allowLeave = false;
 const leaveWarned = ref(false);
 
@@ -200,7 +167,7 @@ onBeforeRouteLeave(async () => {
 
 function goBack() {
   if (window.history.state?.back) router.back();
-  else router.replace({ name: "admin-pengumuman" });
+  else router.replace({ name: "admin-edukasi" });
 }
 
 /** Batal di form Edit = memang mau membuang perubahan; di Tambah, draf tetap disimpan. */
@@ -218,23 +185,21 @@ async function handleSubmit() {
 
   const input = {
     title: title.value,
-    categoryId: categoryId.value,
-    categoryName: categoryName.value,
     text: text.value,
-    author: author.value,
+    tags: tags.value,
     image: newImage.value,
   };
 
   saving.value = true;
   try {
     if (isEdit.value) {
-      await store.update(idPengumuman.value, input);
+      await store.update(idEdukasi.value, input);
       store.setFlash("Perubahan berhasil disimpan.");
     } else {
       await store.create(input);
       // Sudah terbit; sisa draft-nya tidak dibutuhkan lagi.
       await draft.discard().catch(() => undefined);
-      store.setFlash("Pengumuman berhasil dipublikasikan.");
+      store.setFlash("Artikel edukasi sampah berhasil dipublikasikan.");
     }
     allowLeave = true;
     goBack();
@@ -256,15 +221,12 @@ const borderClass = (error: string) => (error ? "border-red-500" : "border-prima
 
 <template>
   <main class="mx-auto flex w-full max-w-sm flex-col gap-4 px-6 pt-safe">
-    <PageHeader
-      :title="isEdit ? 'Edit Pengumuman' : 'Tambah Pengumuman'"
-      fallback="admin-pengumuman"
-    />
+    <PageHeader :title="isEdit ? 'Edit Edukasi' : 'Tambah Edukasi'" fallback="admin-edukasi" />
 
     <div v-if="loading" class="flex flex-col gap-4" aria-hidden="true">
       <div class="h-14 animate-pulse rounded-2xl bg-neutral-200" />
-      <div class="h-14 animate-pulse rounded-2xl bg-neutral-200" />
       <div class="h-44 animate-pulse rounded-2xl bg-neutral-200" />
+      <div class="h-40 animate-pulse rounded-2xl bg-neutral-200" />
     </div>
 
     <div
@@ -291,9 +253,9 @@ const borderClass = (error: string) => (error ? "border-red-500" : "border-prima
           :id="`${uid}-judul`"
           v-model="title"
           type="text"
-          maxlength="150"
+          :maxlength="TITLE_MAX"
           autocomplete="off"
-          placeholder="Contoh: Kerja bakti di hari minggu"
+          placeholder="Contoh: Cara Memilah Sampah Anorganik"
           :aria-invalid="Boolean(titleError)"
           :class="[fieldClass, borderClass(titleError)]"
         />
@@ -301,56 +263,14 @@ const borderClass = (error: string) => (error ? "border-red-500" : "border-prima
       </div>
 
       <div class="flex flex-col gap-1.5">
-        <label :for="`${uid}-kategori`" :class="labelClass">Kategori</label>
-        <div class="relative">
-          <select
-            :id="`${uid}-kategori`"
-            v-model="categoryId"
-            :aria-invalid="Boolean(categoryError)"
-            :class="[
-              fieldClass,
-              borderClass(categoryError),
-              'cursor-pointer appearance-none pr-12',
-              categoryId ? '' : 'text-neutral-400',
-            ]"
-          >
-            <option value="" :disabled="!isEdit">
-              {{ isEdit ? "Kategori lama (tidak diubah)" : "Pilih Kategori" }}
-            </option>
-            <option
-              v-for="option in categories"
-              :key="option.id_category"
-              :value="option.id_category"
-              class="text-neutral-900"
-            >
-              {{ option.name }}
-            </option>
-          </select>
-          <svg
-            class="pointer-events-none absolute inset-y-0 right-4 my-auto size-6 text-neutral-900"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="m6 9 6 6 6-6" />
-          </svg>
-        </div>
-        <p v-if="categoryError" :class="errorClass">{{ categoryError }}</p>
-      </div>
-
-      <div class="flex flex-col gap-1.5">
-        <label :for="`${uid}-isi`" :class="labelClass">Isi pengumuman</label>
+        <label :for="`${uid}-isi`" :class="labelClass">Isi edukasi</label>
         <!-- Enter antar paragraf ikut tersimpan; halaman detail menampilkannya
              dengan whitespace-pre-line. -->
         <textarea
           :id="`${uid}-isi`"
           v-model="text"
-          rows="7"
-          placeholder="Tuliskan detail dari pengumumannya disini..."
+          rows="8"
+          placeholder="Tuliskan detail dari edukasi disini..."
           :aria-invalid="Boolean(textError)"
           :class="[fieldClass, borderClass(textError), 'resize-none']"
         />
@@ -360,7 +280,7 @@ const borderClass = (error: string) => (error ? "border-red-500" : "border-prima
       <ImageDropzone
         v-model:image="newImage"
         :existing="existingImage"
-        :max-bytes="ANNOUNCEMENT_IMAGE_MAX_BYTES"
+        :max-bytes="EDUCATION_IMAGE_MAX_BYTES"
         @error="showToast($event, 'warning')"
       />
 

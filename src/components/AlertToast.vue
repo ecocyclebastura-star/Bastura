@@ -15,6 +15,7 @@ const iconColor: Record<ToastVariant, string> = {
   warning: "text-amber-500",
   error: "text-red-600",
   success: "text-primary-600",
+  info: "text-sky-500",
 };
 
 /** Pesan pendek tampil sebagai pill, pesan panjang jadi kartu 2 baris. */
@@ -57,6 +58,11 @@ const isCompact = computed(() => props.message.length <= 42);
           <path
             v-else-if="variant === 'success'"
             d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.1 14.2-4-4 1.4-1.4 2.6 2.6 5.4-5.4 1.4 1.4-6.8 6.8Z"
+          />
+          <!-- info: lingkaran dengan huruf i -->
+          <path
+            v-else-if="variant === 'info'"
+            d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 15h-2v-6h2v6Zm0-8h-2V7h2v2Z"
           />
           <!-- warning: lingkaran dengan seru -->
           <path

@@ -3,8 +3,12 @@ import { invoke } from "@tauri-apps/api/core";
 import { useAdminTransactionStore } from "./adminTransactionStore";
 import { useAnnouncementAdminStore } from "./announcementAdminStore";
 import { useBalanceStore } from "./balanceStore";
+import { useCatalogAdminStore } from "./catalogAdminStore";
+import { useCommissionStore } from "./commissionStore";
 import { useContentStore } from "./contentStore";
+import { useEducationAdminStore } from "./educationAdminStore";
 import { useProfileStore } from "./profileStore";
+import { useScanStore } from "./scanStore";
 import { useScheduleStore } from "./scheduleStore";
 import { useSetoranStore } from "./setoranStore";
 import { useTransactionStore } from "./transactionStore";
@@ -143,6 +147,11 @@ export const useAuthStore = defineStore("auth", {
       useAdminTransactionStore().reset();
       useSetoranStore().reset();
       useAnnouncementAdminStore().reset();
+      useEducationAdminStore().reset();
+      useCatalogAdminStore().reset();
+      useCommissionStore().reset();
+      // Cuma hasil scan terakhir; catatan jatah harian per akun tetap disimpan.
+      useScanStore().clearResult();
     },
   },
 

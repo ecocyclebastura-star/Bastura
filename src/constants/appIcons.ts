@@ -33,6 +33,9 @@ import trashRoundedIcon from "../assets/icon-trash-rounded.svg?raw";
 // Kotak berwarna di daftar transaksi dibuat lewat TransactionKindIcon.vue.
 import setoranIcon from "../assets/icon-setoran.svg?raw";
 import penarikanIcon from "../assets/icon-penarikan.svg?raw";
+// Tombol galeri & senter di halaman scan.
+import galeriScanIcon from "../assets/icon-galeri-scan.svg?raw";
+import senterIcon from "../assets/icon-senter.svg?raw";
 
 export const APP_ICONS = {
   home: homeIcon,
@@ -61,6 +64,8 @@ export const APP_ICONS = {
   trashRounded: trashRoundedIcon,
   setoran: setoranIcon,
   penarikan: penarikanIcon,
+  galeriScan: galeriScanIcon,
+  senter: senterIcon,
 } as const;
 
 export type IconName = keyof typeof APP_ICONS;

@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import type { AppErrorResponse } from "../constants/authErrors";
+import { normalizeRole } from "../constants/wargaAccess";
 import { byNewest, matchesQuery } from "../constants/transactions";
 import { invokeCommand as call } from "../utils/invokeCommand";
 import type { Transaction, TransactionPage, TransactionQuery } from "./transactionStore";
@@ -12,6 +13,8 @@ interface WargaLocalItem {
   name: string | null;
   email: string | null;
   phone: string | null;
+  /** "warga" | "admin" | "super admin"; bisa kosong di data lama. */
+  role: string | null;
   created_at: string | null;
   /** "active" | "blocked", ditulis juga oleh `update_warga_status_local`. */
   status_active: string | null;
@@ -51,9 +54,8 @@ function toWarga(item: WargaLocalItem): Warga {
     name: item.name ?? "",
     email: item.email ?? "",
     phone: item.phone ?? "",
-    // Endpoint /users/account/warga cuma berisi akun warga dan tidak membawa
-    // role maupun foto.
-    role: "warga",
+    // Endpoint /users/account/warga belum membawa foto.
+    role: normalizeRole(item.role),
     is_blocked: /block/i.test(item.status_active ?? ""),
     total_saldo: item.total_balance ?? 0,
     total_sampah: item.total_weight ?? 0,
@@ -124,12 +126,12 @@ export const useWargaStore = defineStore("warga", {
       };
     },
 
-    /** Khusus super admin. Command-nya BELUM ADA di src-tauri. */
+    /** Khusus super admin. */
     promoteToAdmin(idUser: string) {
       return call<unknown>("promote_admin_command", { idUser });
     },
 
-    /** Khusus super admin. Command-nya BELUM ADA di src-tauri. */
+    /** Khusus super admin. */
     demoteToWarga(idUser: string) {
       return call<unknown>("demote_admin_command", { idUser });
     },

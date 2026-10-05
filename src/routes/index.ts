@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import type { RouteRecordRaw } from "vue-router";
-import { ADMIN_ROLES, homeRouteName } from "../constants/roleRoutes";
+import { ADMIN_ROLES, SUPER_ADMIN_ROLE, homeRouteName } from "../constants/roleRoutes";
 import { useAuthStore } from "../stores/authStore";
 import { useOnboardingStore } from "../stores/onboardingStore";
 
@@ -168,9 +168,17 @@ const routes: RouteRecordRaw[] = [
         meta: { hideTabBar: true },
       },
       {
+        // Kamera layar penuh, jadi bottom nav disembunyikan.
         path: "scan",
         name: "user-scan",
         component: () => import("../views/user/scanView.vue"),
+        meta: { hideTabBar: true },
+      },
+      {
+        path: "scan/hasil",
+        name: "user-scan-hasil",
+        component: () => import("../views/user/hasilScanView.vue"),
+        meta: { hideTabBar: true },
       },
       {
         path: "riwayat",
@@ -280,6 +288,72 @@ const routes: RouteRecordRaw[] = [
         path: "verifikasi-penarikan",
         name: "admin-verifikasi-penarikan",
         component: () => import("../views/admin/verifikasiPenarikanView.vue"),
+      },
+      {
+        path: "jenis-sampah",
+        name: "admin-jenis-sampah",
+        component: () => import("../views/admin/jenisSampahAdminView.vue"),
+      },
+      {
+        // Tambah & edit memakai satu form; bedanya ada tidaknya :id.
+        path: "jenis-sampah/tambah",
+        name: "admin-jenis-sampah-tambah",
+        component: () => import("../views/admin/formJenisSampahView.vue"),
+        meta: { hideTabBar: true },
+      },
+      {
+        path: "jenis-sampah/:id/edit",
+        name: "admin-jenis-sampah-edit",
+        component: () => import("../views/admin/formJenisSampahView.vue"),
+        meta: { hideTabBar: true },
+      },
+      {
+        // Tampilan detailnya sama persis dengan versi warga.
+        path: "jenis-sampah/:id",
+        name: "admin-jenis-sampah-detail",
+        component: () => import("../views/user/detailJenisSampahView.vue"),
+      },
+      {
+        path: "edukasi",
+        name: "admin-edukasi",
+        component: () => import("../views/admin/edukasiAdminView.vue"),
+      },
+      {
+        // Tambah & edit memakai satu form; bedanya ada tidaknya :id.
+        path: "edukasi/tambah",
+        name: "admin-edukasi-tambah",
+        component: () => import("../views/admin/formEdukasiView.vue"),
+        meta: { hideTabBar: true },
+      },
+      {
+        path: "edukasi/:id/edit",
+        name: "admin-edukasi-edit",
+        component: () => import("../views/admin/formEdukasiView.vue"),
+        meta: { hideTabBar: true },
+      },
+      {
+        path: "edukasi/:id",
+        name: "admin-edukasi-detail",
+        component: () => import("../views/admin/detailEdukasiView.vue"),
+      },
+      {
+        // Besaran komisi cuma boleh dilihat & diatur super admin.
+        path: "komisi",
+        name: "admin-komisi",
+        component: () => import("../views/admin/komisiView.vue"),
+        meta: { roles: [SUPER_ADMIN_ROLE] },
+      },
+      {
+        path: "komisi/edit",
+        name: "admin-komisi-edit",
+        component: () => import("../views/admin/komisiEditView.vue"),
+        meta: { roles: [SUPER_ADMIN_ROLE], hideTabBar: true },
+      },
+      {
+        path: "komisi/:periode",
+        name: "admin-komisi-detail",
+        component: () => import("../views/admin/komisiDetailView.vue"),
+        meta: { roles: [SUPER_ADMIN_ROLE] },
       },
       ...profileRoutes("admin"),
     ],

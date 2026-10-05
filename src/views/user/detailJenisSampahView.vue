@@ -4,6 +4,7 @@ import { useRoute } from "vue-router";
 import EmptyState from "../../components/EmptyState.vue";
 import PageHeader from "../../components/PageHeader.vue";
 import { resolveAuthError } from "../../constants/authErrors";
+import { useSectionRoutes } from "../../composables/useSectionRoutes";
 import {
   formatHargaSatuan,
   resolveWasteCategory,
@@ -13,6 +14,8 @@ import type { CatalogItem } from "../../stores/wasteStore";
 
 const route = useRoute();
 const wasteStore = useWasteStore();
+// Dipakai warga dan admin; tombol kembali jatuh ke daftar milik masing-masing.
+const { routeName } = useSectionRoutes();
 
 const item = ref<CatalogItem | null>(null);
 const loading = ref(true);
@@ -41,13 +44,13 @@ onMounted(load);
 </script>
 
 <template>
-  <!-- min-h dikurangi 7rem, setinggi pb-28 di UserLayout, supaya kartu harga
+  <!-- min-h dikurangi 7rem, setinggi pb-28 di UserLayout/AdminLayout, supaya kartu harga
        yang didorong mt-auto berhenti pas di atas bottom nav -- bukan
        ketutupan olehnya. -->
   <main
     class="mx-auto flex min-h-[calc(100dvh-7rem)] w-full max-w-sm flex-col px-6 pt-safe"
   >
-    <PageHeader title="Detail" fallback="user-jenis-sampah" />
+    <PageHeader title="Detail" :fallback="routeName('jenis-sampah')" />
 
     <div v-if="loading" class="flex flex-col gap-3 pt-2" aria-hidden="true">
       <div class="aspect-16/9 w-full animate-pulse rounded-2xl bg-neutral-200" />
