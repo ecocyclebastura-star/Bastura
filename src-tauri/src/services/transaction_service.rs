@@ -116,7 +116,7 @@ pub async fn sync_transaction_log_from_server(state: &AppState) -> Result<(), Ap
     let http_status = response.status().as_u16();
 
     if response.status().is_success() {
-        let api_response = match response.json::<TransactionLogApiResponse>().await {
+        let mut api_response = match response.json::<TransactionLogApiResponse>().await {
             Ok(data) => data,
             Err(e) => {
                 tracing::error!("Gagal memparsing JSON /transaction/transaction-log: {}", e);
@@ -124,6 +124,9 @@ pub async fn sync_transaction_log_from_server(state: &AppState) -> Result<(), Ap
             }
         };
 
+        let _ = crate::services::waste_service::sync_catalog_from_server(state).await;
+        let _ = crate::db::transaction_queries::apply_pc_formatting_to_transactions(&state.db, &mut api_response.data.data).await;
+        
         upsert_transactions(&state.db, &api_response.data.data).await?;
         tracing::info!(
             "Berhasil menyimpan {} data transaksi ke SQLite.",
@@ -377,6 +380,94 @@ pub async fn cancel_withdrawal_service(
 
         tracing::error!(
             "Gagal membatalkan penarikan (HTTP {}): {}",
+            http_status,
+            message
+        );
+
+        Err(AppError::ApiError {
+            http_status,
+            status: "error".to_string(),
+            code: code.map(|s| s.to_string()),
+            message,
+        })
+    }
+}
+
+pub async fn get_deposit_detail_service(
+    state: &AppState,
+    id_deposit: String,
+) -> Result<crate::models::transaction_model::DepositDetailData, AppError> {
+    tracing::info!("Mengambil detail setoran sampah untuk ID: {}", id_deposit);
+    
+    let token = state.get_valid_token().await?;
+    let client = create_http_client();
+    let url = format!("{}/deposits/{}", API_BASE_URL, id_deposit);
+    
+    let res = client
+        .get(&url)
+        .header(AUTHORIZATION, format!("Bearer {}", token))
+        .send()
+        .await;
+        
+    let response = match res {
+        Ok(r) => r,
+        Err(e) => {
+            log_network_error("Get Deposit Detail (kirim request)", &e);
+            return Err(AppError::Network(e));
+        }
+    };
+    
+    let http_status = response.status().as_u16();
+    
+    if response.status().is_success() {
+        let mut api_response = match response.json::<crate::models::transaction_model::DepositDetailApiResponse>().await {
+            Ok(data) => data,
+            Err(e) => {
+                tracing::error!("Gagal memparsing JSON /deposits/:id: {}", e);
+                return Err(e.into());
+            }
+        };
+        
+        // Pastikan katalog lokal di-sync dulu secara diam-diam
+        // supaya SQLite punya data 'unit' paling terbaru
+        let _ = crate::services::waste_service::sync_catalog_from_server(state).await;
+        
+        // Loop over items to inject unit if we have the category_id
+        for item in api_response.data.items.iter_mut() {
+            if let Some(cat_id) = &item.category_id {
+                match crate::db::waste_queries::get_unit_by_waste_id(&state.db, cat_id).await {
+                    Ok(Some(unit)) => item.unit = Some(unit),
+                    Ok(None) => {}, // not in local DB
+                    Err(e) => {
+                        tracing::warn!("Gagal query unit untuk {}: {}", cat_id, e);
+                    }
+                }
+            }
+        }
+        
+        Ok(api_response.data)
+    } else {
+        let body_json = response.json::<serde_json::Value>().await.ok();
+        let code = body_json
+            .as_ref()
+            .and_then(|v| v.get("code"))
+            .and_then(|c| c.as_str());
+
+        let fallback_msg = match http_status {
+            404 => "Gagal: Detail setoran tidak ditemukan.",
+            403 | 401 => "Sesi tidak valid atau akses ditolak.",
+            _ => "Gagal mengambil detail setoran sampah.",
+        };
+
+        let message = body_json
+            .as_ref()
+            .and_then(|v| v.get("message"))
+            .and_then(|m| m.as_str())
+            .unwrap_or(fallback_msg)
+            .to_string();
+
+        tracing::error!(
+            "Gagal get deposit detail (HTTP {}): {}",
             http_status,
             message
         );

@@ -139,6 +139,7 @@ pub fn run() {
             crate::controllers::transaction_controller::get_transaction_history_command,
             crate::controllers::transaction_controller::create_withdrawal_command,
             crate::controllers::transaction_controller::cancel_withdrawal_command,
+            crate::controllers::transaction_controller::get_deposit_detail_command,
             crate::controllers::transaction_controller::add_deposit_command,
             crate::controllers::transaction_controller::edit_deposit_command,
             crate::controllers::transaction_controller::delete_deposit_command,

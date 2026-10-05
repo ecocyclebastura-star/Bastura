@@ -272,6 +272,7 @@ pub async fn get_user_transactions_admin_service(
     };
     
     let mut items = api_response.data.data;
+    let _ = crate::services::waste_service::sync_catalog_from_server(state).await;
     let _ = crate::db::transaction_queries::apply_pc_formatting_to_transactions(&state.db, &mut items).await;
     
     Ok(items)
@@ -326,7 +327,10 @@ pub async fn sync_global_transactions_from_server(state: &AppState) -> Result<()
         }
     };
 
-    let items = api_response.data.data;
+    let mut items = api_response.data.data;
+    let _ = crate::services::waste_service::sync_catalog_from_server(state).await;
+    let _ = crate::db::transaction_queries::apply_pc_formatting_to_transactions(&state.db, &mut items).await;
+    
     if let Err(e) = crate::db::admin_queries::upsert_transaksi_global_batch(&state.db, &items).await {
         tracing::error!("Gagal menyimpan batch transaksi global ke SQLite: {}", e);
         return Err(e);

@@ -31,6 +31,20 @@ pub async fn cancel_withdrawal_command(
 }
 
 #[tauri::command]
+pub async fn get_deposit_detail_command(
+    state: State<'_, AppState>,
+    id_deposit: String,
+) -> Result<crate::models::transaction_model::DepositDetailData, AppError> {
+    tracing::info!("Menjalankan command: get_deposit_detail_command");
+    
+    // 1. Otorisasi (Memastikan User adalah Admin / Super Admin)
+    crate::middlewares::role_guard::require_admin(&state).await?;
+    
+    // 2. Lempar ke layer Service
+    crate::services::transaction_service::get_deposit_detail_service(&state, id_deposit).await
+}
+
+#[tauri::command]
 pub async fn add_deposit_command(
     state: State<'_, AppState>,
     payload: crate::models::transaction_model::AddDepositRequest,

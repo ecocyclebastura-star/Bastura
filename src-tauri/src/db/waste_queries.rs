@@ -80,3 +80,28 @@ pub async fn get_cached_catalog(
 
     Ok(rows)
 }
+
+pub async fn get_unit_by_waste_id(
+    pool: &SqlitePool,
+    id_waste: &str,
+) -> Result<Option<String>, AppError> {
+    // We just need the `unit` field or description to extract [UNIT:PC]
+    let row: Option<(Option<String>, Option<String>)> = sqlx::query_as(
+        "SELECT unit, description FROM waste_catalog_cache WHERE id_waste = ?"
+    )
+    .bind(id_waste)
+    .fetch_optional(pool)
+    .await?;
+
+    if let Some((unit, desc)) = row {
+        // Fallback checks just in case
+        if let Some(d) = desc {
+            if d.contains("[UNIT:PC]") {
+                return Ok(Some("pc".to_string()));
+            }
+        }
+        return Ok(unit);
+    }
+    
+    Ok(None)
+}

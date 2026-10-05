@@ -123,3 +123,40 @@ pub struct EditDepositRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct DepositDetailUser {
+    pub id: Option<String>,
+    pub name: Option<String>,
+    pub phone: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct DepositDetailItem {
+    pub id: String,
+    pub category_id: Option<String>,
+    pub category_name: Option<String>,
+    pub catalog_name: Option<String>,
+    pub description: Option<String>,
+    pub weight_kg: Option<String>,
+    pub unit: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct DepositDetailData {
+    pub id: String,
+    pub user: DepositDetailUser,
+    pub items: Vec<DepositDetailItem>,
+    pub total_weight: Option<String>,
+    pub status: String,
+    pub created_at: String,
+    pub updated_at: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct DepositDetailApiResponse {
+    pub status: String,
+    pub message: String,
+    pub code: String,
+    pub data: DepositDetailData,
+}
