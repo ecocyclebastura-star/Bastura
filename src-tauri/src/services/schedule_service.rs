@@ -6,8 +6,8 @@ use crate::{AppError, AppState};
 pub async fn get_schedule_service(state: &AppState) -> Result<Vec<ScheduleItem>, AppError> {
     tracing::info!("Memulai proses pengambilan jadwal operasional...");
 
-    // 1. Validasi Role (Middleware-style)
-    let token = require_admin(state).await?;
+    // 1. Ambil token sesi aktif (dapat diakses oleh warga maupun admin)
+    let token = state.get_valid_token().await?;
 
     // 2. HTTP Request
     let client = create_http_client();

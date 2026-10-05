@@ -12,11 +12,11 @@ pub struct BalanceUpdatePayload {
 // =============================================================================
 
 /// Field `data` dari response balance API.
-/// `total_balance` bertipe String sesuai response server
-/// (contoh: "0", "1500"). Parsing ke i64 dilakukan di service layer.
+/// `total_balance` bisa dikirim dari server sebagai String ("1500") maupun integer (1500).
 #[derive(Deserialize)]
 pub struct BalanceData {
-    pub total_balance: String,
+    #[serde(deserialize_with = "crate::models::transaction_model::deserialize_nominal")]
+    pub total_balance: i64,
 }
 
 /// Root response dari GET /transaction/balance.
@@ -26,7 +26,7 @@ pub struct BalanceData {
 ///   "status": "success",
 ///   "message": "Saldo berhasil diambil",
 ///   "code": "GET_BALANCE_SUCCESS",
-///   "data": { "total_balance": "1500" }
+///   "data": { "total_balance": 1500 }
 /// }
 /// ```
 #[derive(Deserialize)]

@@ -1,4 +1,4 @@
-use crate::db::admin_queries::{get_cached_warga, upsert_warga_batch, update_warga_status_local};
+// Tidak lagi menggunakan cache lokal untuk warga
 use crate::middlewares::role_guard::require_admin;
 use crate::models::admin_model::{
     AdminGetUserLogRequest, BlockWargaApiResponse, BlockWargaItem, UnblockWargaApiResponse,
@@ -10,8 +10,11 @@ use crate::AppError;
 use crate::AppState;
 use reqwest::header::AUTHORIZATION;
 
-pub async fn sync_warga_from_server(state: &AppState) -> Result<(), AppError> {
-    let token = state.get_valid_token().await?;
+pub async fn get_daftar_warga_service(
+    state: &AppState,
+    search_query: Option<String>,
+) -> Result<Vec<WargaLocalItem>, AppError> {
+    let token = require_admin(state).await?;
 
     let client = create_http_client();
     let url = format!("{}/users/account/warga", API_BASE_URL);
@@ -20,35 +23,19 @@ pub async fn sync_warga_from_server(state: &AppState) -> Result<(), AppError> {
         .get(&url)
         .header(AUTHORIZATION, format!("Bearer {}", token))
         .send()
-        .await;
+        .await?;
 
-    let response = match res {
-        Ok(r) => {
-            if r.status().is_success() {
-                r
-            } else {
-                let status = r.status();
-                let body_text = r.text().await.unwrap_or_default();
-                tracing::warn!(
-                    "API /users/account merespons dengan status error: {} - {}",
-                    status,
-                    body_text
-                );
-                return Err(AppError::ApiError {
-                    http_status: status.as_u16(),
-                    status: "error".to_string(),
-                    code: None,
-                    message: format!("HTTP Status: {} - {}", status, body_text),
-                });
-            }
-        }
-        Err(e) => {
-            tracing::warn!(
-                "Gagal mengambil data warga dari server (Mungkin offline): {}",
-                e
-            );
-            return Err(e.into());
-        }
+    let response = if res.status().is_success() {
+        res
+    } else {
+        let status = res.status();
+        let body_text = res.text().await.unwrap_or_default();
+        return Err(AppError::ApiError {
+            http_status: status.as_u16(),
+            status: "error".to_string(),
+            code: None,
+            message: format!("HTTP Status: {} - {}", status, body_text),
+        });
     };
 
     let api_response: WargaApiResponse = match response.json().await {
@@ -61,18 +48,30 @@ pub async fn sync_warga_from_server(state: &AppState) -> Result<(), AppError> {
 
     let mut local_items = Vec::new();
     for api_item in api_response.message.data {
+        if let Some(search) = &search_query {
+            let search_lower = search.to_lowercase();
+            let name_match = api_item.name.as_deref().unwrap_or("").to_lowercase().contains(&search_lower);
+            let email_match = api_item.email.as_deref().unwrap_or("").to_lowercase().contains(&search_lower);
+            if !name_match && !email_match {
+                continue;
+            }
+        }
+
         let balance_held = api_item
             .balance_held
+            .clone()
             .unwrap_or_default()
             .parse::<i64>()
             .unwrap_or(0);
         let total_balance = api_item
             .total_balance
+            .clone()
             .unwrap_or_default()
             .parse::<i64>()
             .unwrap_or(0);
         let total_weight = api_item
             .total_weight
+            .clone()
             .unwrap_or_default()
             .parse::<i64>()
             .unwrap_or(0);
@@ -90,34 +89,7 @@ pub async fn sync_warga_from_server(state: &AppState) -> Result<(), AppError> {
         });
     }
 
-    if !local_items.is_empty() {
-        if let Err(e) = upsert_warga_batch(&state.db, &local_items).await {
-            tracing::error!("Gagal menyimpan batch warga ke SQLite: {}", e);
-            return Err(e);
-        }
-        tracing::info!(
-            "Berhasil sinkronisasi {} data warga ke SQLite.",
-            local_items.len()
-        );
-    }
-
-    Ok(())
-}
-
-pub async fn get_daftar_warga_service(
-    state: &AppState,
-    search_query: Option<String>,
-) -> Result<Vec<WargaLocalItem>, AppError> {
-    require_admin(state).await?;
-
-    if let Err(e) = sync_warga_from_server(state).await {
-        tracing::warn!(
-            "Sinkronisasi warga dari server gagal (menggunakan data cache): {}",
-            e
-        );
-    }
-
-    get_cached_warga(&state.db, search_query).await
+    Ok(local_items)
 }
 
 pub async fn block_warga_service(
@@ -173,9 +145,6 @@ pub async fn block_warga_service(
     };
 
     if let Some(item) = api_response.data.data.first() {
-        if let Err(e) = update_warga_status_local(&state.db, &target_user_id, "blocked").await {
-            tracing::warn!("Gagal memperbarui status warga di cache lokal: {}", e);
-        }
         Ok(item.clone())
     } else {
         Err(AppError::ApiError {
@@ -240,9 +209,6 @@ pub async fn unblock_warga_service(
     };
 
     let item = api_response.data.data;
-    if let Err(e) = update_warga_status_local(&state.db, &target_user_id, "active").await {
-        tracing::warn!("Gagal memperbarui status warga di cache lokal: {}", e);
-    }
     
     Ok(item)
 }
@@ -304,7 +270,10 @@ pub async fn get_user_transactions_admin_service(
         }
     };
     
-    Ok(api_response.data.data)
+    let mut items = api_response.data.data;
+    let _ = crate::db::transaction_queries::apply_pc_formatting_to_transactions(&state.db, &mut items).await;
+    
+    Ok(items)
 }
 
 pub async fn sync_global_transactions_from_server(state: &AppState) -> Result<(), AppError> {
@@ -357,13 +326,11 @@ pub async fn sync_global_transactions_from_server(state: &AppState) -> Result<()
     };
 
     let items = api_response.data.data;
-    if !items.is_empty() {
-        if let Err(e) = crate::db::admin_queries::upsert_transaksi_global_batch(&state.db, &items).await {
-            tracing::error!("Gagal menyimpan batch transaksi global ke SQLite: {}", e);
-            return Err(e);
-        }
-        tracing::info!("Berhasil sinkronisasi {} data transaksi global ke SQLite.", items.len());
+    if let Err(e) = crate::db::admin_queries::upsert_transaksi_global_batch(&state.db, &items).await {
+        tracing::error!("Gagal menyimpan batch transaksi global ke SQLite: {}", e);
+        return Err(e);
     }
+    tracing::info!("Berhasil sinkronisasi {} data transaksi global ke SQLite.", items.len());
 
     Ok(())
 }

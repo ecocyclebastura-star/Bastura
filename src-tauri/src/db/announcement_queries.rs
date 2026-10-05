@@ -146,3 +146,70 @@ pub async fn get_cached_announcements(
 
     Ok(announcements)
 }
+
+pub async fn upsert_announcement_draft(
+    pool: &SqlitePool,
+    draft: &crate::models::announcement_model::AnnouncementDraft,
+) -> Result<(), AppError> {
+    sqlx::query(
+        r#"
+        INSERT INTO announcement_drafts_cache (draft_id, title, content, category_id, image_local_path, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(draft_id) DO UPDATE SET
+            title = excluded.title,
+            content = excluded.content,
+            category_id = excluded.category_id,
+            image_local_path = excluded.image_local_path,
+            updated_at = excluded.updated_at
+        "#
+    )
+    .bind(&draft.draft_id)
+    .bind(&draft.title)
+    .bind(&draft.content)
+    .bind(&draft.category_id)
+    .bind(&draft.image_local_path)
+    .bind(&draft.updated_at)
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
+pub async fn get_draft_announcements(
+    pool: &SqlitePool,
+) -> Result<Vec<crate::models::announcement_model::AnnouncementDraft>, AppError> {
+    let rows = sqlx::query_as::<_, crate::models::announcement_model::AnnouncementDraft>(
+        "SELECT draft_id, title, content, category_id, image_local_path, updated_at FROM announcement_drafts_cache ORDER BY updated_at DESC"
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(rows)
+}
+
+pub async fn delete_announcement_draft(
+    pool: &SqlitePool,
+    draft_id: &str,
+) -> Result<(), AppError> {
+    sqlx::query("DELETE FROM announcement_drafts_cache WHERE draft_id = ?")
+        .bind(draft_id)
+        .execute(pool)
+        .await?;
+
+    Ok(())
+}
+
+
+pub async fn get_announcement_draft_by_id(
+    pool: &SqlitePool,
+    draft_id: &str,
+) -> Result<crate::models::announcement_model::AnnouncementDraft, AppError> {
+    let row = sqlx::query_as::<_, crate::models::announcement_model::AnnouncementDraft>(
+        "SELECT draft_id, title, content, category_id, image_local_path, updated_at FROM announcement_drafts_cache WHERE draft_id = ?"
+    )
+    .bind(draft_id)
+    .fetch_one(pool)
+    .await?;
+
+    Ok(row)
+}

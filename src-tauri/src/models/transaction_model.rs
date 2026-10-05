@@ -100,3 +100,26 @@ pub struct CancelWithdrawalApiResponse {
     pub code: String,
     pub data: Option<CancelWithdrawalResponseData>,
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct AddDepositRequest {
+    pub user_id: String,
+    pub category_id: String,
+    pub weight_kg: f64,
+    pub description: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct EditDepositRequest {
+    #[serde(skip_serializing)] 
+    pub id_deposit: String,
+    
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub category_id: Option<String>, 
+    
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub weight_kg: Option<f64>,
+    
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}

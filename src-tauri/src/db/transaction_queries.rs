@@ -1,6 +1,35 @@
 use crate::models::transaction_model::TransactionItem;
 use crate::AppError;
 use sqlx::{QueryBuilder, Sqlite, SqlitePool};
+use std::collections::HashSet;
+
+pub async fn apply_pc_formatting_to_transactions(
+    pool: &SqlitePool,
+    transactions: &mut [TransactionItem],
+) -> Result<(), AppError> {
+    let pc_items: Vec<String> = sqlx::query_scalar(
+        "SELECT LOWER(name) FROM waste_catalog_cache WHERE description LIKE '%[UNIT:PC]%'"
+    )
+    .fetch_all(pool)
+    .await?;
+
+    let pc_set: HashSet<String> = pc_items.into_iter().collect();
+
+    for item in transactions {
+        if let Some(desc) = &item.deskripsi {
+            let mut parts: Vec<&str> = desc.split('/').collect();
+            if parts.len() >= 2 {
+                let name = parts[0..parts.len()-1].join("/").trim().to_lowercase();
+                if pc_set.contains(&name) {
+                    let w_str = parts.pop().unwrap().replace("kg", "").replace("pc", "").trim().to_string();
+                    item.deskripsi = Some(format!("{} / {} pc", parts.join("/").trim(), w_str));
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
 
 pub async fn upsert_transactions(
     pool: &SqlitePool,
@@ -94,6 +123,8 @@ pub async fn get_cached_transaction_history(
     } else {
         None
     };
+
+    let _ = apply_pc_formatting_to_transactions(pool, &mut rows).await;
 
     Ok(crate::models::transaction_model::TransactionResponseData {
         data: rows,

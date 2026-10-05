@@ -114,6 +114,36 @@ pub async fn init_db(db_path: &Path) -> Result<SqlitePool, AppError> {
             .await;
     }
 
+    // Migrasi otomatis v7: splitbill_catalog_cache is_pc
+    let is_old_sb_catalog: bool = sqlx::query_scalar(
+        "SELECT COUNT(*) == 0 FROM pragma_table_info('splitbill_catalog_cache') WHERE name = 'is_pc'",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap_or(false);
+
+    if is_old_sb_catalog {
+        tracing::info!("Mendeteksi skema lama pada splitbill_catalog_cache. Menghapus tabel...");
+        let _ = sqlx::query("DROP TABLE splitbill_catalog_cache")
+            .execute(&pool)
+            .await;
+    }
+
+    // Migrasi otomatis v8: draft_posts skema lama dihapus
+    let has_draft_posts: bool = sqlx::query_scalar(
+        "SELECT COUNT(*) > 0 FROM sqlite_master WHERE type='table' AND name='draft_posts'",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap_or(false);
+
+    if has_draft_posts {
+        tracing::info!("Mendeteksi tabel lama draft_posts. Menghapus tabel...");
+        let _ = sqlx::query("DROP TABLE draft_posts")
+            .execute(&pool)
+            .await;
+    }
+
     if let Err(e) = sqlx::query(
         "
         /* =========================================
@@ -212,17 +242,26 @@ pub async fn init_db(db_path: &Path) -> Result<SqlitePool, AppError> {
            KELOMPOK 4: Draft Pengumuman/Edukasi
            ========================================= */
 
-        -- 8. Draft Pengumuman/Edukasi
-        CREATE TABLE IF NOT EXISTS draft_posts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, 
-            post_type TEXT NOT NULL,             
+        -- 8. Draft Pengumuman
+        CREATE TABLE IF NOT EXISTS announcement_drafts_cache (
+            draft_id TEXT PRIMARY KEY,
             title TEXT,
-            content TEXT,                        
-            local_img_path TEXT,                 
-            last_saved DATETIME DEFAULT CURRENT_TIMESTAMP
+            content TEXT,
+            category_id TEXT,
+            image_local_path TEXT,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
         
-        -- 9. Draft Hitung Bagi Hasil (Split Bill)
+        -- 9. Draft Edukasi
+        CREATE TABLE IF NOT EXISTS education_drafts_cache (
+            draft_id TEXT PRIMARY KEY,
+            title TEXT,
+            content TEXT,
+            image_local_path TEXT,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        -- 10. Draft Hitung Bagi Hasil (Split Bill)
         CREATE TABLE IF NOT EXISTS draft_split_bill (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             pendapatan_kotor TEXT NOT NULL,
@@ -249,7 +288,8 @@ pub async fn init_db(db_path: &Path) -> Result<SqlitePool, AppError> {
         -- 11. Cache Katalog Split Bill
         CREATE TABLE IF NOT EXISTS splitbill_catalog_cache (
             name TEXT PRIMARY KEY,
-            price REAL NOT NULL
+            price REAL NOT NULL,
+            is_pc INTEGER DEFAULT 0
         );
         ",
     )

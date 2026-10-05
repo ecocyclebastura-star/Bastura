@@ -52,7 +52,9 @@ pub async fn init_splitbill_service(
                 if response.status().is_success() {
                     if let Ok(tx_data) = response.json::<GlobalTxApiResponse>().await {
                         for mut item in tx_data.data.data {
+                            let stat = item.status.to_lowercase();
                             if item.jenis_transaksi == "Setoran Sampah" 
+                                && (stat == "processed" || stat == "pending" || stat == "diproses")
                                 && item.tanggal_transaksi >= start_iso 
                                 && item.tanggal_transaksi <= end_iso 
                             {
@@ -107,6 +109,11 @@ pub async fn confirm_splitbill_service(
     if req.alokasi.is_empty() {
         return Err(AppError::ValidationError("Alokasi tidak boleh kosong".to_string()));
     }
+    
+    if req.alokasi.iter().any(|item| item.final_amount == 0) {
+        return Err(AppError::ValidationError("Terdapat user dengan final amount 0, alokasi ditolak.".to_string()));
+    }
+
     let client = create_http_client();
     let res = client
         .post(&format!("{}/splitbills/confirm", API_BASE_URL))
@@ -191,31 +198,44 @@ pub async fn get_user_splitbill_detail_service(
 
     // 3. Hitung Nilai Dasar per Item
     let mut item_nilai_dasar = Vec::new();
+    let mut final_items = Vec::new();
     let mut total_nilai_dasar: f64 = 0.0;
 
-    for item in &filtered_items {
+    for mut item in filtered_items {
         let mut weight: f64 = 1.0;
         let mut price: f64 = 1.0;
         
         if let Some(desc) = &item.deskripsi {
-            let parts: Vec<&str> = desc.split('/').collect();
+            let mut parts: Vec<&str> = desc.split('/').collect();
             if parts.len() >= 2 {
-                let nama_sampah = parts[0].trim().to_lowercase();
-                price = *catalog_map.get(&nama_sampah).unwrap_or(&1.0);
-                
-                let w_str = parts[1].replace("kg", "").trim().to_string();
+                // Bagian paling akhir adalah berat/unit, misal "4.00kg"
+                let w_str = parts.pop().unwrap().replace("kg", "").replace("pc", "").trim().to_string();
                 weight = w_str.parse::<f64>().unwrap_or(1.0);
+                
+                // Sisanya (setelah digabung kembali) adalah nama sampah
+                let nama_sampah_asli = parts.join("/").trim().to_string();
+                let nama_sampah_lower = nama_sampah_asli.to_lowercase();
+                
+                // Cari harga di katalog
+                let (cat_price, is_pc) = *catalog_map.get(&nama_sampah_lower).unwrap_or(&(1.0, false));
+                price = cat_price;
+
+                // Rewrite deskripsi di frontend jika ternyata itu item PC
+                if is_pc {
+                    item.deskripsi = Some(format!("{}/{}pc", nama_sampah_asli, w_str));
+                }
             }
         }
         
         let nilai_dasar = weight * price;
         item_nilai_dasar.push(nilai_dasar);
         total_nilai_dasar += nilai_dasar;
+        final_items.push(item);
     }
 
     // 4. Kalkulasi Rasio Akhir
     let mut result = Vec::new();
-    for (i, item) in filtered_items.into_iter().enumerate() {
+    for (i, item) in final_items.into_iter().enumerate() {
         let nilai_dasar = item_nilai_dasar[i];
         let nominal_val = if total_nilai_dasar > 0.0 {
             (nilai_dasar / total_nilai_dasar * (alokasi_baru as f64)).round() as i64

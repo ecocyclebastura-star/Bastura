@@ -29,3 +29,39 @@ pub async fn cancel_withdrawal_command(
     tracing::info!("Menjalankan command: cancel_withdrawal_command");
     crate::services::transaction_service::cancel_withdrawal_service(&state, id_transaksi).await
 }
+
+#[tauri::command]
+pub async fn add_deposit_command(
+    state: State<'_, AppState>,
+    payload: crate::models::transaction_model::AddDepositRequest,
+) -> Result<(), AppError> {
+    tracing::info!("Menjalankan command: add_deposit_command");
+    
+    // 1. Otorisasi (Memastikan User adalah Admin / Super Admin)
+    crate::middlewares::role_guard::require_admin(&state).await?;
+    
+    // 2. Lempar ke layer Service
+    crate::services::transaction_service::add_deposit_service(&state, payload).await
+}
+
+#[tauri::command]
+pub async fn edit_deposit_command(
+    state: State<'_, AppState>,
+    payload: crate::models::transaction_model::EditDepositRequest,
+) -> Result<(), AppError> {
+    tracing::info!("Menjalankan command: edit_deposit_command");
+    
+    crate::middlewares::role_guard::require_admin(&state).await?;
+    crate::services::transaction_service::edit_deposit_service(&state, payload).await
+}
+
+#[tauri::command]
+pub async fn delete_deposit_command(
+    state: State<'_, AppState>,
+    id_deposit: String,
+) -> Result<(), AppError> {
+    tracing::info!("Menjalankan command: delete_deposit_command");
+    
+    crate::middlewares::role_guard::require_admin(&state).await?;
+    crate::services::transaction_service::delete_deposit_service(&state, id_deposit).await
+}

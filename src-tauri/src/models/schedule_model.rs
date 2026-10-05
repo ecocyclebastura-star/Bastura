@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 pub struct ScheduleItem {
     pub id_jadwal: i64,
     pub setor_time: String,
-    pub created_at: String,
-    pub updated_at: String,
+    pub created_at: Option<String>,
+    pub updated_at: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -16,8 +16,8 @@ pub struct ScheduleDataWrapper {
 #[derive(Deserialize, Debug)]
 pub struct ScheduleApiResponse {
     pub status: String,
-    pub message: String,
-    pub code: String,
+    pub message: Option<String>,
+    pub code: Option<String>,
     pub data: ScheduleDataWrapper,
 }
 

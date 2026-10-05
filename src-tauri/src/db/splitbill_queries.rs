@@ -39,14 +39,18 @@ pub async fn save_splitbill_cache(
 
     for catalog in catalogs {
         let price = catalog.price.parse::<f64>().unwrap_or(1.0);
+        let is_pc = if let Some(desc) = &catalog.description {
+            if desc.contains("[UNIT:PC]") { 1 } else { 0 }
+        } else { 0 };
         sqlx::query(
             r#"
-            INSERT INTO splitbill_catalog_cache (name, price)
-            VALUES (?, ?)
+            INSERT INTO splitbill_catalog_cache (name, price, is_pc)
+            VALUES (?, ?, ?)
             "#,
         )
         .bind(catalog.name.to_lowercase())
         .bind(price)
+        .bind(is_pc)
         .execute(&mut *tx)
         .await?;
     }
@@ -63,20 +67,21 @@ pub async fn clear_splitbill_cache(pool: &SqlitePool) -> Result<(), AppError> {
     Ok(())
 }
 
-pub async fn get_cached_catalog_map(pool: &SqlitePool) -> Result<HashMap<String, f64>, AppError> {
+pub async fn get_cached_catalog_map(pool: &SqlitePool) -> Result<HashMap<String, (f64, bool)>, AppError> {
     #[derive(sqlx::FromRow)]
     struct CatalogRow {
         name: String,
         price: f64,
+        is_pc: i32,
     }
 
-    let rows: Vec<CatalogRow> = sqlx::query_as("SELECT name, price FROM splitbill_catalog_cache")
+    let rows: Vec<CatalogRow> = sqlx::query_as("SELECT name, price, is_pc FROM splitbill_catalog_cache")
         .fetch_all(pool)
         .await?;
 
     let mut map = HashMap::new();
     for row in rows {
-        map.insert(row.name, row.price);
+        map.insert(row.name, (row.price, row.is_pc == 1));
     }
     
     Ok(map)

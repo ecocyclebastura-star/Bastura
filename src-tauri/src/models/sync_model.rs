@@ -7,6 +7,7 @@ pub struct SyncData {
     pub announcements_up: Option<String>,
     pub education_up: Option<String>,
     pub simba_up: Option<String>,
+    pub catalog_up: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

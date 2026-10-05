@@ -133,3 +133,97 @@ pub async fn get_cached_education(
 
     Ok(education_list)
 }
+
+pub async fn upsert_education_draft(
+    pool: &SqlitePool,
+    draft: &crate::models::education_model::EducationDraft,
+) -> Result<(), AppError> {
+    sqlx::query(
+        r#"
+        INSERT INTO education_drafts_cache (draft_id, title, content, image_local_path, updated_at)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(draft_id) DO UPDATE SET
+            title = excluded.title,
+            content = excluded.content,
+            image_local_path = excluded.image_local_path,
+            updated_at = excluded.updated_at
+        "#,
+    )
+    .bind(&draft.draft_id)
+    .bind(&draft.title)
+    .bind(&draft.content)
+    .bind(&draft.image_local_path)
+    .bind(&draft.updated_at)
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+pub async fn get_education_draft_by_id(
+    pool: &SqlitePool,
+    draft_id: &str,
+) -> Result<crate::models::education_model::EducationDraft, AppError> {
+    #[derive(sqlx::FromRow)]
+    struct DraftRow {
+        draft_id: String,
+        title: Option<String>,
+        content: Option<String>,
+        image_local_path: Option<String>,
+        updated_at: String,
+    }
+
+    let row = sqlx::query_as::<_, DraftRow>(
+        "SELECT draft_id, title, content, image_local_path, updated_at FROM education_drafts_cache WHERE draft_id = ?",
+    )
+    .bind(draft_id)
+    .fetch_one(pool)
+    .await?;
+
+    Ok(crate::models::education_model::EducationDraft {
+        draft_id: row.draft_id,
+        title: row.title,
+        content: row.content,
+        image_local_path: row.image_local_path,
+        updated_at: row.updated_at,
+    })
+}
+
+pub async fn get_draft_educations(
+    pool: &SqlitePool,
+) -> Result<Vec<crate::models::education_model::EducationDraft>, AppError> {
+    #[derive(sqlx::FromRow)]
+    struct DraftRow {
+        draft_id: String,
+        title: Option<String>,
+        content: Option<String>,
+        image_local_path: Option<String>,
+        updated_at: String,
+    }
+
+    let rows = sqlx::query_as::<_, DraftRow>(
+        "SELECT draft_id, title, content, image_local_path, updated_at FROM education_drafts_cache ORDER BY updated_at DESC",
+    )
+    .fetch_all(pool)
+    .await?;
+
+    let drafts = rows
+        .into_iter()
+        .map(|row| crate::models::education_model::EducationDraft {
+            draft_id: row.draft_id,
+            title: row.title,
+            content: row.content,
+            image_local_path: row.image_local_path,
+            updated_at: row.updated_at,
+        })
+        .collect();
+
+    Ok(drafts)
+}
+
+pub async fn delete_education_draft(pool: &SqlitePool, draft_id: &str) -> Result<(), AppError> {
+    sqlx::query("DELETE FROM education_drafts_cache WHERE draft_id = ?")
+        .bind(draft_id)
+        .execute(pool)
+        .await?;
+    Ok(())
+}

@@ -7,3 +7,4 @@ pub mod waste_controller;
 pub mod schedule_controller;
 pub mod admin_controller;
 pub mod splitbill_controller;
+pub mod super_admin_controller;

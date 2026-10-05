@@ -41,6 +41,17 @@ pub async fn upsert_catalog_item(
     Ok(())
 }
 
+pub async fn delete_catalog_item(
+    pool: &SqlitePool,
+    id_waste: &str,
+) -> Result<(), AppError> {
+    sqlx::query("DELETE FROM waste_catalog_cache WHERE id_waste = ?")
+        .bind(id_waste)
+        .execute(pool)
+        .await?;
+    Ok(())
+}
+
 pub async fn get_cached_catalog(
     pool: &SqlitePool,
     search_query: Option<String>,

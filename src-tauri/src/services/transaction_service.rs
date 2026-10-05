@@ -13,7 +13,7 @@ use reqwest::header::AUTHORIZATION;
 /// 1. Ambil access token yang valid dari AppState (RAM).
 /// 2. Kirim GET request ke `/transaction/balance` dengan Bearer token.
 /// 3. Parse JSON response ke `BalanceApiResponse`.
-/// 4. Konversi `total_balance` (String dari server) ke `i64` secara aman.
+/// 4. Ambil `total_balance` (i64 dari server).
 /// 5. Simpan hasil ke tabel `profile_cache` di SQLite sebagai cache persisten.
 /// 6. Kembalikan nilai saldo.
 pub async fn fetch_real_balance(state: &AppState) -> Result<i64, AppError> {
@@ -79,20 +79,8 @@ pub async fn fetch_real_balance(state: &AppState) -> Result<i64, AppError> {
         }
     };
 
-    // 5. Konversi String → i64 secara aman (tidak akan panic)
-    //    Jika server mengirim nilai yang tidak valid, fallback ke 0.
-    let balance: i64 = api_res
-        .data
-        .total_balance
-        .parse::<i64>()
-        .unwrap_or_else(|e| {
-            tracing::warn!(
-                "fetch_real_balance: Gagal parse total_balance '{}' ke i64: {}. Fallback ke 0.",
-                api_res.data.total_balance,
-                e
-            );
-            0
-        });
+    // 5. Ambil nilai i64
+    let balance: i64 = api_res.data.total_balance;
 
     // 6. Simpan ke SQLite sebagai cache persisten
     profile_queries::update_user_balance(&state.db, balance).await?;
@@ -399,5 +387,213 @@ pub async fn cancel_withdrawal_service(
             code: code.map(|s| s.to_string()),
             message,
         })
+    }
+}
+
+pub async fn add_deposit_service(
+    state: &AppState,
+    payload: crate::models::transaction_model::AddDepositRequest,
+) -> Result<(), AppError> {
+    // 1. Zero-Trust Validation (Lokal)
+    if payload.weight_kg <= 0.0 {
+        return Err(AppError::ValidationError(
+            "Kuantitas / Berat sampah harus lebih dari 0.".to_string(),
+        ));
+    }
+    if payload.user_id.trim().is_empty() {
+        return Err(AppError::ValidationError(
+            "ID User tidak boleh kosong.".to_string(),
+        ));
+    }
+
+    tracing::info!("Memproses transaksi setoran sampah untuk user: {}", payload.user_id);
+
+    // 2. Ekstraksi Token
+    let token = state.get_valid_token().await?;
+    
+    // 3. HTTP Client Request
+    let client = create_http_client();
+    let url = format!("{}/deposits", API_BASE_URL);
+
+    let res = client
+        .post(&url)
+        .header(AUTHORIZATION, format!("Bearer {}", token))
+        .json(&payload)
+        .send()
+        .await;
+
+    let response = match res {
+        Ok(r) => r,
+        Err(e) => {
+            log_network_error("Tambah Setoran (kirim request)", &e);
+            return Err(AppError::Network(e));
+        }
+    };
+
+    let http_status = response.status().as_u16();
+
+    // 4. Error Handling Presisi
+    if response.status().is_success() {
+        tracing::info!("Setoran sampah berhasil ditambahkan.");
+        Ok(())
+    } else {
+        let body_json = response.json::<serde_json::Value>().await.ok();
+        let code = body_json
+            .as_ref()
+            .and_then(|v| v.get("code"))
+            .and_then(|c| c.as_str());
+
+        let fallback_msg = match http_status {
+            404 => "Gagal: Warga atau jenis sampah tidak ditemukan.",
+            403 | 401 => "Sesi tidak valid atau akses ditolak.",
+            _ => "Gagal menambahkan setoran sampah.",
+        };
+
+        let message = body_json
+            .as_ref()
+            .and_then(|v| v.get("message"))
+            .and_then(|m| m.as_str())
+            .unwrap_or(fallback_msg)
+            .to_string();
+
+        tracing::error!(
+            "Gagal tambah setoran (HTTP {}): {}",
+            http_status,
+            message
+        );
+
+        Err(AppError::ApiError {
+            http_status,
+            status: "error".to_string(),
+            code: code.map(|s| s.to_string()),
+            message,
+        })
+    }
+}
+
+pub async fn edit_deposit_service(
+    state: &AppState,
+    payload: crate::models::transaction_model::EditDepositRequest,
+) -> Result<(), AppError> {
+    // 1. Zero-Trust Validation (Lokal)
+    if payload.id_deposit.trim().is_empty() {
+        return Err(AppError::ValidationError(
+            "ID Deposit tidak boleh kosong.".to_string(),
+        ));
+    }
+
+    if let Some(berat) = payload.weight_kg {
+        if berat <= 0.0 {
+            return Err(AppError::ValidationError(
+                "Kuantitas / Berat sampah revisi harus lebih dari 0.".to_string(),
+            ));
+        }
+    }
+
+    if payload.category_id.is_none() && payload.weight_kg.is_none() && payload.description.is_none() {
+        return Err(AppError::ValidationError(
+            "Tidak ada data yang diubah.".to_string(),
+        ));
+    }
+
+    tracing::info!("Mengedit transaksi setoran sampah: {}", payload.id_deposit);
+
+    let token = state.get_valid_token().await?;
+    let client = create_http_client();
+    let url = format!("{}/deposits/{}", API_BASE_URL, payload.id_deposit);
+
+    let res = client
+        .patch(&url)
+        .header(AUTHORIZATION, format!("Bearer {}", token))
+        .json(&payload)
+        .send()
+        .await;
+
+    let response = match res {
+        Ok(r) => r,
+        Err(e) => {
+            log_network_error("Edit Setoran (kirim request)", &e);
+            return Err(AppError::Network(e));
+        }
+    };
+
+    let http_status = response.status().as_u16();
+
+    if response.status().is_success() {
+        tracing::info!("Setoran sampah berhasil diedit.");
+        Ok(())
+    } else {
+        let body_json = response.json::<serde_json::Value>().await.ok();
+        let fallback_msg = match http_status {
+            404 => "Gagal: Transaksi setoran tidak ditemukan.",
+            400 => "Gagal: Request tidak valid.",
+            403 | 401 => "Sesi tidak valid atau akses ditolak.",
+            _ => "Gagal mengedit setoran sampah.",
+        };
+
+        let message = body_json
+            .as_ref()
+            .and_then(|v| v.get("message"))
+            .and_then(|m| m.as_str())
+            .unwrap_or(fallback_msg)
+            .to_string();
+
+        tracing::error!("Gagal edit setoran (HTTP {}): {}", http_status, message);
+        Err(AppError::ValidationError(message))
+    }
+}
+
+pub async fn delete_deposit_service(
+    state: &AppState,
+    id_deposit: String,
+) -> Result<(), AppError> {
+    if id_deposit.trim().is_empty() {
+        return Err(AppError::ValidationError(
+            "ID Deposit tidak boleh kosong.".to_string(),
+        ));
+    }
+
+    tracing::info!("Menghapus transaksi setoran sampah: {}", id_deposit);
+
+    let token = state.get_valid_token().await?;
+    let client = create_http_client();
+    let url = format!("{}/deposits/{}", API_BASE_URL, id_deposit);
+
+    let res = client
+        .delete(&url)
+        .header(AUTHORIZATION, format!("Bearer {}", token))
+        .send()
+        .await;
+
+    let response = match res {
+        Ok(r) => r,
+        Err(e) => {
+            log_network_error("Hapus Setoran (kirim request)", &e);
+            return Err(AppError::Network(e));
+        }
+    };
+
+    let http_status = response.status().as_u16();
+
+    if response.status().is_success() {
+        tracing::info!("Setoran sampah berhasil dihapus.");
+        Ok(())
+    } else {
+        let body_json = response.json::<serde_json::Value>().await.ok();
+        let fallback_msg = match http_status {
+            404 => "Gagal: Transaksi setoran tidak ditemukan atau sudah dihapus sebelumnya.",
+            403 | 401 => "Sesi tidak valid atau akses ditolak.",
+            _ => "Gagal menghapus setoran sampah.",
+        };
+
+        let message = body_json
+            .as_ref()
+            .and_then(|v| v.get("message"))
+            .and_then(|m| m.as_str())
+            .unwrap_or(fallback_msg)
+            .to_string();
+
+        tracing::error!("Gagal hapus setoran (HTTP {}): {}", http_status, message);
+        Err(AppError::ValidationError(message))
     }
 }

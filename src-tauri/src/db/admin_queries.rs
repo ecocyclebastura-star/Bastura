@@ -109,6 +109,21 @@ pub async fn upsert_transaksi_global_batch(
         .await?;
     }
 
+    // Hapus data lokal yang sudah tidak ada di server
+    if !transactions.is_empty() {
+        let mut query_builder = sqlx::QueryBuilder::new("DELETE FROM transaksi_global_cache WHERE id_transaksi NOT IN (");
+        let mut separated = query_builder.separated(", ");
+        for item in transactions {
+            separated.push_bind(&item.id_transaksi);
+        }
+        separated.push_unseparated(")");
+        query_builder.build().execute(&mut *tx).await?;
+    } else {
+        sqlx::query("DELETE FROM transaksi_global_cache")
+            .execute(&mut *tx)
+            .await?;
+    }
+
     tx.commit().await?;
     Ok(())
 }
@@ -116,11 +131,13 @@ pub async fn upsert_transaksi_global_batch(
 pub async fn get_cached_transaksi_global(
     pool: &SqlitePool,
 ) -> Result<Vec<crate::models::transaction_model::TransactionItem>, AppError> {
-    let result = sqlx::query_as::<_, crate::models::transaction_model::TransactionItem>(
+    let mut result = sqlx::query_as::<_, crate::models::transaction_model::TransactionItem>(
         "SELECT * FROM transaksi_global_cache ORDER BY tanggal_transaksi DESC"
     )
     .fetch_all(pool)
     .await?;
+
+    let _ = crate::db::transaction_queries::apply_pc_formatting_to_transactions(pool, &mut result).await;
 
     tracing::info!("get_cached_transaksi_global mengembalikan {} data.", result.len());
 

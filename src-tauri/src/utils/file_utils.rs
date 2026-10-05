@@ -91,6 +91,29 @@ pub async fn download_and_save_image(
     Ok(())
 }
 
+pub fn save_image_bytes(
+    app: &tauri::AppHandle,
+    bytes: &[u8],
+    filename: &str,
+) -> Result<(), AppError> {
+    let images_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| AppError::Unknown(format!("Gagal mendapatkan app_data_dir: {}", e)))?
+        .join("images");
+
+    if !images_dir.exists() {
+        fs::create_dir_all(&images_dir).map_err(|e| AppError::Unknown(format!("Gagal membuat direktori images: {}", e)))?;
+    }
+
+    let file_path = images_dir.join(filename);
+    let mut file = fs::File::create(&file_path).map_err(|e| AppError::Unknown(format!("Gagal membuat file gambar: {}", e)))?;
+    
+    file.write_all(bytes).map_err(|e| AppError::Unknown(format!("Gagal menulis gambar: {}", e)))?;
+
+    Ok(())
+}
+
 pub async fn read_image_as_base64(app: &tauri::AppHandle, filename: &str) -> Option<String> {
     let file_path = app
         .path()
@@ -189,6 +212,37 @@ pub async fn cleanup_unused_images(app: &tauri::AppHandle, pool: &SqlitePool) {
         for row in rows {
             if let Some(url) = row.avatar_url {
                 if let Some(filename) = url.split('/').last() {
+                    used_filenames.insert(filename.to_string());
+                }
+            }
+        }
+    }
+
+    #[derive(sqlx::FromRow)]
+    struct DraftRow {
+        image_local_path: Option<String>,
+    }
+
+    if let Ok(rows) = sqlx::query_as::<_, DraftRow>("SELECT image_local_path FROM announcement_drafts_cache")
+        .fetch_all(pool)
+        .await
+    {
+        for row in rows {
+            if let Some(path) = row.image_local_path {
+                if let Some(filename) = path.split('/').last() {
+                    used_filenames.insert(filename.to_string());
+                }
+            }
+        }
+    }
+
+    if let Ok(rows) = sqlx::query_as::<_, DraftRow>("SELECT image_local_path FROM education_drafts_cache")
+        .fetch_all(pool)
+        .await
+    {
+        for row in rows {
+            if let Some(path) = row.image_local_path {
+                if let Some(filename) = path.split('/').last() {
                     used_filenames.insert(filename.to_string());
                 }
             }
