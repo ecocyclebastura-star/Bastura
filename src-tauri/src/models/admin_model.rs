@@ -18,6 +18,7 @@ pub struct WargaApiItem {
     pub name: Option<String>,
     pub email: Option<String>,
     pub phone: Option<String>,
+    pub role: Option<String>,
     pub created_at: Option<String>,
     pub status_active: Option<String>,
     pub balance_held: Option<String>,
@@ -31,6 +32,8 @@ pub struct WargaLocalItem {
     pub name: Option<String>,
     pub email: Option<String>,
     pub phone: Option<String>,
+    #[sqlx(default)]
+    pub role: Option<String>,
     pub created_at: Option<String>,
     pub status_active: Option<String>,
     pub balance_held: Option<i64>,

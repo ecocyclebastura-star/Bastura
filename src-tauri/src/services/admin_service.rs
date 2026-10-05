@@ -81,6 +81,7 @@ pub async fn get_daftar_warga_service(
             name: api_item.name,
             email: api_item.email,
             phone: api_item.phone,
+            role: api_item.role,
             created_at: api_item.created_at,
             status_active: api_item.status_active,
             balance_held: Some(balance_held),
