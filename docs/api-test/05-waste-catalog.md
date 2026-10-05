@@ -223,7 +223,9 @@
       "confidence": 0.95
     }
   ],
-  "disclaimer": "Harga bersifat perkiraan dan dapat berubah. Harga akhir ditentukan admin saat penimbangan."
+  "disclaimer": "Harga bersifat perkiraan dan dapat berubah. Harga akhir ditentukan admin saat penimbangan.",
+  "remaining": 1,
+  "limit": 2
 }
 ```
 
@@ -241,4 +243,25 @@
 | 400 | `IMAGE_REQUIRED` | Form-data `image` kosong. |
 | 400 | `INVALID_FILE_TYPE` | File bukan JPG/PNG/WEBP. |
 | 400 | `FILE_TOO_LARGE` | Ukuran gambar melebihi 5MB. |
+| 429 | `QUOTA_EXCEEDED` | Kuota scan harian Anda telah habis. (Terdapat `remaining` dan `limit` di `data`) |
 | 500 | `INTERNAL_SERVER_ERROR` | Gagal memanggil AI SumoPod atau kegagalan internal lainnya. |
+
+---
+
+## 9. [CAT-GET-SCAN-QUOTA] Cek Sisa Kuota Scan AI
+- **Method**: `GET`
+- **Endpoint**: `/api/v1/waste/catalog/scan-ai/quota`
+- **Akses**: Semua Pengguna Login
+
+**Contoh Response Sukses (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Berhasil mengambil sisa kuota",
+  "data": {
+    "remaining": 2,
+    "limit": 2
+  }
+}
+```
+*(Catatan: untuk superadmin, nilainya "unlimited")*

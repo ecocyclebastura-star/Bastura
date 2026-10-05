@@ -105,13 +105,13 @@ export const addAncController = async (c: Context) => {
         // Embed author_id to maintain reference to the admin who created it
         const contentJson = { text: contentStr, author_id: authorId };
 
-        let resultId: string | null = null;
+        let resultData: any = null;
         try {
             const result = await addAnc(title, category_id, contentJson, createimagefilename);
-            resultId = result.id_announcements;
+            resultData = result;
 
             // Audit Log
-            await sql`INSERT INTO audit_logs (actor_id, target_id, action_type, created_at) VALUES (${authorId}, ${resultId}, 'ADD_ANC', NOW())`;
+            await sql`INSERT INTO audit_logs (actor_id, target_id, action_type, created_at) VALUES (${authorId}, ${resultData.id_announcements}, 'ADD_ANC', NOW())`;
         } catch (dbError) {
             throw dbError; // caught by outer try-catch
         }
@@ -127,7 +127,7 @@ export const addAncController = async (c: Context) => {
             }
         }
 
-        return sendAncResponse(c, 201, action, 'success', action, 'Berhasil menambahkan pengumuman.', 'Pengumuman berhasil ditambahkan.', { id_announcements: resultId }, 'ADD_ANC_SUCCESS');
+        return sendAncResponse(c, 201, action, 'success', action, 'Berhasil menambahkan pengumuman.', 'Pengumuman berhasil ditambahkan.', resultData, 'ADD_ANC_SUCCESS');
     } catch (error: any) {
         console.error("Error di add-anc:", error);
         try {

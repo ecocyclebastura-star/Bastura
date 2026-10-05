@@ -8,12 +8,21 @@ export const getAnc = async (id: string , email: string) => {
         return "USER_NOT_FOUND"
     }
 
-    const result = await sql`SELECT * FROM announcements`
+    const result = await sql`
+        SELECT a.*, c.name AS category_name 
+        FROM announcements a
+        LEFT JOIN announcement_categories c ON a.category_id = c.id_category
+    `
 
     return result.length > 0 ? result : null
 }
 
 export const getAncById = async (id: string) => {
-    const result = await sql`SELECT * FROM announcements WHERE id_announcements = ${id}`;
+    const result = await sql`
+        SELECT a.*, c.name AS category_name 
+        FROM announcements a
+        LEFT JOIN announcement_categories c ON a.category_id = c.id_category
+        WHERE a.id_announcements = ${id}
+    `;
     return result.length > 0 ? result[0] : null;
 }

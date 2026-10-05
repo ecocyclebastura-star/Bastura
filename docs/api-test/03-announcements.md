@@ -29,9 +29,10 @@
       "id_announcements": "d5e931cc-a3b6-4de7-a8db-f5c57e86ed5d",
       "data": {
         "title": "Jadwal Pengangkutan Sampah Baru",
+        "category_id": "f0e2b10a-b6de-4e31-8bc6-b258380e922e",
+        "category_name": "Umum",
         "content": "Pengangkutan sampah akan dilakukan setiap hari Senin dan Kamis.",
         "image": "photo_1690000000.jpg",
-        "category_id": "f0e2b10a-b6de-4e31-8bc6-b258380e922e",
         "created_at": "2026-10-03T02:00:00.000Z"
       }
     }
@@ -95,7 +96,14 @@ Atur field berikut persis seperti tabel ini:
   "message": "Pengumuman berhasil ditambahkan",
   "code": "ADD_ANC_SUCCESS",
   "data": {
-    "id_announcements": "e9f0a2b1-c3d4-5e6f-7a8b-9c0d1e2f3a4b"
+    "id_announcements": "e9f0a2b1-c3d4-5e6f-7a8b-9c0d1e2f3a4b",
+    "title": "[TEST] Pengumuman API Baru",
+    "category_id": "f0e2b10a-b6de-4e31-8bc6-b258380e922e",
+    "category_name": "Umum",
+    "content": {"p": "Isi dari pengumuman ini dalam bentuk JSON string."},
+    "announcements_img": "photo_1690000000.jpg",
+    "created_at": "2026-10-03T02:00:00.000Z",
+    "updated_at": null
   }
 }
 ```
@@ -130,8 +138,18 @@ Atur field berikut persis seperti tabel ini:
 ```json
 {
   "status": "success",
-  "message": "Pengumuman berhasil diubah",
-  "code": "UPDATE_ANC_SUCCESS"
+  "message": "Berhasil mengedit pengumuman.",
+  "code": "EDIT_ANC_SUCCESS",
+  "data": {
+    "id_announcements": "e9f0a2b1-c3d4-5e6f-7a8b-9c0d1e2f3a4b",
+    "title": "[UPDATE] Judul Pengumuman Diubah",
+    "category_id": "f0e2b10a-b6de-4e31-8bc6-b258380e922e",
+    "category_name": "Umum",
+    "content": {"p": "Konten berhasil diperbarui."},
+    "announcements_img": "photo_1690000000.jpg",
+    "created_at": "2026-10-03T02:00:00.000Z",
+    "updated_at": "2026-10-04T10:00:00.000Z"
+  }
 }
 ```
 

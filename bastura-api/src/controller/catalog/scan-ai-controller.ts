@@ -3,16 +3,41 @@ import sharp from "sharp";
 import { getCatalogForAIModel } from "../../model/catalog/get-catalog-for-ai";
 import { analyzeWasteImage } from "../../ai/sumopod-client";
 import { sendcatalogResponse } from "../../logs/w_catalog/catalog-logs";
+import { claimAiQuota, refundAiQuota } from "../../model/catalog/ai-quota-models";
 
 export const scanAiController = async (c: Context) => {
     const action = "scan_ai_catalog";
     const requestId = crypto.randomUUID();
+    let sub = "";
+    let quotaClaimed = false;
+
     try {
-        const payload = c.get('jwtPayload') as { sub: string };
-        const sub = payload.sub;
+        const payload = c.get('jwtPayload') as { sub: string, role: number };
+        sub = payload.sub;
+        const role = payload.role;
 
         if (!sub) {
             return sendcatalogResponse(c, 401, 'SCAN_AI', 'error', action, 'Unauthorized', 'ID tidak ditemukan', null, 'UNAUTHORIZED');
+        }
+
+        const scanLimit = parseInt(process.env.SCAN_LIMIT || "2", 10);
+        let remaining: number | "unlimited" = "unlimited";
+        let limit: number | "unlimited" = "unlimited";
+
+        if (role !== 3) {
+            const claimResult = await claimAiQuota(sub, scanLimit);
+            if (!claimResult.success) {
+                return sendcatalogResponse(
+                    c, 429, 'SCAN_AI', 'error', action,
+                    'Kuota scan AI habis',
+                    'Kuota scan harian Anda telah habis.',
+                    { remaining: 0, limit: scanLimit },
+                    'QUOTA_EXCEEDED'
+                );
+            }
+            quotaClaimed = true;
+            remaining = claimResult.remaining;
+            limit = scanLimit;
         }
 
         // 1. Ambil body request multipart
@@ -56,13 +81,14 @@ export const scanAiController = async (c: Context) => {
         const aiResult = await analyzeWasteImage(base64Image, catalogItems, { requestId, userId: sub });
 
         // 5. Kalkulasi dan Strukturisasi Response
-        // 5. Kalkulasi dan Strukturisasi Response
         if (aiResult.status === "unclear_image") {
             return c.json({
                 status: "unclear_image",
                 message: "Gambar tidak menampilkan sampah dengan jelas, mohon ulang pengambilan gambar",
                 items: [],
-                disclaimer: "Harga bersifat perkiraan dan dapat berubah. Harga akhir ditentukan admin saat penimbangan."
+                disclaimer: "Harga bersifat perkiraan dan dapat berubah. Harga akhir ditentukan admin saat penimbangan.",
+                remaining,
+                limit
             }, 200);
         }
 
@@ -71,7 +97,9 @@ export const scanAiController = async (c: Context) => {
                 status: "not_in_catalog",
                 message: "sampah ini tidak bernilai jual",
                 items: [],
-                disclaimer: "Harga bersifat perkiraan dan dapat berubah. Harga akhir ditentukan admin saat penimbangan."
+                disclaimer: "Harga bersifat perkiraan dan dapat berubah. Harga akhir ditentukan admin saat penimbangan.",
+                remaining,
+                limit
             }, 200);
         }
 
@@ -108,7 +136,9 @@ export const scanAiController = async (c: Context) => {
                 status: "not_in_catalog",
                 message: "sampah ini tidak bernilai jual",
                 items: [],
-                disclaimer: "Harga bersifat perkiraan dan dapat berubah. Harga akhir ditentukan admin saat penimbangan."
+                disclaimer: "Harga bersifat perkiraan dan dapat berubah. Harga akhir ditentukan admin saat penimbangan.",
+                remaining,
+                limit
             }, 200);
         }
 
@@ -125,10 +155,16 @@ export const scanAiController = async (c: Context) => {
             status: finalStatus,
             message: finalMessage,
             items: finalItems,
-            disclaimer: "Harga bersifat perkiraan dan dapat berubah. Harga akhir ditentukan admin saat penimbangan."
+            disclaimer: "Harga bersifat perkiraan dan dapat berubah. Harga akhir ditentukan admin saat penimbangan.",
+            remaining,
+            limit
         }, 200);
 
     } catch (error: any) {
+        if (quotaClaimed && sub) {
+            await refundAiQuota(sub).catch(err => console.error("Gagal refund kuota:", err));
+        }
+
         let errorCode = 'INTERNAL_SERVER_ERROR';
         let clientMsg = 'Gagal memproses gambar';
         
