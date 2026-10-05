@@ -8,3 +8,4 @@ pub mod schedule_controller;
 pub mod admin_controller;
 pub mod splitbill_controller;
 pub mod super_admin_controller;
+pub mod commission_controller;

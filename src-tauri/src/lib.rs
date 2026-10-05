@@ -163,6 +163,9 @@ pub fn run() {
             crate::controllers::splitbill_controller::get_user_splitbill_detail_command,
             crate::controllers::super_admin_controller::promote_admin_command,
             crate::controllers::super_admin_controller::demote_admin_command,
+            crate::controllers::commission_controller::get_commission_summary_command,
+            crate::controllers::commission_controller::get_commission_detail_command,
+            crate::controllers::commission_controller::update_commission_fee_command,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -265,8 +265,8 @@ pub async fn edit_catalog_service(
         }
     }
 
-    let mut photo_bytes = payload.file_bytes;
-    let mut photo_filename = payload.file_name;
+    let photo_bytes = payload.file_bytes;
+    let photo_filename = payload.file_name;
     
     if let Some(ref bytes) = photo_bytes {
         if bytes.len() > 500 * 1024 {

@@ -9,3 +9,4 @@ pub mod schedule_model;
 pub mod admin_model;
 pub mod splitbill_model;
 pub mod super_admin_model;
+pub mod commission_model;

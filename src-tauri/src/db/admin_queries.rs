@@ -1,7 +1,7 @@
 use crate::AppError;
 use sqlx::SqlitePool;
 use crate::models::admin_model::WargaLocalItem;
-use crate::models::transaction_model::TransactionItem;
+
 pub async fn upsert_warga_batch(pool: &SqlitePool, warga_list: &[WargaLocalItem]) -> Result<(), AppError> {
     let mut tx = pool.begin().await?;
 

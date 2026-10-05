@@ -4,7 +4,6 @@ use crate::utils::error::AppError;
 use crate::utils::http::create_http_client;
 use crate::utils::state::AppState;
 use reqwest::header::AUTHORIZATION;
-use crate::models::transaction_model::TransactionLogDataWrapper;
 use crate::models::waste_model::WasteCatalogApiResponse;
 use std::collections::HashMap;
 
@@ -165,10 +164,6 @@ pub async fn history_splitbill_service(
     }
 }
 
-#[derive(serde::Deserialize)]
-struct LogApiResponse {
-    pub data: TransactionLogDataWrapper,
-}
 
 pub async fn get_user_splitbill_detail_service(
     state: &AppState,
