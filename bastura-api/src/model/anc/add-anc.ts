@@ -7,11 +7,16 @@ export const addAnc = async (
     announcements_img: string | null
 ) => {
     const result = await sql`
-        INSERT INTO announcements (
-            id_announcements, title, category_id, content, announcements_img, created_at
-        ) VALUES (
-            gen_random_uuid(), ${title}, ${category_id}, ${sql.json(content)}, ${announcements_img}, NOW()
-        ) RETURNING id_announcements
+        WITH inserted AS (
+            INSERT INTO announcements (
+                id_announcements, title, category_id, content, announcements_img, created_at
+            ) VALUES (
+                gen_random_uuid(), ${title}, ${category_id}, ${sql.json(content)}, ${announcements_img}, NOW()
+            ) RETURNING *
+        )
+        SELECT i.*, c.name AS category_name
+        FROM inserted i
+        LEFT JOIN announcement_categories c ON i.category_id = c.id_category
     `;
     return result[0];
 }

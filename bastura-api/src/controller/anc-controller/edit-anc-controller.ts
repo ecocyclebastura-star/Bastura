@@ -118,9 +118,12 @@ export const editAncController = async (c: Context) => {
             updateData.announcements_img = createimagefilename;
         }
 
+        let resultData: any = null;
         if (Object.keys(updateData).length > 0) {
-            await editAnc(id, updateData);
+            resultData = await editAnc(id, updateData);
             await sql`INSERT INTO audit_logs (actor_id, target_id, action_type, created_at) VALUES (${authorId}, ${id}, 'EDIT_ANC', NOW())`;
+        } else {
+            resultData = existingAnc;
         }
 
         if (createimagefilename && imageArrayBuffer) {
@@ -141,7 +144,7 @@ export const editAncController = async (c: Context) => {
             }
         }
 
-        return sendAncResponse(c, 200, action, 'success', action, 'Berhasil mengedit pengumuman.', 'Berhasil mengedit pengumuman.', undefined, 'EDIT_ANC_SUCCESS');
+        return sendAncResponse(c, 200, action, 'success', action, 'Berhasil mengedit pengumuman.', 'Berhasil mengedit pengumuman.', resultData, 'EDIT_ANC_SUCCESS');
     } catch (error: any) {
         console.error("Error di edit-anc:", error);
         try {

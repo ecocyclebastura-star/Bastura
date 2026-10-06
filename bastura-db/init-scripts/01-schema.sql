@@ -242,5 +242,17 @@ CREATE TABLE IF NOT EXISTS jadwal_setor (
     updated_at TIMESTAMPTZ
 );
 
+CREATE TABLE IF NOT EXISTS ai_scan_quotas (
+    id_quota UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    id_user UUID NOT NULL,
+    scan_date DATE NOT NULL,
+    scan_count INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ,
+
+    CONSTRAINT fk_ai_scan_user FOREIGN KEY (id_user) REFERENCES users(id_users) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT unique_user_date UNIQUE (id_user, scan_date)
+);
+
 ALTER TABLE profit ADD CONSTRAINT fk_profit_id_sb FOREIGN KEY (id_sb) REFERENCES split_bills(id_sb) ON DELETE RESTRICT;
 ALTER TABLE deposit ADD CONSTRAINT fk_deposit_id_sb FOREIGN KEY (id_sb) REFERENCES split_bills(id_sb) ON DELETE RESTRICT;

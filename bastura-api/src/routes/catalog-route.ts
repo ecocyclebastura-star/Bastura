@@ -8,6 +8,7 @@ import { deleteCatalogController } from "../controller/catalog/delete-catalog-co
 import { uploadCatalogImgController } from "../controller/catalog/upload-catalog-img-controller";
 import { getCategoriesController } from "../controller/catalog/get-categories-controller";
 import { scanAiController } from "../controller/catalog/scan-ai-controller";
+import { getAiQuotaController } from "../controller/catalog/get-quota-controller";
 
 const catalogApp = new Hono();
 catalogApp.use('/*', checkAccessToken);
@@ -19,5 +20,6 @@ catalogApp.patch("/catalog/:id", editCatalogController);
 catalogApp.delete("/catalog/:id", deleteCatalogController);
 catalogApp.post("/catalog/photo/:id", uploadCatalogImgController);
 catalogApp.post("/catalog/scan-ai", scanAiController);
+catalogApp.get("/catalog/scan-ai/quota", getAiQuotaController);
 
 export default catalogApp

@@ -31,6 +31,8 @@ export const getAncController = async (c : Context) => {
             id_announcements: anc.id_announcements,
             data: {
                 title: anc.title,
+                category_id: anc.category_id,
+                category_name: anc.category_name,
                 content: anc.content,
                 announcements_img: anc.announcements_img ?? 'undefined',
                 created_at: anc.created_at,

@@ -8,10 +8,15 @@ export const editAnc = async (id: string, updateData: any) => {
     }
 
     const result = await sql`
-        UPDATE announcements
-        SET ${sql(updateData)}
-        WHERE id_announcements = ${id}
-        RETURNING id_announcements
+        WITH updated AS (
+            UPDATE announcements
+            SET ${sql(updateData)}
+            WHERE id_announcements = ${id}
+            RETURNING *
+        )
+        SELECT u.*, c.name AS category_name
+        FROM updated u
+        LEFT JOIN announcement_categories c ON u.category_id = c.id_category
     `;
     return result[0];
 }

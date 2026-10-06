@@ -27,6 +27,7 @@ services:
     environment:
       # Format: postgresql://USER:PASSWORD@HOST:PORT/DATABASE
       DATABASE_URL: postgresql://your_database_user:your_database_password@bastura-db:5432/your_database_name
+      SCAN_LIMIT: 2
     depends_on:
       - bastura-db
     networks:
