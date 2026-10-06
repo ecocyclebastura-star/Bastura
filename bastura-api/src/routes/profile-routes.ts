@@ -6,9 +6,10 @@ import { updateAddProfileImgController } from "../controller/profile-controller/
 import { updateuserController } from "../controller/profile-controller/update-user";
 import { getProfilePhotoController } from "../controller/profile-controller/get-user-photo";
 import { getAdminContactController } from "../controller/profile-controller/get-admin-contact";
+import { updateAdminContactController } from "../controller/profile-controller/update-admin-contact";
 import { changepassController } from "../controller/profile-controller/changepass";
 import { get_warga_controller } from "../controller/users_data/get-warga-controller";
-import { adminOnly } from "../auth/middleware/auth-middleware";
+import { adminOnly, superAdminOnly } from "../auth/middleware/auth-middleware";
 import { blockUserController } from "../controller/admin/block-users-controller";
 import { unblockUserController } from "../controller/admin/unblock-users-controller";
 
@@ -17,6 +18,7 @@ export const profileApp = new Hono();
 profileApp.use('/*', checkAccessToken)
 profileApp.get('/profile',getuserController)
 profileApp.get('/contact-info', getAdminContactController)
+profileApp.patch('/contact-info', superAdminOnly, updateAdminContactController)
 profileApp.patch('/profile',updateuserController)
 profileApp.patch('/profile/deactive',deleteUserController)
 profileApp.patch('/profile/changepass',changepassController)

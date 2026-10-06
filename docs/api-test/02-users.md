@@ -299,3 +299,32 @@
   }
 }
 ```
+
+---
+
+## 13. [ADMIN-UPDATE-CONTACT] Ubah Nomor Kontak Admin
+- **Method**: `PATCH`
+- **Endpoint**: `/api/v1/users/account/contact-info`
+- **Akses**: Super Admin
+- **Header**: `Authorization: Bearer <token>`
+
+**Request Body:**
+```json
+{
+  "phone": "089876543210"
+}
+```
+
+**Contoh Response Sukses (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Nomor Admin/CS berhasil diubah",
+  "data": [
+    {
+      "email": "superbastura@example.com",
+      "phone": "089876543210"
+    }
+  ]
+}
+```
