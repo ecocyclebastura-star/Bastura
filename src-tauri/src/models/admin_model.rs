@@ -147,3 +147,30 @@ pub struct VerifyWithdrawalResult {
     pub balance: i64,
     pub id_users: String,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateContactInfoRequest {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub phone: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct UpdateContactInfoItem {
+    pub email: String,
+    pub phone: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct UpdateContactInfoData {
+    pub data: Vec<UpdateContactInfoItem>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct UpdateContactInfoApiResponse {
+    pub status: String,
+    pub message: String,
+    pub code: String,
+    pub data: UpdateContactInfoData,
+}

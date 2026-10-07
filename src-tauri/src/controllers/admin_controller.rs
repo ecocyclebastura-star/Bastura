@@ -62,3 +62,12 @@ pub async fn verify_withdrawal_command(
 ) -> Result<crate::models::admin_model::VerifyWithdrawalResult, AppError> {
     crate::services::admin_service::verify_withdrawal_service(&state, id_tsc, is_approve).await
 }
+
+#[tauri::command]
+pub async fn update_admin_contact_info_command(
+    state: tauri::State<'_, AppState>,
+    payload: crate::models::admin_model::UpdateContactInfoRequest,
+) -> Result<Vec<crate::models::admin_model::UpdateContactInfoItem>, AppError> {
+    tracing::info!("Menjalankan command: update_admin_contact_info_command");
+    crate::services::admin_service::update_admin_contact_info_service(&state, payload).await
+}

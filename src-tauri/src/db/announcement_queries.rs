@@ -14,10 +14,12 @@ pub async fn upsert_announcements(
 
         sqlx::query(
             r#"
-            INSERT INTO announcements_cache (id_announcements, title, content, announcements_img, created_at)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO announcements_cache (id_announcements, title, category_id, category_name, content, announcements_img, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id_announcements) DO UPDATE SET
                 title = excluded.title,
+                category_id = excluded.category_id,
+                category_name = excluded.category_name,
                 content = excluded.content,
                 announcements_img = excluded.announcements_img,
                 created_at = excluded.created_at
@@ -25,6 +27,8 @@ pub async fn upsert_announcements(
         )
         .bind(&item.id_announcements)
         .bind(&item.data.title)
+        .bind(&item.data.category_id)
+        .bind(&item.data.category_name)
         .bind(&content_json)
         .bind(&item.data.announcements_img)
         .bind(&item.data.created_at)
@@ -56,6 +60,8 @@ struct AnnouncementRow {
     id_announcements: Option<String>,
     title: String,
     content: Option<String>,
+    category_id: Option<String>,
+    category_name: Option<String>,
     announcements_img: Option<String>,
     created_at: String,
 }
@@ -67,7 +73,7 @@ pub async fn get_cached_announcements(
     limit: Option<u32>,
 ) -> Result<Vec<AnnouncementClientResponse>, AppError> {
     let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(
-        "SELECT id_announcements, title, content, announcements_img, created_at FROM announcements_cache WHERE 1=1"
+        "SELECT id_announcements, title, category_id, category_name, content, announcements_img, created_at FROM announcements_cache WHERE 1=1"
     );
 
     if let Some(s) = search {
@@ -137,6 +143,8 @@ pub async fn get_cached_announcements(
         announcements.push(AnnouncementClientResponse {
             id: row.id_announcements.unwrap_or_default(),
             title: row.title,
+            category_id: row.category_id,
+            category_name: row.category_name,
             content,
             image_url: row.announcements_img,
             image_base64,

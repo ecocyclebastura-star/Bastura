@@ -10,6 +10,8 @@ pub struct AnnouncementContent {
 #[derive(Debug, Deserialize)]
 pub struct AnnouncementData {
     pub title: String,
+    pub category_id: Option<String>,
+    pub category_name: Option<String>,
     pub content: serde_json::Value,
     pub announcements_img: Option<String>,
     pub created_at: String,
@@ -31,6 +33,8 @@ pub struct AnnouncementApiResponse {
 pub struct AnnouncementClientResponse {
     pub id: String,
     pub title: String,
+    pub category_id: Option<String>,
+    pub category_name: Option<String>,
     pub content: AnnouncementContent,
     pub image_url: Option<String>,
     pub image_base64: Option<String>,

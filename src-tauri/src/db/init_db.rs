@@ -144,6 +144,29 @@ pub async fn init_db(db_path: &Path) -> Result<SqlitePool, AppError> {
             .await;
     }
 
+    // Migrasi otomatis v9: announcements_cache category_id & category_name
+    let has_category_id: bool = sqlx::query_scalar(
+        "SELECT COUNT(*) > 0 FROM pragma_table_info('announcements_cache') WHERE name = 'category_id'",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap_or(false);
+
+    if !has_category_id {
+        let table_exists: bool = sqlx::query_scalar(
+            "SELECT COUNT(*) > 0 FROM sqlite_master WHERE type='table' AND name='announcements_cache'",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap_or(false);
+
+        if table_exists {
+            tracing::info!("Migrasi v9: Menambahkan category_id dan category_name ke announcements_cache...");
+            let _ = sqlx::query("ALTER TABLE announcements_cache ADD COLUMN category_id TEXT").execute(&pool).await;
+            let _ = sqlx::query("ALTER TABLE announcements_cache ADD COLUMN category_name TEXT").execute(&pool).await;
+        }
+    }
+
     if let Err(e) = sqlx::query(
         "
         /* =========================================
@@ -196,6 +219,8 @@ pub async fn init_db(db_path: &Path) -> Result<SqlitePool, AppError> {
         CREATE TABLE IF NOT EXISTS announcements_cache (
             id_announcements TEXT PRIMARY KEY,   
             title TEXT NOT NULL,
+            category_id TEXT,
+            category_name TEXT,
             content TEXT,                        
             announcements_img TEXT,
             created_at DATETIME NOT NULL

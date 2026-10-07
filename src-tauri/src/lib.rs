@@ -167,6 +167,7 @@ pub fn run() {
             crate::controllers::commission_controller::get_commission_summary_command,
             crate::controllers::commission_controller::get_commission_detail_command,
             crate::controllers::commission_controller::update_commission_fee_command,
+            crate::controllers::admin_controller::update_admin_contact_info_command,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

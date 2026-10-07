@@ -481,3 +481,76 @@ pub async fn verify_withdrawal_service(
         id_users: api_response.data.id_users.unwrap_or_default(),
     })
 }
+
+pub async fn update_admin_contact_info_service(
+    state: &AppState,
+    payload: crate::models::admin_model::UpdateContactInfoRequest,
+) -> Result<Vec<crate::models::admin_model::UpdateContactInfoItem>, AppError> {
+    tracing::info!("Memproses pembaruan kontak Admin/Superadmin...");
+
+    let token = crate::middlewares::role_guard::require_super_admin(state).await?;
+
+    let client = crate::utils::http::create_http_client();
+    let url = format!("{}/users/account/contact-info", crate::utils::constants::API_BASE_URL);
+
+    let res = client
+        .patch(&url)
+        .header(reqwest::header::AUTHORIZATION, format!("Bearer {}", token))
+        .json(&payload)
+        .send()
+        .await;
+
+    let response = match res {
+        Ok(r) => r,
+        Err(e) => {
+            crate::utils::logger::log_network_error("Update Admin Contact Info (kirim request)", &e);
+            return Err(AppError::Network(e));
+        }
+    };
+
+    let http_status = response.status().as_u16();
+
+    if response.status().is_success() {
+        let api_response = match response.json::<crate::models::admin_model::UpdateContactInfoApiResponse>().await {
+            Ok(data) => data,
+            Err(e) => {
+                tracing::error!("Gagal memparsing JSON /users/account/contact-info: {}", e);
+                return Err(e.into());
+            }
+        };
+
+        tracing::info!("Berhasil mengubah kontak Admin/CS.");
+        Ok(api_response.data.data)
+    } else {
+        let body_json = response.json::<serde_json::Value>().await.ok();
+        let code = body_json
+            .as_ref()
+            .and_then(|v| v.get("code"))
+            .and_then(|c| c.as_str());
+
+        let fallback_msg = match http_status {
+            403 | 401 => "Sesi tidak valid atau akses ditolak (Bukan Superadmin).",
+            _ => "Gagal mengubah kontak Admin.",
+        };
+
+        let message = body_json
+            .as_ref()
+            .and_then(|v| v.get("message"))
+            .and_then(|m| m.as_str())
+            .unwrap_or(fallback_msg)
+            .to_string();
+
+        tracing::error!(
+            "Gagal mengubah kontak Admin (HTTP {}): {}",
+            http_status,
+            message
+        );
+
+        Err(AppError::ApiError {
+            http_status,
+            status: "error".to_string(),
+            code: code.map(|s| s.to_string()),
+            message,
+        })
+    }
+}
