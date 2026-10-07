@@ -117,19 +117,15 @@ export const useProfileStore = defineStore("profile", {
     },
 
     /**
-     * Ubah kontak pengurus lewat `update_admin_contact_info_command` di
+     * Ubah No. HP pengurus lewat `update_admin_contact_info_command` di
      * admin_controller.rs. Khusus super admin -- backend menolak role lain.
-     * Field yang tidak dikirim (`undefined`) dibiarkan apa adanya di server.
+     * Email sengaja tidak diubah dari aplikasi; `null` membuat backend tidak
+     * mengirim field itu sama sekali, jadi email di server tetap.
      */
-    async updateAdminContact(contact: Partial<AdminContact>) {
+    async updateAdminPhone(phone: string) {
       const updated = await invoke<AdminContact[]>(
         "update_admin_contact_info_command",
-        {
-          payload: {
-            phone: contact.phone ?? null,
-            email: contact.email ?? null,
-          },
-        },
+        { payload: { phone, email: null } },
       );
 
       if (updated[0]) this.adminContact = updated[0];

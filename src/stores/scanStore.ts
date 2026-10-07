@@ -24,7 +24,7 @@ export interface ScanResponse {
 export type ScanOutcome = "recognized" | "blurry" | "unrecognized";
 
 /** Jatah scan per hari, sesuai desain. */
-export const DAILY_SCAN_LIMIT = 3;
+export const DAILY_SCAN_LIMIT = 2;
 
 /** Batas `scan_waste_ai_command`. */
 export const SCAN_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
@@ -80,7 +80,7 @@ interface DailyUsage {
 /**
  * Fitur scan sampah warga, lewat `scan_waste_ai_command`.
  *
- * CATATAN BACKEND: batas 3x sehari belum dijaga server, jadi untuk sekarang
+ * CATATAN BACKEND: batas 2x sehari belum dijaga server, jadi untuk sekarang
  * dihitung di perangkat (localStorage, per akun). Kalau server nanti
  * menolak dengan HTTP 429, jatahnya langsung dianggap habis.
  */

@@ -8,37 +8,24 @@ import PageHeader from "../../components/PageHeader.vue";
 import { resolveAuthError } from "../../constants/authErrors";
 import { useToast } from "../../composables/useToast";
 import { useProfileStore } from "../../stores/profileStore";
-import {
-  DIGITS_RE,
-  EMAIL_HINT,
-  EMAIL_RE,
-  PHONE_FORMAT_HINT,
-  PHONE_HINT,
-  PHONE_RE,
-} from "../../utils/validators";
+import { DIGITS_RE, PHONE_FORMAT_HINT, PHONE_HINT, PHONE_RE } from "../../utils/validators";
 
 const router = useRouter();
 const profileStore = useProfileStore();
 const { toastMessage, toastVariant, showToast } = useToast();
 
+/** Cuma No. HP yang bisa diubah; email kontak dibiarkan apa adanya. */
 const phone = ref("");
-const email = ref("");
 const phoneError = ref("");
-const emailError = ref("");
 const saving = ref(false);
 
 // Pesan salah hilang begitu kolomnya mulai diisi lagi.
 watch(phone, () => (phoneError.value = ""));
-watch(email, () => (emailError.value = ""));
 
-const original = computed(() => ({
-  phone: profileStore.adminContact?.phone?.trim() ?? "",
-  email: profileStore.adminContact?.email?.trim() ?? "",
-}));
+const originalPhone = computed(() => profileStore.adminContact?.phone?.trim() ?? "");
 
 function fillForm() {
-  phone.value = original.value.phone;
-  email.value = original.value.email;
+  phone.value = originalPhone.value;
 }
 
 onMounted(async () => {
@@ -47,32 +34,21 @@ onMounted(async () => {
   fillForm();
 });
 
-const phoneChanged = computed(() => phone.value.trim() !== original.value.phone);
-const emailChanged = computed(() => email.value.trim() !== original.value.email);
-const isDirty = computed(() => phoneChanged.value || emailChanged.value);
+const isDirty = computed(() => phone.value.trim() !== originalPhone.value);
 
-/**
- * Yang divalidasi cuma kolom yang diubah, supaya kontak lama berformat lain
- * (mis. +62...) tidak menghalangi admin mengganti kolom satunya.
- */
 function validate(): "ok" | "empty" | "invalid" {
-  phoneError.value = "";
-  emailError.value = "";
-
   const p = phone.value.trim();
-  const e = email.value.trim();
 
-  if (phoneChanged.value && !p) phoneError.value = "No. HP tidak boleh kosong";
-  if (emailChanged.value && !e) emailError.value = "Email tidak boleh kosong";
-  if (phoneError.value || emailError.value) return "empty";
-
-  if (phoneChanged.value) {
-    if (!DIGITS_RE.test(p)) phoneError.value = PHONE_HINT;
-    else if (!PHONE_RE.test(p)) phoneError.value = PHONE_FORMAT_HINT;
+  if (!p) {
+    phoneError.value = "No. HP tidak boleh kosong";
+    return "empty";
   }
-  if (emailChanged.value && !EMAIL_RE.test(e)) emailError.value = EMAIL_HINT;
 
-  return phoneError.value || emailError.value ? "invalid" : "ok";
+  if (!DIGITS_RE.test(p)) phoneError.value = PHONE_HINT;
+  else if (!PHONE_RE.test(p)) phoneError.value = PHONE_FORMAT_HINT;
+  else phoneError.value = "";
+
+  return phoneError.value ? "invalid" : "ok";
 }
 
 function goBack() {
@@ -102,10 +78,7 @@ async function handleSave() {
 
   saving.value = true;
   try {
-    await profileStore.updateAdminContact({
-      phone: phoneChanged.value ? phone.value.trim() : undefined,
-      email: emailChanged.value ? email.value.trim() : undefined,
-    });
+    await profileStore.updateAdminPhone(phone.value.trim());
     allowLeave = true;
     goBack();
   } catch (error) {
@@ -135,7 +108,7 @@ onBeforeRouteLeave(() => {
     <PageHeader title="Ubah Kontak" fallback="admin-hubungi-kami" />
 
     <p class="mt-2 text-body-sm text-neutral-600">
-      Kontak ini tampil di halaman Hubungi Kami untuk semua warga.
+      No. HP ini tampil di halaman Hubungi Kami untuk semua warga.
     </p>
 
     <!-- Kontak lama gagal dimuat: lebih aman tidak menimpa kontak yang tidak terlihat. -->
@@ -167,17 +140,6 @@ onBeforeRouteLeave(() => {
         inputmode="numeric"
         autocomplete="tel"
         :error="phoneError"
-      />
-
-      <BaseInput
-        v-model="email"
-        variant="line"
-        label="Email"
-        placeholder="(example@gmail.com)"
-        icon="none"
-        inputmode="email"
-        autocomplete="email"
-        :error="emailError"
       />
 
       <BaseButton
