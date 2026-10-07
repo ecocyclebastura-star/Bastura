@@ -8,12 +8,9 @@ import BaseDialog from "../../components/BaseDialog.vue";
 import ContentListPage from "../../components/ContentListPage.vue";
 import FabButton from "../../components/FabButton.vue";
 import FilterChips from "../../components/FilterChips.vue";
-import {
-  ALL_CATEGORIES,
-  ANNOUNCEMENT_CATEGORIES,
-  resolveCategory,
-} from "../../constants/announcementCategories";
+import { ALL_CATEGORIES, resolveCategory } from "../../constants/announcementCategories";
 import { resolveAuthError } from "../../constants/authErrors";
+import { useAnnouncementChips } from "../../composables/useAnnouncementChips";
 import { useSearchableList } from "../../composables/useSearchableList";
 import { useToast } from "../../composables/useToast";
 import { useAnnouncementAdminStore } from "../../stores/announcementAdminStore";
@@ -29,13 +26,12 @@ const { searchTerm, items, loading, errorMessage, submit, clearSearch, reload } 
     fallbackError: "Gagal memuat pengumuman. Coba lagi sebentar lagi.",
   });
 
-// Sama seperti halaman warga: kategori disaring di sini, datanya sudah ada.
-const activeCategory = ref<string>(ALL_CATEGORIES);
-
-const visibleItems = computed(() =>
-  activeCategory.value === ALL_CATEGORIES
-    ? items.value
-    : items.value.filter((item) => resolveCategory(item) === activeCategory.value),
+// Admin dapat daftar kategori resmi dari server, jadi kategori yang belum
+// punya pengumuman pun tetap muncul sebagai chip.
+const serverCategoryNames = computed(() => store.categories.map((item) => item.name));
+const { activeCategory, chips, visibleItems } = useAnnouncementChips(
+  items,
+  serverCategoryNames,
 );
 
 const isFiltered = computed(
@@ -79,6 +75,9 @@ function openEdit(item: Announcement) {
 }
 
 onMounted(() => {
+  // Gagal pun tidak apa-apa: chip tetap terisi dari pengumuman yang dimuat.
+  store.loadCategories().catch(() => undefined);
+
   // Titipan dari form Tambah/Edit.
   const flash = store.takeFlash();
   if (flash.message) showToast(flash.message, flash.variant);
@@ -106,7 +105,7 @@ onMounted(() => {
     @retry="reload"
   >
     <template #filters>
-      <FilterChips v-model="activeCategory" :chips="ANNOUNCEMENT_CATEGORIES" />
+      <FilterChips v-model="activeCategory" :chips="chips" />
     </template>
 
     <AdminAnnouncementItem

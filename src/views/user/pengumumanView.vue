@@ -1,14 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import { useRouter } from "vue-router";
 import AnnouncementListItem from "../../components/AnnouncementListItem.vue";
 import ContentListPage from "../../components/ContentListPage.vue";
 import FilterChips from "../../components/FilterChips.vue";
-import {
-  ALL_CATEGORIES,
-  ANNOUNCEMENT_CATEGORIES,
-  resolveCategory,
-} from "../../constants/announcementCategories";
+import { ALL_CATEGORIES, resolveCategory } from "../../constants/announcementCategories";
+import { useAnnouncementChips } from "../../composables/useAnnouncementChips";
 import { useSearchableList } from "../../composables/useSearchableList";
 import { useContentStore } from "../../stores/contentStore";
 import type { Announcement } from "../../stores/contentStore";
@@ -25,16 +22,9 @@ const { searchTerm, items, loading, errorMessage, submit, clearSearch, reload } 
     { fallbackError: "Gagal memuat pengumuman. Coba lagi sebentar lagi." },
   );
 
-// Filter kategori sengaja dikerjakan di sisi frontend: datanya sudah ada di
-// tangan, jadi ganti-ganti chip tidak perlu bolak-balik ke backend.
-const activeCategory = ref<string>(ALL_CATEGORIES);
-
-const visibleItems = computed(() => {
-  if (activeCategory.value === ALL_CATEGORIES) return items.value;
-  return items.value.filter(
-    (item) => resolveCategory(item) === activeCategory.value,
-  );
-});
+// Warga tidak boleh memanggil command daftar kategori, jadi chip-nya diambil
+// dari kategori pengumuman yang sudah dimuat.
+const { activeCategory, chips, visibleItems } = useAnnouncementChips(items);
 
 const isFiltered = computed(
   () =>
@@ -65,7 +55,7 @@ function openDetail(id: string) {
     @retry="reload"
   >
     <template #filters>
-      <FilterChips v-model="activeCategory" :chips="ANNOUNCEMENT_CATEGORIES" />
+      <FilterChips v-model="activeCategory" :chips="chips" />
     </template>
 
     <AnnouncementListItem

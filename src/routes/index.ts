@@ -239,6 +239,11 @@ const routes: RouteRecordRaw[] = [
         meta: { hideTabBar: true },
       },
       {
+        path: "setoran/bagi-hasil/riwayat",
+        name: "admin-setoran-bagi-hasil-riwayat",
+        component: () => import("../views/admin/bagiHasilRiwayatView.vue"),
+      },
+      {
         path: "setoran/bagi-hasil/alokasi",
         name: "admin-setoran-bagi-hasil-alokasi",
         component: () => import("../views/admin/bagiHasilAlokasiView.vue"),
@@ -356,6 +361,13 @@ const routes: RouteRecordRaw[] = [
         meta: { roles: [SUPER_ADMIN_ROLE] },
       },
       ...profileRoutes("admin"),
+      {
+        // Kontak di halaman Hubungi Kami cuma boleh diubah super admin.
+        path: "profil/bantuan/hubungi/edit",
+        name: "admin-hubungi-kami-edit",
+        component: () => import("../views/admin/editKontakView.vue"),
+        meta: { roles: [SUPER_ADMIN_ROLE], hideTabBar: true },
+      },
     ],
   },
 ];

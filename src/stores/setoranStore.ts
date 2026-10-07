@@ -203,6 +203,18 @@ export interface AlokasiWarga {
   nominal: number;
 }
 
+/** Bentuk `SplitBillHistoryItem` dari src-tauri/src/models/splitbill_model.rs. */
+export interface BagiHasilRiwayat {
+  id_sb: string;
+  /** Total dana yang dibagikan, dalam rupiah. */
+  total_sb: number;
+  date_start: string;
+  date_end: string;
+  status: string;
+  processed_at: string;
+  processed_by_name: string;
+}
+
 /** Isian pembagian yang dibawa dari langkah Input Data sampai Konfirmasi. */
 export interface BagiHasilDraft {
   total_dana: number;
@@ -502,6 +514,14 @@ export const useSetoranStore = defineStore("setoran", {
 
     clearDraft() {
       this.draft = null;
+    },
+
+    /** Pembagian yang sudah pernah dikirim, terbaru di atas. Cloud-only. */
+    async fetchRiwayat(): Promise<BagiHasilRiwayat[]> {
+      const result = await invokeCommand<BagiHasilRiwayat[]>("get_splitbill_history_command");
+      return [...result].sort(
+        (a, b) => new Date(b.processed_at).getTime() - new Date(a.processed_at).getTime(),
+      );
     },
 
     /* ================================ TOAST ================================ */

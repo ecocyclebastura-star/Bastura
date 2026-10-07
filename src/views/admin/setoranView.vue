@@ -140,6 +140,14 @@ onMounted(() => {
         :block="false"
         @click="router.push({ name: 'admin-setoran-bagi-hasil' })"
       />
+
+      <button
+        type="button"
+        class="mx-auto mt-2 block cursor-pointer rounded-full px-4 py-1.5 text-body-sm font-bold text-primary-700 underline underline-offset-2 transition-colors duration-200 hover:bg-primary-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+        @click="router.push({ name: 'admin-setoran-bagi-hasil-riwayat' })"
+      >
+        Lihat Riwayat Pembagian
+      </button>
     </section>
 
     <SearchBar

@@ -1,13 +1,23 @@
 <script setup lang="ts">
 import { computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import AppIcon from "../../components/AppIcon.vue";
 import BaseButton from "../../components/BaseButton.vue";
 import PageHeader from "../../components/PageHeader.vue";
+import { isSuperAdmin } from "../../constants/roleRoutes";
 import { useSectionRoutes } from "../../composables/useSectionRoutes";
+import { useAuthStore } from "../../stores/authStore";
 import { useProfileStore } from "../../stores/profileStore";
 
+const router = useRouter();
 const profileStore = useProfileStore();
-const { routeName } = useSectionRoutes();
+const authStore = useAuthStore();
+const { section, routeName } = useSectionRoutes();
+
+/** Mengubah kontak cuma bisa dilakukan super admin. */
+const canEdit = computed(
+  () => section.value === "admin" && isSuperAdmin(authStore.role),
+);
 
 onMounted(() => profileStore.loadAdminContact());
 
@@ -111,5 +121,14 @@ async function open(url: string) {
         </span>
       </button>
     </div>
+
+    <BaseButton
+      v-if="canEdit && !profileStore.contactLoading && !profileStore.contactError"
+      class="mx-auto mt-6 w-4/5"
+      label="Ubah kontak"
+      variant="accent"
+      :block="false"
+      @click="router.push({ name: 'admin-hubungi-kami-edit' })"
+    />
   </main>
 </template>

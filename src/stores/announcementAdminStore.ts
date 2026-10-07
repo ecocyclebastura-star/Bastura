@@ -31,7 +31,7 @@ export interface AnnouncementInput {
   title: string;
   /** `id_category` dari server; kosong saat edit = kategori lama dibiarkan. */
   categoryId: string;
-  /** Nama kategori yang dipilih, ikut disimpan di `content`. */
+  /** Nama kategori yang dipilih, penentu flag `important` di `content`. */
   categoryName: string;
   text: string;
   /** Edit saja: penulis asli dipertahankan. */
@@ -42,16 +42,14 @@ export interface AnnouncementInput {
 
 /**
  * `content` dikirim sebagai string JSON berbentuk `AnnouncementContent`
- * ({ text, author, important }). Nama kategorinya ikut disisipkan supaya
- * filter kategori langsung jalan begitu struct Rust-nya membaca field itu
- * (lihat announcementCategories.ts).
+ * ({ text, author, important }). Kategorinya sendiri dikirim terpisah lewat
+ * `category_id`.
  */
 function toContent(input: Pick<AnnouncementInput, "text" | "categoryName" | "author">): string {
   return JSON.stringify({
     text: input.text.trim(),
     author: input.author || useAuthStore().user?.name || "",
     important: input.categoryName.trim().toLowerCase() === "penting",
-    category: input.categoryName,
   });
 }
 

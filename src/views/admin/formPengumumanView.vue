@@ -6,7 +6,6 @@ import BaseButton from "../../components/BaseButton.vue";
 import DraftBanner from "../../components/DraftBanner.vue";
 import ImageDropzone from "../../components/ImageDropzone.vue";
 import PageHeader from "../../components/PageHeader.vue";
-import { resolveCategory } from "../../constants/announcementCategories";
 import { resolveAuthError } from "../../constants/authErrors";
 import { useContentDraft } from "../../composables/useContentDraft";
 import { useToast } from "../../composables/useToast";
@@ -143,12 +142,11 @@ async function load() {
       return;
     }
 
-    // Daftar dari server belum membawa id kategori, jadi dicocokkan lewat
-    // namanya. Yang tidak cocok dibiarkan kosong = kategori lama tidak diubah.
-    const currentName = resolveCategory(item).toLowerCase();
+    // Id yang tidak ada di daftar pilihan (atau pengumuman lama tanpa
+    // kategori) dibiarkan kosong = kategori lama tidak diubah.
     title.value = item.title;
     categoryId.value =
-      categories.value.find((option) => option.name.toLowerCase() === currentName)?.id_category ??
+      categories.value.find((option) => option.id_category === item.category_id)?.id_category ??
       "";
     text.value = item.content.text;
     author.value = item.content.author;

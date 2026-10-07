@@ -7,12 +7,6 @@ export interface AnnouncementContent {
   text: string;
   author: string;
   important: boolean;
-  /**
-   * Belum ada di struct Rust-nya, jadi untuk sekarang selalu undefined.
-   * Disiapkan di sini supaya filter kategori langsung jalan begitu backend
-   * mulai mengirimkannya di dalam `content`.
-   */
-  category?: string;
 }
 
 /** Bentuk `EducationContent` dari src-tauri/src/models/education_model.rs. */
@@ -34,6 +28,9 @@ interface ContentBase {
 }
 
 export interface Announcement extends ContentBase {
+  /** `id_category` dari server; null untuk pengumuman lama tanpa kategori. */
+  category_id: string | null;
+  category_name: string | null;
   content: AnnouncementContent;
 }
 
