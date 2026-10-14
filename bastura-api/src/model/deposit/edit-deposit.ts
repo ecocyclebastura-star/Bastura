@@ -43,5 +43,7 @@ export const editDepositModel = async (
             INSERT INTO audit_logs (actor_id, target_id, action_type, details, created_at) 
             VALUES (${admin_id}, ${id}, 'EDIT_DEPOSIT', ${sql.json({ old_weight: currentDeposit.weight_dp, new_weight: new_weight || currentDeposit.weight_dp })}, NOW())
         `;
+
+        await tx`UPDATE update_logs SET transaction_up = NOW() WHERE id_update = 1`;
     });
 }

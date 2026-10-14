@@ -37,6 +37,8 @@ export const addDepositModel = async (
             VALUES (${admin_id}, ${id_deposit}, 'ADD_DEPOSIT', ${sql.json({ total_weight: weight_kg })}, NOW())
         `;
 
+        await tx`UPDATE update_logs SET transaction_up = NOW() WHERE id_update = 1`;
+
         return id_deposit;
     });
 }

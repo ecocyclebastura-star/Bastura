@@ -44,12 +44,15 @@ export const addWasteCatalog = async (
     description: string,
     catalog_img: string | null
 ) => {
-    const result = await sql`
-        INSERT INTO waste_catalog (
-            id_waste, name, category_id, unit, price, description, catalog_img, created_at
-        ) VALUES (
-            gen_random_uuid(), ${name}, ${category_id}, ${unit}, ${price}, ${description}, ${catalog_img}, NOW()
-        ) RETURNING id_waste
-    `;
-    return result[0];
+    return await sql.begin(async (tx) => {
+        const result = await tx`
+            INSERT INTO waste_catalog (
+                id_waste, name, category_id, unit, price, description, catalog_img, created_at
+            ) VALUES (
+                gen_random_uuid(), ${name}, ${category_id}, ${unit}, ${price}, ${description}, ${catalog_img}, NOW()
+            ) RETURNING id_waste
+        `;
+        await tx`UPDATE update_logs SET catalog_up = NOW() WHERE id_update = 1`;
+        return result[0];
+    });
 }

@@ -31,6 +31,8 @@ export const veriftyWD = async (id_admin: string, id_tsc: string, proccess_type:
                     WHERE id_wd = ${id_tsc}
                     RETURNING wd_status
                 `;
+
+                await tx`UPDATE update_logs SET transaction_up = now() WHERE id_update = 1`;
                 
                 return {
                     success: update_wd[0].wd_status,
@@ -46,6 +48,8 @@ export const veriftyWD = async (id_admin: string, id_tsc: string, proccess_type:
                     WHERE id_wd = ${id_tsc}
                     RETURNING wd_status
                 `;
+
+                await tx`UPDATE update_logs SET transaction_up = now() WHERE id_update = 1`;
                 
                 return {
                     success: update_wd[0].wd_status,
@@ -53,7 +57,6 @@ export const veriftyWD = async (id_admin: string, id_tsc: string, proccess_type:
                 };
             }
             
-            // tambahin update api di tabel update 
             return 'ERR_PROCCESS_NOT_FOUND';
         });
         

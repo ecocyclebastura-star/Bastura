@@ -83,11 +83,16 @@ export const changeOldPassword = async (email: string, old_password: string , ne
 }
 
 export const updatePasswordByEmail = async (id: string, hashedPassword: string) => {
-  const result = await sql`
-    UPDATE users SET password = ${hashedPassword}, updated_at = NOW() WHERE email = ${id}
-    RETURNING id_users, name, email, phone
-  `
-  return result[0]
+  return await sql.begin(async (tx) => {
+    const result = await tx`
+      UPDATE users SET password = ${hashedPassword}, updated_at = NOW() WHERE email = ${id}
+      RETURNING id_users, name, email, phone
+    `;
+    if (result.length > 0) {
+      await tx`UPDATE update_logs SET profile_up = NOW() WHERE id_update = 1`;
+    }
+    return result[0];
+  });
 }
  
  export const setNewUserBalance = async (id: string, amount: 0 ) => {

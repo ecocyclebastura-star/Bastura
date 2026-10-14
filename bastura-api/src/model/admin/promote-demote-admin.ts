@@ -46,6 +46,8 @@ export const promoteUserToAdmin = async (id_user: string, id_admin: string) => {
         // Create audit log
         await tx`INSERT INTO audit_logs (actor_id, target_id, action_type, created_at) VALUES (${id_admin}, ${id_user}, 'PROMOTE_ADMIN', NOW())`;
 
+        await tx`UPDATE update_logs SET profile_up = now() WHERE id_update = 1`;
+
         return { ...updateResult[0], role: 'admin' };
     });
     
@@ -93,6 +95,8 @@ export const demoteAdminToUser = async (id_user: string, id_admin: string) => {
 
         // Create audit log
         await tx`INSERT INTO audit_logs (actor_id, target_id, action_type, created_at) VALUES (${id_admin}, ${id_user}, 'DEMOTE_ADMIN', NOW())`;
+
+        await tx`UPDATE update_logs SET profile_up = now() WHERE id_update = 1`;
 
         return { ...updateResult[0], role: 'user' };
     });

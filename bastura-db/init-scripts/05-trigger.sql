@@ -25,7 +25,7 @@ BEGIN
     UPDATE update_logs SET announcements_up = NOW() WHERE id_update = 1;
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 CREATE TRIGGER trigger_update_announcements
 AFTER INSERT OR UPDATE OR DELETE ON announcements
@@ -39,7 +39,7 @@ BEGIN
     UPDATE update_logs SET education_up = NOW() WHERE id_update = 1;
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 CREATE TRIGGER trigger_update_education
 AFTER INSERT OR UPDATE OR DELETE ON education_content
@@ -53,7 +53,7 @@ BEGIN
     UPDATE update_logs SET transaction_up = NOW() WHERE id_update = 1;
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 CREATE TRIGGER trigger_update_deposit
 AFTER INSERT OR UPDATE OR DELETE ON deposit

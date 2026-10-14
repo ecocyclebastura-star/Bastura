@@ -15,11 +15,16 @@ export const editEducation = async (id: string, updateData: any) => {
         updateData.content = sql.json(updateData.content);
     }
 
-    const result = await sql`
-        UPDATE education_content
-        SET ${sql(updateData)}
-        WHERE id_content = ${id}
-        RETURNING id_content
-    `;
-    return result[0];
+    return await sql.begin(async (tx) => {
+        const result = await tx`
+            UPDATE education_content
+            SET ${tx(updateData)}
+            WHERE id_content = ${id}
+            RETURNING id_content
+        `;
+        if (result.length > 0) {
+            await tx`UPDATE update_logs SET education_up = NOW() WHERE id_update = 1`;
+        }
+        return result[0];
+    });
 }

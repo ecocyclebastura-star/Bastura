@@ -26,5 +26,7 @@ export const deleteDepositModel = async (id: string, admin_id: string) => {
             INSERT INTO audit_logs (actor_id, target_id, action_type, details, created_at) 
             VALUES (${admin_id}, ${id}, 'DELETE_DEPOSIT', ${sql.json(snapshot)}, NOW())
         `;
+
+        await tx`UPDATE update_logs SET transaction_up = NOW() WHERE id_update = 1`;
     });
 }
