@@ -66,6 +66,89 @@ struct AnnouncementRow {
     created_at: String,
 }
 
+/// Ambil text/author/important dari satu objek `content`. Key versi lama
+/// (`isi_konten`, `kontak_informasi`, dst.) tetap dibaca sebagai cadangan.
+fn content_from_object(value: &serde_json::Value) -> AnnouncementContent {
+    let text = value
+        .get("text")
+        .and_then(|t| t.as_str())
+        .or_else(|| value.get("isi_konten").and_then(|i| i.get("inti")).and_then(|t| t.as_str()))
+        .unwrap_or("")
+        .to_string();
+
+    let author = value
+        .get("author")
+        .and_then(|a| a.as_str())
+        .or_else(|| {
+            value
+                .get("kontak_informasi")
+                .and_then(|k| k.get("nama_divisi"))
+                .and_then(|a| a.as_str())
+        })
+        .unwrap_or("")
+        .to_string();
+
+    let important = match value.get("important") {
+        Some(serde_json::Value::Bool(b)) => *b,
+        Some(serde_json::Value::String(s)) => s.eq_ignore_ascii_case("true"),
+        _ => value
+            .get("pengaturan_tampilan")
+            .and_then(|p| p.get("tampilkan_penulis"))
+            .and_then(|i| i.as_bool())
+            .unwrap_or(false),
+    };
+
+    AnnouncementContent { text, author, important }
+}
+
+/// `content` dikirim aplikasi sebagai string JSON ({"text","author","important"}),
+/// tapi server bisa membalasnya dalam beberapa bentuk: objek biasa, string
+/// berisi JSON (ter-encode dua kali di cache), atau objek yang `text`-nya
+/// berisi JSON utuh kiriman aplikasi. Lapisan-lapisan itu dibuka sampai
+/// ketemu teks aslinya, supaya yang tampil bukan JSON mentah.
+fn parse_announcement_content(raw: &str) -> AnnouncementContent {
+    let mut current = raw.to_string();
+    let mut outer: Option<AnnouncementContent> = None;
+
+    // Dibatasi supaya isian yang aneh tidak membuat loop tanpa akhir.
+    for _ in 0..4 {
+        match serde_json::from_str::<serde_json::Value>(&current) {
+            Ok(serde_json::Value::String(inner)) => current = inner,
+            Ok(value) if value.is_object() => {
+                let mut content = content_from_object(&value);
+                if let Some(prev) = &outer {
+                    if content.author.is_empty() {
+                        content.author = prev.author.clone();
+                    }
+                    content.important |= prev.important;
+                }
+
+                let text_is_content = serde_json::from_str::<serde_json::Value>(&content.text)
+                    .map(|v| v.get("text").is_some() || v.get("isi_konten").is_some())
+                    .unwrap_or(false);
+                if !text_is_content {
+                    return content;
+                }
+
+                current = content.text.clone();
+                outer = Some(content);
+            }
+            _ => break,
+        }
+    }
+
+    // Bukan JSON sama sekali: server menyimpannya sebagai teks biasa.
+    outer.unwrap_or_else(|| AnnouncementContent {
+        text: if serde_json::from_str::<serde_json::Value>(&current).is_ok() {
+            String::new()
+        } else {
+            current
+        },
+        author: String::new(),
+        important: false,
+    })
+}
+
 pub async fn get_cached_announcements(
     pool: &SqlitePool,
     app: &tauri::AppHandle,
@@ -97,54 +180,7 @@ pub async fn get_cached_announcements(
 
     let mut announcements = Vec::new();
     for row in rows {
-        let raw_content = row.content.unwrap_or_else(|| "{}".to_string());
-
-        // `content` dikirim ke server sebagai string JSON (multipart text), jadi
-        // server bisa membalasnya sebagai string, bukan objek. Di cache jadinya
-        // ter-encode dua kali ("\"{\\\"text\\\":...}\"") dan teksnya hilang;
-        // lapisan string-nya dibuka dulu sebelum di-parse.
-        let content_json = match serde_json::from_str::<serde_json::Value>(&raw_content) {
-            Ok(serde_json::Value::String(inner)) => inner,
-            _ => raw_content,
-        };
-
-        let content: AnnouncementContent =
-            serde_json::from_str(&content_json).unwrap_or_else(|_| {
-                if let Ok(value) = serde_json::from_str::<serde_json::Value>(&content_json) {
-                    let text = value.get("text")
-                        .and_then(|t| t.as_str())
-                        .or_else(|| value.get("isi_konten")
-                            .and_then(|i| i.get("inti"))
-                            .and_then(|t| t.as_str()))
-                        .unwrap_or("")
-                        .to_string();
-                        
-                    let author = value.get("author")
-                        .and_then(|a| a.as_str())
-                        .or_else(|| value.get("kontak_informasi")
-                            .and_then(|k| k.get("nama_divisi"))
-                            .and_then(|a| a.as_str()))
-                        .unwrap_or("")
-                        .to_string();
-                        
-                    let important = value.get("pengaturan_tampilan")
-                        .and_then(|p| p.get("tampilkan_penulis"))
-                        .and_then(|i| i.as_bool())
-                        .unwrap_or(false);
-
-                    AnnouncementContent {
-                        text,
-                        author,
-                        important,
-                    }
-                } else {
-                    AnnouncementContent {
-                        text: String::new(),
-                        author: String::new(),
-                        important: false,
-                    }
-                }
-            });
+        let content = parse_announcement_content(row.content.as_deref().unwrap_or("{}"));
 
         let mut image_base64 = None;
         if let Some(ref img_url) = row.announcements_img {
