@@ -208,6 +208,18 @@ pub async fn get_draft_announcements(
     Ok(rows)
 }
 
+/// Buang satu pengumuman dari cache setelah dihapus di server. Smart sync
+/// baru membersihkannya kalau `announcements_up` di server ikut naik, jadi
+/// tanpa ini pengumuman yang sudah dihapus tetap tampil di perangkat.
+pub async fn delete_cached_announcement(pool: &SqlitePool, id: &str) -> Result<(), AppError> {
+    sqlx::query("DELETE FROM announcements_cache WHERE id_announcements = ?")
+        .bind(id)
+        .execute(pool)
+        .await?;
+
+    Ok(())
+}
+
 pub async fn delete_announcement_draft(
     pool: &SqlitePool,
     draft_id: &str,

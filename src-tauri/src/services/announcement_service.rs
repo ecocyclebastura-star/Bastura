@@ -338,26 +338,20 @@ pub async fn delete_announcement_service(
         .send()
         .await?;
 
-    if res.status().is_success() {
+    // 404 = sudah tidak ada di server (mis. dihapus dari perangkat lain), jadi
+    // hasilnya sama dengan berhasil: sisa di cache lokal ikut dibuang.
+    if res.status().is_success() || res.status().as_u16() == 404 {
+        crate::db::announcement_queries::delete_cached_announcement(&state.db, &id).await?;
         Ok("Pengumuman berhasil dihapus.".to_string())
     } else {
         let status = res.status();
         let body = res.text().await.unwrap_or_default();
-        if status.as_u16() == 404 {
-            Err(AppError::ApiError {
-                http_status: 404,
-                status: "error".to_string(),
-                code: None,
-                message: "Pengumuman tidak ditemukan di server.".to_string(),
-            })
-        } else {
-            Err(AppError::ApiError {
-                http_status: status.as_u16(),
-                status: "error".to_string(),
-                code: None,
-                message: format!("Gagal menghapus pengumuman: {}", body),
-            })
-        }
+        Err(AppError::ApiError {
+            http_status: status.as_u16(),
+            status: "error".to_string(),
+            code: None,
+            message: format!("Gagal menghapus pengumuman: {}", body),
+        })
     }
 }
 

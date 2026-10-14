@@ -131,6 +131,7 @@ pub async fn run_smart_sync_service(state: &AppState) -> Result<bool, AppError> 
     }
 
     // 6. Sync Transaction History
+    let mut admin_transaction_error = None;
     if let Some(server_transaction_up) = &server_data.transaction_up {
         let local_transaction_up = get_last_sync(&state.db, "transaction").await?;
 
@@ -151,8 +152,10 @@ pub async fn run_smart_sync_service(state: &AppState) -> Result<bool, AppError> 
 
             if let Err(e) = sync_result {
                 tracing::error!("Sinkronisasi riwayat transaksi gagal: {}", e);
+                // Error admin tetap dilaporkan, tapi setelah katalog di bawah
+                // ikut disinkronkan; dulu return di sini membuat katalog terlewat.
                 if is_admin {
-                    return Err(e);
+                    admin_transaction_error = Some(e);
                 }
             } else {
                 update_last_sync(&state.db, "transaction", server_transaction_up).await?;
@@ -187,6 +190,10 @@ pub async fn run_smart_sync_service(state: &AppState) -> Result<bool, AppError> 
 
     // Cleanup unused images after sync finishes
     crate::utils::file_utils::cleanup_unused_images(&state.app_handle, &state.db).await;
+
+    if let Some(e) = admin_transaction_error {
+        return Err(e);
+    }
 
     Ok(true)
 }

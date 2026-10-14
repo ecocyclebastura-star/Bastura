@@ -28,6 +28,14 @@ pub async fn sync_catalog_from_server(state: &AppState) -> Result<(), AppError> 
                         let items = api_response.data.data;
                         let cached_items = get_cached_catalog(&state.db, None, None).await?;
 
+                        // Daftar dari server lengkap (tanpa halaman), jadi item yang
+                        // tidak ada di sini sudah dihapus permanen di server.
+                        let live_ids: std::collections::HashSet<String> = items
+                            .iter()
+                            .filter(|i| i.deleted_at.is_none())
+                            .map(|i| i.id_waste.clone())
+                            .collect();
+
                         for server_item in items {
                             // Handle Soft Delete
                             if server_item.deleted_at.is_some() {
@@ -75,6 +83,14 @@ pub async fn sync_catalog_from_server(state: &AppState) -> Result<(), AppError> 
                                 tracing::error!("Gagal menyimpan katalog ke SQLite: {}", e);
                             }
                         }
+
+                        // Soft delete sudah ditangani di atas; ini untuk item yang
+                        // sama sekali tidak dikirim lagi oleh server.
+                        for cached in cached_items.iter().filter(|c| !live_ids.contains(&c.id_waste)) {
+                            if let Err(e) = crate::db::waste_queries::delete_catalog_item(&state.db, &cached.id_waste).await {
+                                tracing::error!("Gagal menghapus katalog dari SQLite: {}", e);
+                            }
+                        }
                     }
                     Err(e) => {
                         tracing::error!("Gagal memparsing respon JSON katalog sampah: {}", e);
@@ -102,9 +118,6 @@ pub async fn sync_catalog_from_server(state: &AppState) -> Result<(), AppError> 
             return Err(e.into());
         }
     }
-
-    // Clean up local items that are deleted on server
-    // Option: delete items from local DB that are not in the current server list
 
     Ok(())
 }
@@ -420,15 +433,13 @@ pub async fn delete_catalog_service(
         let body_json: Option<serde_json::Value> = serde_json::from_str(&body_text).ok();
         let code = body_json.as_ref().and_then(|v| v.get("code")).and_then(|c| c.as_str());
         
+        // Sudah tidak ada di server (mis. dihapus dari perangkat lain): hasilnya
+        // sama dengan berhasil, cukup buang sisanya dari cache lokal.
         if status.as_u16() == 404 || code == Some("CATALOG_NOT_FOUND") {
-            return Err(AppError::ApiError {
-                http_status: 404,
-                status: "error".to_string(),
-                code: Some("CATALOG_NOT_FOUND".to_string()),
-                message: "Gagal: ID sampah tidak ditemukan atau sudah dihapus.".to_string(),
-            });
+            crate::db::waste_queries::delete_catalog_item(&state.db, &id).await?;
+            return Ok(());
         }
-        
+
         let message = body_json.as_ref().and_then(|v| v.get("message")).and_then(|m| m.as_str())
             .unwrap_or(&format!("Gagal hapus katalog (HTTP {}): {}", status.as_u16(), body_text)).to_string();
         
@@ -440,7 +451,9 @@ pub async fn delete_catalog_service(
         });
     }
 
-    // Paksa sinkronisasi lokal agar data langsung terhapus di cache
+    // Langsung dibuang dari cache: smart sync baru menarik ulang katalog kalau
+    // `catalog_up` di server ikut naik, jadi tidak bisa diandalkan di sini.
+    crate::db::waste_queries::delete_catalog_item(&state.db, &id).await?;
     let _ = crate::services::sync_service::run_smart_sync_service(state).await;
 
     Ok(())

@@ -378,7 +378,10 @@ pub async fn delete_education_service(state: &AppState, id: &str) -> Result<Stri
         .send()
         .await?;
 
-    if res.status().is_success() {
+    // 404 = sudah tidak ada di server (mis. dihapus dari perangkat lain), jadi
+    // hasilnya sama dengan berhasil: sisa di cache lokal ikut dibuang.
+    if res.status().is_success() || res.status().as_u16() == 404 {
+        crate::db::education_queries::delete_cached_education(&state.db, id).await?;
         Ok("Edukasi berhasil dihapus.".to_string())
     } else {
         let status = res.status();

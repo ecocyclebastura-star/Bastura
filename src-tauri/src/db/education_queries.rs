@@ -220,6 +220,17 @@ pub async fn get_draft_educations(
     Ok(drafts)
 }
 
+/// Buang satu edukasi dari cache setelah dihapus di server. Smart sync baru
+/// membersihkannya kalau `education_up` di server ikut naik, jadi tanpa ini
+/// edukasi yang sudah dihapus tetap tampil di perangkat.
+pub async fn delete_cached_education(pool: &SqlitePool, id: &str) -> Result<(), AppError> {
+    sqlx::query("DELETE FROM education_cache WHERE id_content = ?")
+        .bind(id)
+        .execute(pool)
+        .await?;
+    Ok(())
+}
+
 pub async fn delete_education_draft(pool: &SqlitePool, draft_id: &str) -> Result<(), AppError> {
     sqlx::query("DELETE FROM education_drafts_cache WHERE draft_id = ?")
         .bind(draft_id)

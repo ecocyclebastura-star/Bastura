@@ -150,7 +150,7 @@ export const useAuthStore = defineStore("auth", {
       useEducationAdminStore().reset();
       useCatalogAdminStore().reset();
       useCommissionStore().reset();
-      // Cuma hasil scan terakhir; catatan jatah harian per akun tetap disimpan.
+      // Cuma hasil scan terakhir; batas scan harian dijaga server.
       useScanStore().clearResult();
     },
   },
