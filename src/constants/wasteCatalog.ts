@@ -1,5 +1,6 @@
 /** Penerjemah nilai mentah katalog sampah jadi bentuk yang siap ditampilkan. */
 import { formatRupiah } from "../utils/formatters";
+import { normalizeUnit } from "./setoran";
 import type { CatalogItem } from "../stores/wasteStore";
 
 /** Nilai khusus buat chip "Semua": tidak menyaring apa pun. */
@@ -49,7 +50,8 @@ export function buildWasteCategoryChips(
 }
 
 /**
- * Estimasi harga siap tampil, mis. "Rp1.500/kg".
+ * Estimasi harga siap tampil, mis. "Rp1.500/kg" atau "Rp500/pc" untuk sampah
+ * yang dihitung per buah.
  *
  * Harga yang belum diisi backend ditampilkan sebagai placeholder, bukan
  * "Rp0" -- gratis dan belum ada harganya itu dua hal yang berbeda.
@@ -59,5 +61,5 @@ export function formatHargaSatuan(
   unit: string | null | undefined,
 ): string {
   if (price == null) return "Belum ada";
-  return `${formatRupiah(price)}/${unit?.trim() || "kg"}`;
+  return `${formatRupiah(price)}/${normalizeUnit(unit)}`;
 }

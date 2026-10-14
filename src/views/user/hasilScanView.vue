@@ -1,16 +1,21 @@
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
+import { computed, onMounted, reactive } from "vue";
 import { useRouter } from "vue-router";
 import AlertToast from "../../components/AlertToast.vue";
 import AppIcon from "../../components/AppIcon.vue";
 import BaseButton from "../../components/BaseButton.vue";
 import PageHeader from "../../components/PageHeader.vue";
+import { normalizeUnit } from "../../constants/setoran";
+import type { SetoranUnit } from "../../constants/setoran";
 import { useToast } from "../../composables/useToast";
 import { primaryItem, useScanStore } from "../../stores/scanStore";
+import type { ScanItem } from "../../stores/scanStore";
+import { useWasteStore } from "../../stores/wasteStore";
 import { formatRupiah } from "../../utils/formatters";
 
 const router = useRouter();
 const scanStore = useScanStore();
+const wasteStore = useWasteStore();
 const { toastMessage, toastVariant, showToast } = useToast();
 
 const result = computed(() => scanStore.result);
@@ -20,6 +25,33 @@ const others = computed(() =>
   result.value ? result.value.items.filter((entry) => entry !== item.value) : [],
 );
 
+/**
+ * Balasan AI cuma membawa `price_per_kg`, padahal sebagian katalog dihitung
+ * per buah. Satuannya diambil dari katalog lewat `catalog_id`; selama belum
+ * ketemu (atau barangnya tidak ada di katalog) dianggap kg.
+ */
+const catalogUnits = reactive<Record<string, SetoranUnit>>({});
+
+function unitOf(entry: ScanItem): SetoranUnit {
+  return (entry.catalog_id && catalogUnits[entry.catalog_id]) || "kg";
+}
+
+async function loadCatalogUnits() {
+  const ids = new Set(
+    (result.value?.items ?? []).map((entry) => entry.catalog_id).filter(Boolean) as string[],
+  );
+  // Berurutan: pencarian pertama yang meleset sudah menarik seluruh katalog,
+  // sisanya tinggal dibaca dari memori.
+  for (const id of ids) {
+    try {
+      const found = await wasteStore.findCatalogItem(id);
+      if (found) catalogUnits[id] = normalizeUnit(found.unit);
+    } catch {
+      // Gagal memuat katalog cukup jatuh ke kg; hasil scan tetap tampil.
+    }
+  }
+}
+
 onMounted(() => {
   // Halaman ini cuma berarti setelah scan; dibuka langsung = balik ke kamera.
   if (!item.value) {
@@ -27,6 +59,7 @@ onMounted(() => {
     return;
   }
   showToast("Scan berhasil! Jenis sampah berhasil dikenali.", "success");
+  loadCatalogUnits();
 });
 
 function openCatalog(id: string) {
@@ -81,7 +114,7 @@ const sectionClass = "border-t border-primary-400 px-5 py-3";
               class="flex justify-between gap-3 text-body-sm text-neutral-800"
             >
               <span>{{ other.name }}</span>
-              <span class="shrink-0 font-semibold">{{ formatRupiah(other.price_per_kg) }}/kg</span>
+              <span class="shrink-0 font-semibold">{{ formatRupiah(other.price_per_kg) }}/{{ unitOf(other) }}</span>
             </li>
           </ul>
         </div>
@@ -90,7 +123,7 @@ const sectionClass = "border-t border-primary-400 px-5 py-3";
           <div class="flex items-center justify-between gap-3">
             <p class="text-body-sm font-bold text-neutral-900">Estimasi Harga</p>
             <p class="text-body-md font-bold text-primary-800">
-              {{ formatRupiah(item.price_per_kg) }}/kg
+              {{ formatRupiah(item.price_per_kg) }}/{{ unitOf(item) }}
             </p>
           </div>
 

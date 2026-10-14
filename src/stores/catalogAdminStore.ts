@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import type { DraftImage } from "../composables/useContentDraft";
 import type { ToastVariant } from "../composables/useToast";
+import type { SetoranUnit } from "../constants/setoran";
 import { invokeCommand } from "../utils/invokeCommand";
 import { useWasteStore } from "./wasteStore";
 
@@ -20,8 +21,11 @@ export interface CatalogInput {
   categoryId: number;
   /** Rupiah penuh per satuan. */
   price: number;
-  /** Satuan harga; form-nya selalu per kg, tapi satuan lama tetap dibawa saat edit. */
-  unit: string;
+  /**
+   * Satuan harga. Server cuma mengenal "kg"; "pc" disimpan backend sebagai kg
+   * dengan penanda [UNIT:PC] di deskripsi (lihat waste_service.rs).
+   */
+  unit: SetoranUnit;
   description: string;
   image?: DraftImage | null;
 }

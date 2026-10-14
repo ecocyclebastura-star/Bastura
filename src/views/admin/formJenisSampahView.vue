@@ -6,6 +6,8 @@ import BaseButton from "../../components/BaseButton.vue";
 import ImageDropzone from "../../components/ImageDropzone.vue";
 import PageHeader from "../../components/PageHeader.vue";
 import { resolveAuthError } from "../../constants/authErrors";
+import { normalizeUnit } from "../../constants/setoran";
+import type { SetoranUnit } from "../../constants/setoran";
 import { useToast } from "../../composables/useToast";
 import {
   CATALOG_IMAGE_MAX_BYTES,
@@ -37,8 +39,13 @@ const categoryId = ref("");
 /** Cuma digit; tampilannya diberi titik ribuan lewat `priceDisplay`. */
 const priceDigits = ref("");
 const description = ref("");
-/** Satuan lama dibawa saat edit; item baru selalu per kg sesuai desain. */
-const unit = ref("kg");
+/** Harga dihitung per kg atau per buah (pc), mis. jerigen. */
+const unit = ref<SetoranUnit>("kg");
+
+const UNIT_OPTIONS: readonly { value: SetoranUnit; label: string; hint: string }[] = [
+  { value: "kg", label: "Kg", hint: "per kilogram" },
+  { value: "pc", label: "Pc", hint: "per buah" },
+];
 
 const nameError = ref("");
 const categoryError = ref("");
@@ -82,7 +89,13 @@ const loading = ref(false);
 const loadError = ref("");
 
 /** Nilai awal form, pembanding untuk penjaga perubahan yang belum disimpan. */
-const initial = ref({ name: "", categoryId: "", priceDigits: "", description: "" });
+const initial = ref({
+  name: "",
+  categoryId: "",
+  priceDigits: "",
+  description: "",
+  unit: "kg" as SetoranUnit,
+});
 
 async function load() {
   loading.value = true;
@@ -103,13 +116,14 @@ async function load() {
     categoryId.value = item.category_id != null ? String(item.category_id) : "";
     priceDigits.value = item.price != null ? String(Math.round(item.price)) : "";
     description.value = item.description ?? "";
-    unit.value = item.unit?.trim() || "kg";
+    unit.value = normalizeUnit(item.unit);
     existingImage.value = item.image_base64 ?? "";
     initial.value = {
       name: name.value,
       categoryId: categoryId.value,
       priceDigits: priceDigits.value,
       description: description.value,
+      unit: unit.value,
     };
   } catch (error) {
     loadError.value = resolveAuthError(error, "Gagal memuat data jenis sampah.");
@@ -130,6 +144,7 @@ const isDirty = computed(
     categoryId.value !== initial.value.categoryId ||
     priceDigits.value !== initial.value.priceDigits ||
     description.value !== initial.value.description ||
+    unit.value !== initial.value.unit ||
     newImage.value !== null,
 );
 
@@ -278,6 +293,37 @@ const borderClass = (error: string) => (error ? "border-red-500" : "border-prima
         <p v-if="categoryError" :class="errorClass">{{ categoryError }}</p>
       </div>
 
+      <fieldset class="flex flex-col gap-1.5">
+        <legend :class="[labelClass, 'mb-1.5']">Satuan</legend>
+        <div class="grid grid-cols-2 gap-3">
+          <label
+            v-for="option in UNIT_OPTIONS"
+            :key="option.value"
+            class="flex cursor-pointer flex-col items-center rounded-2xl border px-4 py-2.5 transition-colors duration-200 has-focus-visible:ring-2 has-focus-visible:ring-primary-500"
+            :class="
+              unit === option.value
+                ? 'border-primary-700 bg-primary-700 text-white'
+                : 'border-primary-700 bg-white text-neutral-900 hover:bg-primary-100'
+            "
+          >
+            <input
+              v-model="unit"
+              type="radio"
+              :name="`${uid}-satuan-pilihan`"
+              :value="option.value"
+              class="sr-only"
+            />
+            <span class="text-body-reg font-bold">{{ option.label }}</span>
+            <span
+              class="text-body-tiny"
+              :class="unit === option.value ? 'text-primary-100' : 'text-neutral-500'"
+            >
+              {{ option.hint }}
+            </span>
+          </label>
+        </div>
+      </fieldset>
+
       <div class="flex flex-col gap-1.5">
         <label :for="`${uid}-harga`" :class="labelClass">Estimasi harga</label>
         <div class="relative">
@@ -297,7 +343,7 @@ const borderClass = (error: string) => (error ? "border-red-500" : "border-prima
             :id="`${uid}-satuan`"
             class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-body-sm font-bold text-neutral-900"
           >
-            /{{ unit === "kg" ? "Kg" : unit }}
+            /{{ unit === "pc" ? "Pc" : "Kg" }}
           </span>
         </div>
         <p v-if="priceError" :class="errorClass">{{ priceError }}</p>
