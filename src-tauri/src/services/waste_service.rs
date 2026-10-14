@@ -97,6 +97,11 @@ pub async fn sync_catalog_from_server(state: &AppState) -> Result<(), AppError> 
                         return Err(e.into());
                     }
                 }
+            } else if response.status().as_u16() == 404 {
+                tracing::info!("Katalog di server kosong (404 / DATA_NOT_FOUND). Mengosongkan cache SQLite.");
+                sqlx::query("DELETE FROM waste_catalog_cache")
+                    .execute(&state.db)
+                    .await?;
             } else {
                 tracing::warn!(
                     "API katalog merespons dengan status error: {}",

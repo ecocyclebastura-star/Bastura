@@ -57,6 +57,9 @@ pub async fn sync_education_from_server(state: &AppState) -> Result<(), AppError
                         return Err(e.into());
                     }
                 }
+            } else if response.status().as_u16() == 404 {
+                tracing::info!("Edukasi di server kosong (404 / DATA_NOT_FOUND). Mengosongkan cache SQLite.");
+                upsert_education(&state.db, &[]).await?;
             } else {
                 tracing::warn!(
                     "API edukasi merespons dengan status error: {}",
@@ -382,6 +385,7 @@ pub async fn delete_education_service(state: &AppState, id: &str) -> Result<Stri
     // hasilnya sama dengan berhasil: sisa di cache lokal ikut dibuang.
     if res.status().is_success() || res.status().as_u16() == 404 {
         crate::db::education_queries::delete_cached_education(&state.db, id).await?;
+        let _ = crate::services::sync_service::run_smart_sync_service(state).await;
         Ok("Edukasi berhasil dihapus.".to_string())
     } else {
         let status = res.status();

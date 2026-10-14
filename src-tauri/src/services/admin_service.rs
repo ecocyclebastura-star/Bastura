@@ -294,6 +294,10 @@ pub async fn sync_global_transactions_from_server(state: &AppState) -> Result<()
         Ok(r) => {
             if r.status().is_success() {
                 r
+            } else if r.status().as_u16() == 404 {
+                tracing::info!("Transaksi global di server kosong (404). Mengosongkan cache.");
+                crate::db::admin_queries::upsert_transaksi_global_batch(&state.db, &[]).await?;
+                return Ok(());
             } else {
                 let status = r.status();
                 let body_text = r.text().await.unwrap_or_default();

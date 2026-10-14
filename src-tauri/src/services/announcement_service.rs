@@ -61,6 +61,9 @@ pub async fn sync_announcements_from_server(state: &AppState) -> Result<(), AppE
                         return Err(e.into());
                     }
                 }
+            } else if response.status().as_u16() == 404 {
+                tracing::info!("Pengumuman di server kosong (404 / DATA_NOT_FOUND). Mengosongkan cache SQLite.");
+                upsert_announcements(&state.db, &[]).await?;
             } else {
                 tracing::warn!(
                     "API pengumuman merespons dengan status error: {}",
@@ -342,6 +345,7 @@ pub async fn delete_announcement_service(
     // hasilnya sama dengan berhasil: sisa di cache lokal ikut dibuang.
     if res.status().is_success() || res.status().as_u16() == 404 {
         crate::db::announcement_queries::delete_cached_announcement(&state.db, &id).await?;
+        let _ = crate::services::sync_service::run_smart_sync_service(state).await;
         Ok("Pengumuman berhasil dihapus.".to_string())
     } else {
         let status = res.status();

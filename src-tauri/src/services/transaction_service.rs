@@ -148,8 +148,9 @@ pub async fn sync_transaction_log_from_server(state: &AppState) -> Result<(), Ap
             .unwrap_or("Gagal mengambil riwayat transaksi dari server")
             .to_string();
 
-        if code == Some("DATA_NOT_FOUND")
-            || (http_status == 404 && message.to_lowercase().contains("tidak ditemukan"))
+        if http_status == 404
+            || code == Some("DATA_NOT_FOUND")
+            || message.to_lowercase().contains("tidak ditemukan")
         {
             tracing::info!("Riwayat transaksi kosong (DATA_NOT_FOUND / 404). Mengosongkan cache.");
             upsert_transactions(&state.db, &[]).await?;
@@ -666,8 +667,17 @@ pub async fn delete_deposit_service(
 
     let http_status = response.status().as_u16();
 
-    if response.status().is_success() {
+    if response.status().is_success() || http_status == 404 {
         tracing::info!("Setoran sampah berhasil dihapus.");
+        let _ = sqlx::query("DELETE FROM transaksi_global_cache WHERE id_transaksi = ?")
+            .bind(&id_deposit)
+            .execute(&state.db)
+            .await;
+        let _ = sqlx::query("DELETE FROM transaction_history_cache WHERE id_transaksi = ?")
+            .bind(&id_deposit)
+            .execute(&state.db)
+            .await;
+        let _ = crate::services::sync_service::run_smart_sync_service(state).await;
         Ok(())
     } else {
         let body_json = response.json::<serde_json::Value>().await.ok();
