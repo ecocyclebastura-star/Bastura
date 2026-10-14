@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import AlertToast from "../../components/AlertToast.vue";
-import AppIcon from "../../components/AppIcon.vue";
+import AvatarPhoto from "../../components/AvatarPhoto.vue";
 import ManagementMenu from "../../components/cards/ManagementMenu.vue";
 import ScheduleCard from "../../components/cards/ScheduleCard.vue";
 import ScheduleSheet from "../../components/ScheduleSheet.vue";
@@ -11,17 +11,23 @@ import { resolveAuthError } from "../../constants/authErrors";
 import { isSuperAdmin } from "../../constants/roleRoutes";
 import { useToast } from "../../composables/useToast";
 import { useAuthStore } from "../../stores/authStore";
+import { useProfileStore } from "../../stores/profileStore";
 import { useScheduleStore } from "../../stores/scheduleStore";
 import type { SetorSchedule } from "../../stores/scheduleStore";
 
 const router = useRouter();
 const authStore = useAuthStore();
 const scheduleStore = useScheduleStore();
+const profileStore = useProfileStore();
 const { toastMessage, toastVariant, showToast } = useToast();
 
-// Nama panggilan: ambil kata pertama biar sapaannya tetap pendek.
+// Nama panggilan: ambil kata pertama biar sapaannya tetap pendek. Nama dari
+// profil didahulukan supaya ikut berubah setelah diedit di menu Profil.
 const greetingName = computed(
-  () => authStore.user?.name?.trim().split(/\s+/)[0] || "Admin",
+  () =>
+    (profileStore.profile?.name || authStore.user?.name)
+      ?.trim()
+      .split(/\s+/)[0] || "Admin",
 );
 
 /** Menu yang dipegang admin maupun super admin. */
@@ -91,6 +97,10 @@ function handleMenu(key: string) {
 // Jadwal terakhir yang tersimpan di store tetap tampil selama request ini
 // jalan, jadi gagal memuat cukup dikabari lewat toast.
 onMounted(async () => {
+  // Foto profil memakai store yang sama dengan menu Profil, jadi cukup dimuat
+  // sekali; setelah diganti di Edit Profil, sapaan ini otomatis ikut berubah.
+  if (!profileStore.profile) profileStore.load();
+
   try {
     await scheduleStore.fetch();
   } catch (error) {
@@ -118,7 +128,11 @@ async function handleConfirmSchedule(value: SetorSchedule) {
   <main class="mx-auto flex w-full max-w-sm flex-col gap-5 px-6 pt-safe">
     <!-- Sapaan -->
     <header class="flex items-center gap-3 pt-6">
-      <AppIcon name="account" class="size-11 text-neutral-900" />
+      <AvatarPhoto
+        :src="profileStore.avatarSrc"
+        alt="Foto profil"
+        class="size-11"
+      />
       <div>
         <p class="text-body-md leading-tight font-extrabold text-neutral-900">
           Halo, {{ greetingName }}

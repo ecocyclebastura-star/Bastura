@@ -97,20 +97,33 @@ pub async fn get_cached_announcements(
 
     let mut announcements = Vec::new();
     for row in rows {
-        let content_json = row.content.unwrap_or_else(|| "{}".to_string());
+        let raw_content = row.content.unwrap_or_else(|| "{}".to_string());
+
+        // `content` dikirim ke server sebagai string JSON (multipart text), jadi
+        // server bisa membalasnya sebagai string, bukan objek. Di cache jadinya
+        // ter-encode dua kali ("\"{\\\"text\\\":...}\"") dan teksnya hilang;
+        // lapisan string-nya dibuka dulu sebelum di-parse.
+        let content_json = match serde_json::from_str::<serde_json::Value>(&raw_content) {
+            Ok(serde_json::Value::String(inner)) => inner,
+            _ => raw_content,
+        };
 
         let content: AnnouncementContent =
             serde_json::from_str(&content_json).unwrap_or_else(|_| {
                 if let Ok(value) = serde_json::from_str::<serde_json::Value>(&content_json) {
-                    let text = value.get("isi_konten")
-                        .and_then(|i| i.get("inti"))
+                    let text = value.get("text")
                         .and_then(|t| t.as_str())
+                        .or_else(|| value.get("isi_konten")
+                            .and_then(|i| i.get("inti"))
+                            .and_then(|t| t.as_str()))
                         .unwrap_or("")
                         .to_string();
                         
-                    let author = value.get("kontak_informasi")
-                        .and_then(|k| k.get("nama_divisi"))
+                    let author = value.get("author")
                         .and_then(|a| a.as_str())
+                        .or_else(|| value.get("kontak_informasi")
+                            .and_then(|k| k.get("nama_divisi"))
+                            .and_then(|a| a.as_str()))
                         .unwrap_or("")
                         .to_string();
                         

@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import AlertToast from "../../components/AlertToast.vue";
 import AppIcon from "../../components/AppIcon.vue";
 import { resolveAuthError } from "../../constants/authErrors";
 import { useToast } from "../../composables/useToast";
 import {
-  DAILY_SCAN_LIMIT,
   SCAN_IMAGE_MAX_BYTES,
   SCAN_IMAGE_TYPES,
   classifyScan,
@@ -107,19 +106,6 @@ const frozenImage = ref("");
 const failed = ref(false);
 let failTimer: ReturnType<typeof setTimeout> | undefined;
 
-const limitReached = computed(() => scanStore.remainingToday === 0);
-
-function limitMessage(): string {
-  const remaining = scanStore.remainingToday;
-  if (remaining === 0) {
-    return `Kamu sudah mencapai batas ${DAILY_SCAN_LIMIT} kali scan hari ini. Coba lagi besok.`;
-  }
-  if (remaining === DAILY_SCAN_LIMIT) {
-    return `Kamu hanya memiliki batas ${DAILY_SCAN_LIMIT} kali untuk menggunakan fitur scan dalam sehari.`;
-  }
-  return `Kamu masih punya ${remaining} kali scan lagi hari ini.`;
-}
-
 function clearFrozen() {
   clearTimeout(failTimer);
   if (frozenImage.value) URL.revokeObjectURL(frozenImage.value);
@@ -168,8 +154,13 @@ async function runScan(image: Blob, fileName: string) {
     );
   } catch (error) {
     failed.value = true;
-    if (limitReached.value) showToast(limitMessage(), "info");
-    else showToast(resolveAuthError(error, "Scan gagal. Coba lagi sebentar lagi."), "error");
+    // Batas scan harian dijaga server; pesan bawaan backend untuk 429 cuma
+    // "Gagal memproses gambar (HTTP 429)", jadi diganti kalimat sendiri.
+    if ((error as { http_status?: number })?.http_status === 429) {
+      showToast("Jatah scan kamu hari ini sudah habis. Coba lagi besok, ya.", "info");
+    } else {
+      showToast(resolveAuthError(error, "Scan gagal. Coba lagi sebentar lagi."), "error");
+    }
   } finally {
     scanning.value = false;
   }
@@ -178,14 +169,8 @@ async function runScan(image: Blob, fileName: string) {
   failTimer = setTimeout(clearFrozen, 4500);
 }
 
-function ensureQuota(): boolean {
-  if (!limitReached.value) return true;
-  showToast(limitMessage(), "info");
-  return false;
-}
-
 async function handleShutter() {
-  if (scanning.value || !ensureQuota()) return;
+  if (scanning.value) return;
 
   if (!cameraReady.value) {
     cameraInput.value?.click();
@@ -201,7 +186,7 @@ async function handleShutter() {
 }
 
 function openGallery() {
-  if (scanning.value || !ensureQuota()) return;
+  if (scanning.value) return;
   galleryInput.value?.click();
 }
 
@@ -227,7 +212,6 @@ async function onFileChosen(event: Event) {
 onMounted(() => {
   startCamera();
   document.addEventListener("visibilitychange", onVisibilityChange);
-  showToast(limitMessage(), "info");
 });
 
 onUnmounted(() => {

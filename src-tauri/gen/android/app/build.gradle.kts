@@ -1,3 +1,4 @@
+import java.io.FileInputStream
 import java.util.Properties
 
 plugins {
@@ -24,6 +25,23 @@ android {
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
     }
+    // Kunci penandatangan APK release. keystore.properties (di-gitignore) berisi
+    // password, keyAlias, dan storeFile; tanpa file itu build release tetap
+    // jalan, hanya saja APK-nya tidak bertanda tangan.
+    val keystorePropertiesFile = rootProject.file("keystore.properties")
+    val hasReleaseKeystore = keystorePropertiesFile.exists()
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            create("release") {
+                val keystoreProperties = Properties()
+                keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["password"] as String
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["password"] as String
+            }
+        }
+    }
     buildTypes {
         getByName("debug") {
             manifestPlaceholders["usesCleartextTraffic"] = "true"
@@ -37,6 +55,9 @@ android {
             }
         }
         getByName("release") {
+            if (hasReleaseKeystore) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isMinifyEnabled = true
             proguardFiles(
                 *fileTree(".") { include("**/*.pro") }
@@ -55,6 +76,25 @@ android {
 
 rust {
     rootDirRel = "../../../"
+}
+
+// Salinan APK dengan nama yang rapi di outputs/apk, mis. "Bastura-v0.1.0.apk"
+// (release) atau "Bastura-v0.1.0-debug.apk". File asli "app-universal-*.apk"
+// sengaja dibiarkan karena Tauri CLI mencarinya dengan nama itu.
+val apkVersionName = android.defaultConfig.versionName
+afterEvaluate {
+    for (profile in listOf("debug", "release")) {
+        val profileCapitalized = profile.replaceFirstChar { it.uppercase() }
+        tasks.findByName("assembleUniversal$profileCapitalized")?.doLast {
+            val outputDir = layout.buildDirectory.dir("outputs/apk/universal/$profile").get().asFile
+            val apk = outputDir.listFiles { file -> file.extension == "apk" }?.firstOrNull()
+                ?: return@doLast
+            val suffix = if (profile == "release") "" else "-$profile"
+            val target = File(outputDir.parentFile, "Bastura-v$apkVersionName$suffix.apk")
+            apk.copyTo(target, overwrite = true)
+            println("APK disalin ke: ${target.absolutePath}")
+        }
+    }
 }
 
 dependencies {

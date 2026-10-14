@@ -1,6 +1,5 @@
 import { defineStore } from "pinia";
 import { invokeCommand } from "../utils/invokeCommand";
-import { useAuthStore } from "./authStore";
 
 /** Bentuk `ScanWasteAiItem` dari src-tauri/src/models/waste_model.rs. */
 export interface ScanItem {
@@ -22,9 +21,6 @@ export interface ScanResponse {
 }
 
 export type ScanOutcome = "recognized" | "blurry" | "unrecognized";
-
-/** Jatah scan per hari, sesuai desain. */
-export const DAILY_SCAN_LIMIT = 2;
 
 /** Batas `scan_waste_ai_command`. */
 export const SCAN_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
@@ -66,67 +62,28 @@ export function classifyScan(response: ScanResponse): ScanOutcome {
   return "recognized";
 }
 
-/** Tanggal lokal "YYYY-MM-DD"; jatah scan direset tiap ganti hari. */
-function todayKey(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-}
-
-interface DailyUsage {
-  date: string;
-  count: number;
-}
-
 /**
  * Fitur scan sampah warga, lewat `scan_waste_ai_command`.
  *
- * CATATAN BACKEND: batas 2x sehari belum dijaga server, jadi untuk sekarang
- * dihitung di perangkat (localStorage, per akun). Kalau server nanti
- * menolak dengan HTTP 429, jatahnya langsung dianggap habis.
+ * Batas scan per hari dijaga server; kalau jatahnya habis, command-nya gagal
+ * dengan HTTP 429 dan halaman scan tinggal menampilkan pesannya.
  */
 export const useScanStore = defineStore("scan", {
   state: () => ({
-    /** id user -> pemakaian hari ini. */
-    usage: {} as Record<string, DailyUsage>,
-
-    /** Hasil scan terakhir untuk halaman hasil; sengaja tidak di-persist. */
+    /** Hasil scan terakhir untuk halaman hasil. */
     result: null as ScanResponse | null,
     /** Object URL foto yang di-scan. */
     resultImage: "",
   }),
 
-  getters: {
-    usedToday(state): number {
-      const id = useAuthStore().user?.id ?? "";
-      const entry = state.usage[id];
-      return entry && entry.date === todayKey() ? entry.count : 0;
-    },
-    remainingToday(): number {
-      return Math.max(0, DAILY_SCAN_LIMIT - this.usedToday);
-    },
-  },
-
   actions: {
-    setUsed(count: number) {
-      const id = useAuthStore().user?.id ?? "";
-      this.usage[id] = { date: todayKey(), count: Math.min(count, DAILY_SCAN_LIMIT) };
-    },
-
     async scan(image: Blob, fileName: string): Promise<ScanResponse> {
       const bytes = new Uint8Array(await image.arrayBuffer());
-      try {
-        const response = await invokeCommand<ScanResponse>("scan_waste_ai_command", {
-          // Vec<u8> di Rust diterima sebagai array angka biasa dari sisi JS.
-          payload: { file_name: fileName, file_bytes: Array.from(bytes) },
-        });
-        this.setUsed(this.usedToday + 1);
-        return { ...response, items: response.items ?? [] };
-      } catch (error) {
-        if ((error as { http_status?: number })?.http_status === 429) {
-          this.setUsed(DAILY_SCAN_LIMIT);
-        }
-        throw error;
-      }
+      const response = await invokeCommand<ScanResponse>("scan_waste_ai_command", {
+        // Vec<u8> di Rust diterima sebagai array angka biasa dari sisi JS.
+        payload: { file_name: fileName, file_bytes: Array.from(bytes) },
+      });
+      return { ...response, items: response.items ?? [] };
     },
 
     setResult(response: ScanResponse, imageUrl: string) {
@@ -140,10 +97,5 @@ export const useScanStore = defineStore("scan", {
       this.result = null;
       this.resultImage = "";
     },
-  },
-
-  // Cuma catatan jatah harian yang perlu bertahan saat aplikasi ditutup.
-  persist: {
-    pick: ["usage"],
   },
 });

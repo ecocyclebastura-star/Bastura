@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import AppIcon from "../../components/AppIcon.vue";
+import AvatarPhoto from "../../components/AvatarPhoto.vue";
 import BalanceCard from "../../components/cards/BalanceCard.vue";
 import ContentCard from "../../components/cards/ContentCard.vue";
 import ExploreMenu from "../../components/cards/ExploreMenu.vue";
@@ -9,16 +9,22 @@ import type { ExploreItem } from "../../components/cards/ExploreMenu.vue";
 import { useAuthStore } from "../../stores/authStore";
 import { useBalanceStore } from "../../stores/balanceStore";
 import { useContentStore } from "../../stores/contentStore";
+import { useProfileStore } from "../../stores/profileStore";
 import { formatTanggal } from "../../utils/formatters";
 
 const router = useRouter();
 const authStore = useAuthStore();
 const balanceStore = useBalanceStore();
 const contentStore = useContentStore();
+const profileStore = useProfileStore();
 
-// Nama panggilan: ambil kata pertama biar sapaannya tetap pendek.
+// Nama panggilan: ambil kata pertama biar sapaannya tetap pendek. Nama dari
+// profil didahulukan supaya ikut berubah setelah diedit di menu Profil.
 const greetingName = computed(
-  () => authStore.user?.name?.trim().split(/\s+/)[0] || "Warga",
+  () =>
+    (profileStore.profile?.name || authStore.user?.name)
+      ?.trim()
+      .split(/\s+/)[0] || "Warga",
 );
 
 const EXPLORE_ITEMS: ExploreItem[] = [
@@ -34,7 +40,12 @@ const EXPLORE_ROUTES: Record<string, string | undefined> = {
   "jenis-sampah": "user-jenis-sampah",
 };
 
-onMounted(() => contentStore.loadHighlights());
+onMounted(() => {
+  contentStore.loadHighlights();
+  // Foto profil memakai store yang sama dengan menu Profil, jadi cukup dimuat
+  // sekali; setelah diganti di Edit Profil, sapaan ini otomatis ikut berubah.
+  if (!profileStore.profile) profileStore.load();
+});
 
 function handleExplore(key: string) {
   const name = EXPLORE_ROUTES[key];
@@ -46,7 +57,11 @@ function handleExplore(key: string) {
   <main class="mx-auto flex w-full max-w-sm flex-col gap-5 px-6 pt-safe">
     <!-- Sapaan -->
     <header class="flex items-center gap-3 pt-6">
-      <AppIcon name="account" class="size-11 text-neutral-900" />
+      <AvatarPhoto
+        :src="profileStore.avatarSrc"
+        alt="Foto profil"
+        class="size-11"
+      />
       <div>
         <p class="text-body-md leading-tight font-extrabold text-neutral-900">
           Halo, {{ greetingName }}
