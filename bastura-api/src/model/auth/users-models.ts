@@ -84,7 +84,7 @@ export const changeOldPassword = async (email: string, old_password: string , ne
 
 export const updatePasswordByEmail = async (id: string, hashedPassword: string) => {
   const result = await sql`
-    UPDATE users SET password = ${hashedPassword} WHERE email = ${id}
+    UPDATE users SET password = ${hashedPassword}, updated_at = NOW() WHERE email = ${id}
     RETURNING id_users, name, email, phone
   `
   return result[0]

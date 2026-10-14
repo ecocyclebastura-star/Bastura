@@ -22,4 +22,5 @@ export const getEnvJWT =  {
 export const getEnvOTP = {
     OTP_SECRET: process.env.OTP_SECRET as string,
     RESEND_API_KEY: process.env.RESEND_API_KEY as string,
+    RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL || 'Bastura <noreply@api.basturaapp.my.id>',
 }
